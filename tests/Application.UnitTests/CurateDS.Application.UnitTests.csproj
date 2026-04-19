@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Application\CurateDS.Application.csproj" />
+    <ProjectReference Include="..\..\packages\application\CurateDS.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

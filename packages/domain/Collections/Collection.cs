@@ -4,6 +4,7 @@ public sealed class Collection
 {
     private Collection()
     {
+        Name = null!;
     }
 
     private Collection(Guid id, Guid ownerId, string name, DateTime createdUtc)

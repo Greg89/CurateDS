@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Api\CurateDS.Api.csproj" />
+    <ProjectReference Include="..\..\apps\api\CurateDS.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Infrastructure\CurateDS.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\packages\infrastructure\CurateDS.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

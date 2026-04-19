@@ -4,8 +4,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Application\CurateDS.Application.csproj" />
-    <ProjectReference Include="..\Domain\CurateDS.Domain.csproj" />
+    <ProjectReference Include="..\application\CurateDS.Application.csproj" />
+    <ProjectReference Include="..\domain\CurateDS.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

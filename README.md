@@ -8,15 +8,15 @@ This repository currently contains:
 
 - lightweight discovery docs in `docs/`
 - implementation planning docs in `app-plan/`
-- initial solution and project skeleton for API, domain, application, infrastructure, web, and tests
+- an app/package repo skeleton for API, web, backend packages, and tests
 
 ## Planned Architecture
 
-- `src/Api` ASP.NET Core API
-- `src/Application` application use cases and contracts
-- `src/Domain` domain model and business rules
-- `src/Infrastructure` EF Core, PostgreSQL, logging, and external adapters
-- `src/Web` React web client
+- `apps/api` ASP.NET Core API
+- `apps/web` React web client
+- `packages/application` application use cases and contracts
+- `packages/domain` domain model and business rules
+- `packages/infrastructure` EF Core, PostgreSQL, logging, and external adapters
 
 ## Test Layout
 

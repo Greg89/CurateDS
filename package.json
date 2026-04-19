@@ -2,7 +2,7 @@
   "name": "curateds",
   "private": true,
   "workspaces": [
-    "src/Web",
+    "apps/web",
     "tests/Web.UnitTests",
     "tests/EndToEndTests"
   ],
