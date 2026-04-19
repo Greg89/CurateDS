@@ -46,7 +46,7 @@ In Docker Compose, Seq is available locally:
 - UI: `http://localhost:8081`
 - ingestion endpoint: `http://localhost:5341`
 
-This gives you a local way to validate Serilog events before wiring the same sink pattern to a dedicated Railway logging service later.
+The local compose setup starts Seq without authentication for convenience. For Railway or any shared environment, you should switch that to a proper admin password or managed access model.
 
 ## Test Layout
 
