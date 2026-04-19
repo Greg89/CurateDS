@@ -1,13 +1,12 @@
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace CurateDS.Api.IntegrationTests;
 
-public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthEndpointTests : IClassFixture<CollectionApiFactory>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly CollectionApiFactory _factory;
 
-    public HealthEndpointTests(WebApplicationFactory<Program> factory)
+    public HealthEndpointTests(CollectionApiFactory factory)
     {
         _factory = factory;
     }

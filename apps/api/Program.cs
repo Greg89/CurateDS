@@ -1,4 +1,10 @@
+using CurateDS.Api.Collections;
+using CurateDS.Application.Abstractions.Persistence;
+using CurateDS.Application.Collections.CreateCollection;
+using CurateDS.Application.Collections.ListCollections;
 using CurateDS.Infrastructure.Persistence;
+using CurateDS.Infrastructure.Persistence.Repositories;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Formatting.Compact;
@@ -26,13 +32,43 @@ builder.Host.UseSerilog((context, services, configuration) =>
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
+var useInMemoryDatabase = builder.Configuration.GetValue<bool>("Testing:UseInMemoryDatabase");
+
 builder.Services.AddDbContext<CatalogDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("CatalogDb")));
+{
+    if (useInMemoryDatabase)
+    {
+        var databaseName = builder.Configuration["Testing:DatabaseName"] ?? "curateds-tests";
+        options.UseInMemoryDatabase(databaseName);
+        return;
+    }
+
+    options.UseNpgsql(builder.Configuration.GetConnectionString("CatalogDb"));
+});
+
+builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
+builder.Services.AddScoped<IValidator<CreateCollectionCommand>, CreateCollectionCommandValidator>();
+builder.Services.AddScoped<CreateCollectionService>();
+builder.Services.AddScoped<ListCollectionsService>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<CatalogDbContext>("catalog-db");
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+
+    if (dbContext.Database.IsRelational())
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+    else
+    {
+        await dbContext.Database.EnsureCreatedAsync();
+    }
+}
 
 app.UseSerilogRequestLogging();
 app.UseExceptionHandler();
@@ -55,6 +91,7 @@ app.MapGet("/", () => Results.Ok(new
     utc = DateTime.UtcNow
 }));
 
+app.MapCollectionEndpoints();
 app.MapHealthChecks("/health");
 
 app.Run();

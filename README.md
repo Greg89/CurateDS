@@ -59,9 +59,13 @@ The local compose setup starts Seq without authentication for convenience. For R
 
 ## Next Implementation Focus
 
-The first vertical slice should cover:
+The current vertical slice covers:
 
 1. creating a collection
-2. defining a custom attribute
-3. creating an item
-4. viewing item detail
+2. listing collections
+
+The next vertical slice should cover:
+
+1. defining a custom attribute
+2. creating an item
+3. viewing item detail
