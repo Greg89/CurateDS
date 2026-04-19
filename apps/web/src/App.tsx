@@ -1,3 +1,5 @@
+import { appConfig } from "./config";
+
 export function App() {
   return (
     <main className="app-shell">
@@ -8,6 +10,7 @@ export function App() {
           The repo skeleton is in place. The next slice is collection creation,
           custom attributes, and the first end-to-end item workflow.
         </p>
+        <p className="meta">API base URL: {appConfig.apiBaseUrl}</p>
       </section>
     </main>
   );

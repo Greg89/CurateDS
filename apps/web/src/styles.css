@@ -56,3 +56,9 @@ body {
   color: #d2dbcf;
   line-height: 1.6;
 }
+
+.meta {
+  margin: 1rem 0 0;
+  font-size: 0.92rem;
+  color: #9eb29a;
+}

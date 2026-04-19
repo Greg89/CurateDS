@@ -39,3 +39,6 @@ jobs:
 
       - name: Build web
         run: npm run build:web
+
+      - name: Validate Docker Compose
+        run: docker compose config

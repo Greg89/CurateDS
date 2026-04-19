@@ -1,15 +1,66 @@
 services:
-  postgres:
+  catalog-seq:
+    image: datalust/seq:2025.2
+    container_name: curateds-seq
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:5341"
+      - "8081:80"
+    volumes:
+      - curateds-seq-data:/data
+    restart: unless-stopped
+
+  catalog-db:
     image: postgres:17-alpine
     container_name: curateds-postgres
     environment:
-      POSTGRES_DB: curateds
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-curateds}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-curateds}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     volumes:
       - curateds-postgres-data:/var/lib/postgresql/data
 
+  catalog-api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: curateds-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__CatalogDb: Host=catalog-db;Port=5432;Database=${POSTGRES_DB:-curateds};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      Serilog__SeqUrl: ${SEQ_INTERNAL_URL:-http://catalog-seq:5341}
+    depends_on:
+      catalog-seq:
+        condition: service_started
+      catalog-db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  catalog-web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    container_name: curateds-web
+    depends_on:
+      - catalog-api
+    ports:
+      - "3000:8080"
+    restart: unless-stopped
+
 volumes:
   curateds-postgres-data:
+  curateds-seq-data:
