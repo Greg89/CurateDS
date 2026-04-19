@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CurateDS.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a42f357a317aeb2282c3a4bde7e0b0163100b4ca")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9298e622ba5043fe4219c93a2b7108507a293dbe")]
 [assembly: System.Reflection.AssemblyProductAttribute("CurateDS.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CurateDS.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
