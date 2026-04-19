@@ -1,0 +1,58 @@
+:root {
+  font-family: "Segoe UI", sans-serif;
+  color: #f5f7f4;
+  background:
+    radial-gradient(circle at top, rgba(95, 129, 87, 0.28), transparent 35%),
+    linear-gradient(180deg, #19241d 0%, #0d120e 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 2rem;
+}
+
+.hero {
+  width: min(720px, 100%);
+  border: 1px solid rgba(245, 247, 244, 0.12);
+  border-radius: 24px;
+  padding: 2rem;
+  background: rgba(18, 26, 20, 0.78);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28);
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.8rem;
+  color: #b9c9b4;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 1;
+}
+
+.copy {
+  margin: 1rem 0 0;
+  max-width: 52ch;
+  color: #d2dbcf;
+  line-height: 1.6;
+}

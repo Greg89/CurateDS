@@ -1,41 +1,47 @@
+using CurateDS.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Formatting.Compact;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console(new RenderedCompactJsonFormatter());
+});
+
+builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+
+builder.Services.AddDbContext<CatalogDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("CatalogDb")));
+
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<CatalogDbContext>("catalog-db");
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseSerilogRequestLogging();
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
+app.MapGet("/", () => Results.Ok(new
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    name = "CurateDS API",
+    status = "ok",
+    utc = DateTime.UtcNow
+}));
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapHealthChecks("/health");
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+public partial class Program;
