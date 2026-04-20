@@ -439,11 +439,11 @@ function CollectionList({
   collections,
   selectedCollectionId,
   onSelect
-}: {
+}: Readonly<{
   collections: Collection[];
   selectedCollectionId: string;
   onSelect: (collectionId: string) => void;
-}) {
+}>) {
   if (collections.length === 0) {
     return (
       <div className="empty-state">
@@ -479,10 +479,10 @@ function CollectionList({
 function AttributeDefinitionList({
   attributeDefinitions,
   selectedCollectionName
-}: {
+}: Readonly<{
   attributeDefinitions: AttributeDefinition[];
   selectedCollectionName: string | null;
-}) {
+}>) {
   if (!selectedCollectionName) {
     return (
       <div className="empty-state">
@@ -527,12 +527,12 @@ function DynamicAttributeFields({
   disabled,
   values,
   onChange
-}: {
+}: Readonly<{
   attributeDefinitions: AttributeDefinition[];
   disabled: boolean;
   values: Record<string, string>;
   onChange: (attributeDefinitionId: string, value: string) => void;
-}) {
+}>) {
   if (attributeDefinitions.length === 0) {
     return (
       <div className="empty-state compact">
@@ -635,12 +635,12 @@ function ItemList({
   selectedCollectionName,
   selectedItemId,
   onSelect
-}: {
+}: Readonly<{
   items: ItemSummary[];
   selectedCollectionName: string | null;
   selectedItemId: string;
   onSelect: (itemId: string) => void;
-}) {
+}>) {
   if (!selectedCollectionName) {
     return (
       <div className="empty-state compact">
@@ -686,10 +686,10 @@ function ItemList({
 function ItemDetailCard({
   item,
   selectedCollectionName
-}: {
+}: Readonly<{
   item: ItemDetail | null;
   selectedCollectionName: string | null;
-}) {
+}>) {
   if (!selectedCollectionName) {
     return null;
   }
