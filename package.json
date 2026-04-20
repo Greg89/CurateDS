@@ -1,0 +1,14 @@
+{
+  "name": "curateds",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "tests/Web.UnitTests",
+    "tests/EndToEndTests"
+  ],
+  "scripts": {
+    "build:web": "npm run build --workspace @curateds/web",
+    "test:web": "npm run test --workspace @curateds/web-tests",
+    "test:e2e": "npm run test --workspace @curateds/e2e"
+  }
+}
