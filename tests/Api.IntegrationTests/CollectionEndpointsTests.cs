@@ -41,5 +41,13 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         collections!.Should().Contain(collection => collection.Name == "Fountain Pens");
     }
 
+    [Fact]
+    public async Task PostCollections_ShouldReturnBadRequest_WhenNameIsWhitespaceOnly()
+    {
+        var response = await _client.PostAsJsonAsync("/collections", new { name = "   " });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     private sealed record CollectionResponse(Guid Id, string Name, DateTime CreatedUtc);
 }

@@ -10,8 +10,10 @@ public sealed class CreateCollectionCommandValidator : AbstractValidator<CreateC
             .NotEmpty();
 
         RuleFor(command => command.Name)
-            .NotEmpty()
-            .MinimumLength(3)
+            .Must(name => !string.IsNullOrWhiteSpace(name))
+            .WithMessage("'Name' must not be empty.")
+            .Must(name => name.Trim().Length >= 3)
+            .WithMessage("'Name' must be at least 3 characters long.")
             .MaximumLength(100);
     }
 }

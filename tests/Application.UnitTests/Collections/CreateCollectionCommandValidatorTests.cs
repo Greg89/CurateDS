@@ -15,4 +15,26 @@ public sealed class CreateCollectionCommandValidatorTests
 
         result.IsValid.Should().BeFalse();
     }
+
+    [Fact]
+    public void Validate_ShouldFail_WhenNameIsWhitespaceOnly()
+    {
+        var validator = new CreateCollectionCommandValidator();
+        var command = new CreateCollectionCommand(Guid.NewGuid(), "   ");
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Validate_ShouldFail_WhenTrimmedNameIsTooShort()
+    {
+        var validator = new CreateCollectionCommandValidator();
+        var command = new CreateCollectionCommand(Guid.NewGuid(), " ab ");
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+    }
 }
