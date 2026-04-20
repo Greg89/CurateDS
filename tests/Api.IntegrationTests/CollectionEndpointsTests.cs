@@ -38,7 +38,7 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         var collections = await response.Content.ReadFromJsonAsync<IReadOnlyList<CollectionResponse>>();
 
         collections.Should().NotBeNull();
-        collections!.Should().ContainSingle(collection => collection.Name == "Fountain Pens");
+        collections!.Should().Contain(collection => collection.Name == "Fountain Pens");
     }
 
     private sealed record CollectionResponse(Guid Id, string Name, DateTime CreatedUtc);

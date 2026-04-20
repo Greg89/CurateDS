@@ -40,6 +40,7 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__CatalogDb: Host=catalog-db;Port=5432;Database=${POSTGRES_DB:-curateds};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
       Serilog__SeqUrl: ${SEQ_INTERNAL_URL:-http://catalog-seq:5341}
+      Cors__AllowedOrigins__0: http://localhost:3000
     depends_on:
       catalog-seq:
         condition: service_started

@@ -32,6 +32,25 @@ builder.Host.UseSerilog((context, services, configuration) =>
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("WebClient", policy =>
+    {
+        if (allowedOrigins.Length == 0)
+        {
+            return;
+        }
+
+        policy.WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 var useInMemoryDatabase = builder.Configuration.GetValue<bool>("Testing:UseInMemoryDatabase");
 
 builder.Services.AddDbContext<CatalogDbContext>(options =>
@@ -72,6 +91,7 @@ await using (var scope = app.Services.CreateAsyncScope())
 
 app.UseSerilogRequestLogging();
 app.UseExceptionHandler();
+app.UseCors("WebClient");
 
 app.MapGet("/ready", () => Results.Ok(new
 {
