@@ -1,11 +1,14 @@
 using CurateDS.Api.Collections;
 using CurateDS.Application.Abstractions.Persistence;
+using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
+using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
 using CurateDS.Infrastructure.Persistence;
 using CurateDS.Infrastructure.Persistence.Repositories;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using Serilog;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Seq;
@@ -31,6 +34,10 @@ builder.Host.UseSerilog((context, services, configuration) =>
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
@@ -66,8 +73,12 @@ builder.Services.AddDbContext<CatalogDbContext>(options =>
 });
 
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
+builder.Services.AddScoped<IAttributeDefinitionRepository, AttributeDefinitionRepository>();
+builder.Services.AddScoped<IValidator<CreateAttributeDefinitionCommand>, CreateAttributeDefinitionCommandValidator>();
 builder.Services.AddScoped<IValidator<CreateCollectionCommand>, CreateCollectionCommandValidator>();
+builder.Services.AddScoped<CreateAttributeDefinitionService>();
 builder.Services.AddScoped<CreateCollectionService>();
+builder.Services.AddScoped<ListAttributeDefinitionsService>();
 builder.Services.AddScoped<ListCollectionsService>();
 
 builder.Services.AddHealthChecks()

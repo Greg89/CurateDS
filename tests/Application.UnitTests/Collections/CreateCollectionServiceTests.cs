@@ -30,6 +30,12 @@ public sealed class CreateCollectionServiceTests
             return Task.CompletedTask;
         }
 
+        public Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, Guid ownerId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Collections.SingleOrDefault(collection =>
+                collection.Id == collectionId && collection.OwnerId == ownerId));
+        }
+
         public Task<IReadOnlyList<Collection>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyList<Collection>>(Collections.Where(collection => collection.OwnerId == ownerId).ToArray());

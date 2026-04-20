@@ -19,6 +19,14 @@ public sealed class CollectionRepository : ICollectionRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, Guid ownerId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.Collections
+            .SingleOrDefaultAsync(
+                collection => collection.Id == collectionId && collection.OwnerId == ownerId,
+                cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Collection>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
     {
         return await _dbContext.Collections

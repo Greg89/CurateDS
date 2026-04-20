@@ -1,0 +1,40 @@
+using CurateDS.Application.Abstractions.Persistence;
+using CurateDS.Domain.Collections;
+using Microsoft.EntityFrameworkCore;
+
+namespace CurateDS.Infrastructure.Persistence.Repositories;
+
+public sealed class AttributeDefinitionRepository : IAttributeDefinitionRepository
+{
+    private readonly CatalogDbContext _dbContext;
+
+    public AttributeDefinitionRepository(CatalogDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task AddAsync(AttributeDefinition attributeDefinition, CancellationToken cancellationToken)
+    {
+        await _dbContext.AttributeDefinitions.AddAsync(attributeDefinition, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<int> GetNextSortOrderAsync(Guid collectionId, CancellationToken cancellationToken)
+    {
+        var nextSortOrder = await _dbContext.AttributeDefinitions
+            .Where(attributeDefinition => attributeDefinition.CollectionId == collectionId)
+            .Select(attributeDefinition => (int?)attributeDefinition.SortOrder)
+            .MaxAsync(cancellationToken);
+
+        return (nextSortOrder ?? -1) + 1;
+    }
+
+    public async Task<IReadOnlyList<AttributeDefinition>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.AttributeDefinitions
+            .Where(attributeDefinition => attributeDefinition.CollectionId == collectionId)
+            .OrderBy(attributeDefinition => attributeDefinition.SortOrder)
+            .ThenBy(attributeDefinition => attributeDefinition.Name)
+            .ToListAsync(cancellationToken);
+    }
+}
