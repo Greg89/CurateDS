@@ -26,6 +26,36 @@ export interface AttributeDefinition {
   createdUtc: string;
 }
 
+export interface ItemAttributeValue {
+  attributeDefinitionId: string;
+  attributeName: string;
+  attributeKey: string;
+  dataType: AttributeDataType;
+  value: string;
+}
+
+export interface ItemSummary {
+  id: string;
+  collectionId: string;
+  name: string;
+  description: string | null;
+  quantity: number;
+  attributeValueCount: number;
+  createdUtc: string;
+  updatedUtc: string;
+}
+
+export interface ItemDetail {
+  id: string;
+  collectionId: string;
+  name: string;
+  description: string | null;
+  quantity: number;
+  createdUtc: string;
+  updatedUtc: string;
+  attributeValues: ItemAttributeValue[];
+}
+
 export async function listCollections(): Promise<Collection[]> {
   const response = await fetch(`${appConfig.apiBaseUrl}/collections`);
 
@@ -46,16 +76,9 @@ export async function createCollection(name: string): Promise<Collection> {
   });
 
   if (!response.ok) {
-    const details = (await response.json().catch(() => null)) as
-      | { errors?: Record<string, string[]> }
-      | null;
-
-    const message =
-      details?.errors?.Name?.[0] ??
-      details?.errors?.name?.[0] ??
-      "Failed to create collection.";
-
-    throw new Error(message);
+    throw new Error(
+      (await readValidationMessage(response)) ?? "Failed to create collection."
+    );
   }
 
   return (await response.json()) as Collection;
@@ -99,17 +122,83 @@ export async function createAttributeDefinition(input: {
   );
 
   if (!response.ok) {
-    const details = (await response.json().catch(() => null)) as
-      | { errors?: Record<string, string[]> }
-      | null;
-
-    const message =
-      details?.errors?.Name?.[0] ??
-      details?.errors?.name?.[0] ??
-      "Failed to create attribute definition.";
-
-    throw new Error(message);
+    throw new Error(
+      (await readValidationMessage(response)) ??
+        "Failed to create attribute definition."
+    );
   }
 
   return (await response.json()) as AttributeDefinition;
+}
+
+export async function listItems(collectionId: string): Promise<ItemSummary[]> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/items`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load items.");
+  }
+
+  return (await response.json()) as ItemSummary[];
+}
+
+export async function getItemDetail(
+  collectionId: string,
+  itemId: string
+): Promise<ItemDetail> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/items/${itemId}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load item details.");
+  }
+
+  return (await response.json()) as ItemDetail;
+}
+
+export async function createItem(input: {
+  collectionId: string;
+  name: string;
+  description: string;
+  quantity: number;
+  attributeValues: Array<{
+    attributeDefinitionId: string;
+    value: string;
+  }>;
+}): Promise<ItemDetail> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${input.collectionId}/items`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: input.name,
+        description: input.description,
+        quantity: input.quantity,
+        attributeValues: input.attributeValues
+      })
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error((await readValidationMessage(response)) ?? "Failed to create item.");
+  }
+
+  return (await response.json()) as ItemDetail;
+}
+
+async function readValidationMessage(response: Response): Promise<string | null> {
+  const details = (await response.json().catch(() => null)) as
+    | { errors?: Record<string, string[]> }
+    | null;
+
+  if (!details?.errors) {
+    return null;
+  }
+
+  return Object.values(details.errors).flat()[0] ?? null;
 }

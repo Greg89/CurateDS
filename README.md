@@ -63,9 +63,13 @@ The current vertical slice covers:
 
 1. creating a collection
 2. listing collections
+3. defining custom attribute definitions per collection
+4. creating items with typed custom attribute values
+5. listing items for a collection
+6. viewing item detail
 
 The next vertical slice should cover:
 
-1. defining a custom attribute
-2. creating an item
-3. viewing item detail
+1. editing items after creation
+2. introducing tags and locations
+3. adding collection-aware search and filtering

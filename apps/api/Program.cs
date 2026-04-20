@@ -2,8 +2,11 @@ using CurateDS.Api.Collections;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
+using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
+using CurateDS.Application.Collections.ListItems;
 using CurateDS.Infrastructure.Persistence;
 using CurateDS.Infrastructure.Persistence.Repositories;
 using FluentValidation;
@@ -74,12 +77,17 @@ builder.Services.AddDbContext<CatalogDbContext>(options =>
 
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<IAttributeDefinitionRepository, AttributeDefinitionRepository>();
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddScoped<IValidator<CreateAttributeDefinitionCommand>, CreateAttributeDefinitionCommandValidator>();
 builder.Services.AddScoped<IValidator<CreateCollectionCommand>, CreateCollectionCommandValidator>();
+builder.Services.AddScoped<IValidator<CreateItemCommand>, CreateItemCommandValidator>();
 builder.Services.AddScoped<CreateAttributeDefinitionService>();
 builder.Services.AddScoped<CreateCollectionService>();
+builder.Services.AddScoped<CreateItemService>();
+builder.Services.AddScoped<GetItemDetailService>();
 builder.Services.AddScoped<ListAttributeDefinitionsService>();
 builder.Services.AddScoped<ListCollectionsService>();
+builder.Services.AddScoped<ListItemsService>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<CatalogDbContext>("catalog-db");

@@ -1,8 +1,11 @@
 using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
+using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
+using CurateDS.Application.Collections.ListItems;
 using CurateDS.Application.Common;
 using FluentValidation;
 
@@ -119,6 +122,98 @@ public static class CollectionEndpoints
             }
         });
 
+        group.MapGet("/{collectionId:guid}/items", async (
+            Guid collectionId,
+            ListItemsService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var items = await service.ExecuteAsync(
+                    new ListItemsQuery(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.Ok(items.Select(ToResponse));
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
+            }
+        });
+
+        group.MapPost("/{collectionId:guid}/items", async (
+            Guid collectionId,
+            CreateItemRequest request,
+            CreateItemService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var result = await service.ExecuteAsync(
+                    new CreateItemCommand(
+                        ownerId,
+                        collectionId,
+                        request.Name,
+                        request.Description,
+                        request.Quantity,
+                        request.AttributeValues.Select(attributeValue =>
+                            new CreateItemAttributeValueInput(
+                                attributeValue.AttributeDefinitionId,
+                                attributeValue.Value)).ToArray()),
+                    cancellationToken);
+
+                return Results.Created(
+                    $"/collections/{collectionId}/items/{result.Id}",
+                    ToResponse(new ItemDetailDto(
+                        result.Id,
+                        result.CollectionId,
+                        result.Name,
+                        result.Description,
+                        result.Quantity,
+                        result.CreatedUtc,
+                        result.UpdatedUtc,
+                        result.AttributeValues)));
+            }
+            catch (ValidationException exception)
+            {
+                return Results.ValidationProblem(exception.Errors
+                    .GroupBy(error => error.PropertyName)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => group.Select(error => error.ErrorMessage).ToArray()));
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/items/{itemId:guid}", async (
+            Guid collectionId,
+            Guid itemId,
+            GetItemDetailService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var item = await service.ExecuteAsync(
+                    new GetItemDetailQuery(ownerId, collectionId, itemId),
+                    cancellationToken);
+
+                return Results.Ok(ToResponse(item));
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
+            }
+        });
+
         return app;
     }
 
@@ -148,4 +243,31 @@ public static class CollectionEndpoints
             attributeDefinition.IsFilterable,
             attributeDefinition.SortOrder,
             attributeDefinition.CreatedUtc);
+
+    private static ItemSummaryResponse ToResponse(ItemSummaryDto item) =>
+        new(
+            item.Id,
+            item.CollectionId,
+            item.Name,
+            item.Description,
+            item.Quantity,
+            item.AttributeValueCount,
+            item.CreatedUtc,
+            item.UpdatedUtc);
+
+    private static ItemDetailResponse ToResponse(ItemDetailDto item) =>
+        new(
+            item.Id,
+            item.CollectionId,
+            item.Name,
+            item.Description,
+            item.Quantity,
+            item.CreatedUtc,
+            item.UpdatedUtc,
+            item.AttributeValues.Select(attributeValue => new ItemAttributeValueResponse(
+                attributeValue.AttributeDefinitionId,
+                attributeValue.AttributeName,
+                attributeValue.AttributeKey,
+                attributeValue.DataType,
+                attributeValue.Value)).ToArray());
 }

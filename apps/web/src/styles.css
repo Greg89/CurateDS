@@ -22,7 +22,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -118,7 +119,8 @@ h1 {
   background: rgba(255, 255, 255, 0.03);
 }
 
-.field select {
+.field select,
+.field-textarea {
   width: 100%;
   border: 1px solid rgba(234, 219, 199, 0.18);
   border-radius: 14px;
@@ -128,7 +130,8 @@ h1 {
 }
 
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field-textarea:focus {
   outline: 2px solid rgba(214, 152, 87, 0.55);
   outline-offset: 2px;
 }
@@ -178,6 +181,10 @@ h1 {
   color: #d6cfc2;
 }
 
+.empty-state.compact {
+  margin-top: 1rem;
+}
+
 .collection-list {
   display: grid;
   gap: 1rem;
@@ -221,8 +228,102 @@ h1 {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.panel-wide {
+  grid-column: 1 / -1;
+}
+
+.item-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.item-results {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.dynamic-field-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.item-list,
+.detail-value-list {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item-card,
+.detail-value-card,
+.item-detail-card {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.item-card.selected {
+  outline: 2px solid rgba(214, 152, 87, 0.5);
+}
+
+.item-select {
+  width: 100%;
+  padding: 1rem 1.1rem;
+  border: 0;
+  border-radius: 18px;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.item-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.item-card p,
+.detail-value-card p,
+.item-detail-card p {
+  margin-top: 0.45rem;
+  color: #d0c7ba;
+}
+
+.item-detail-card {
+  padding: 1.1rem;
+}
+
+.eyebrow.subtle {
+  margin-bottom: 0.4rem;
+  color: #cba77c;
+}
+
+.item-detail-copy {
+  line-height: 1.6;
+}
+
+.detail-meta-grid {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1rem;
+}
+
+.item-value {
+  font-size: 1.05rem;
+  color: #f4e4d2;
+}
+
 .collection-card h3,
-.attribute-card h3 {
+.attribute-card h3,
+.item-card h3,
+.detail-value-card h3,
+.item-detail-card h3 {
   font-size: 1.1rem;
 }
 
@@ -257,6 +358,10 @@ h1 {
 
 @media (max-width: 860px) {
   .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .item-workspace {
     grid-template-columns: 1fr;
   }
 }
