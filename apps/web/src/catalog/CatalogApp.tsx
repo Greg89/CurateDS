@@ -88,11 +88,12 @@ export function CatalogApp({
   const [savedViewName, setSavedViewName] = useState("");
   const [savedViews, setSavedViews] = useState<SavedItemView[]>([]);
   const [savedViewsCollectionId, setSavedViewsCollectionId] = useState("");
+  const normalizedItemFilterTagIds = normalizeTagIds(itemFilterTagIds);
 
   const itemFilters: ItemFilters = {
     searchText: itemSearchText,
     locationId: itemFilterLocationId,
-    tagIds: itemFilterTagIds,
+    tagIds: normalizedItemFilterTagIds,
     attributeFilters: itemAttributeFilters,
     sortBy: itemSortBy,
     sortDirection: itemSortDirection
@@ -123,7 +124,7 @@ export function CatalogApp({
       itemSortBy,
       itemSortDirection,
       JSON.stringify(itemAttributeFilters),
-      ...itemFilterTagIds
+      ...normalizedItemFilterTagIds
     ],
     queryFn: () => listItems(selectedCollectionId, itemFilters),
     enabled: hasSelectedCollection
@@ -1962,4 +1963,9 @@ function describeSort(
           : "updated date";
 
   return `${sortLabel} ${sortDirection === "asc" ? "ascending" : "descending"}`;
+}
+
+function normalizeTagIds(tagIds: readonly string[]) {
+  return [...new Set(tagIds.map((tagId) => tagId.trim()).filter((tagId) => tagId.length > 0))]
+    .sort((left, right) => left.localeCompare(right));
 }
