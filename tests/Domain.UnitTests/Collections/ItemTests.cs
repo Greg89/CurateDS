@@ -52,4 +52,34 @@ public sealed class ItemTests
         item.Quantity.Should().Be(3);
         item.UpdatedUtc.Should().Be(nextUpdatedUtc);
     }
+
+    [Fact]
+    public void Create_ShouldThrowArgumentNullException_WhenNameIsNull()
+    {
+        var act = () => Item.Create(
+            Guid.NewGuid(),
+            null!,
+            null,
+            1,
+            DateTime.UtcNow);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("name");
+    }
+
+    [Fact]
+    public void UpdateDetails_ShouldThrowArgumentNullException_WhenNameIsNull()
+    {
+        var item = Item.Create(
+            Guid.NewGuid(),
+            "Original Name",
+            null,
+            1,
+            DateTime.UtcNow);
+
+        var act = () => item.UpdateDetails(null!, null, 1, DateTime.UtcNow);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("name");
+    }
 }

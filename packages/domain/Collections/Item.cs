@@ -61,6 +61,8 @@ public sealed class Item
             throw new ArgumentException("Collection ID is required.", nameof(collectionId));
         }
 
+        ArgumentNullException.ThrowIfNull(name);
+
         var normalizedName = name.Trim();
 
         if (normalizedName.Length is < 3 or > 120)
@@ -98,6 +100,8 @@ public sealed class Item
 
     public void UpdateDetails(string name, string? description, int quantity, DateTime updatedUtc)
     {
+        ArgumentNullException.ThrowIfNull(name);
+
         var normalizedName = name.Trim();
 
         if (normalizedName.Length is < 3 or > 120)

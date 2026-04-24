@@ -33,6 +33,8 @@ public sealed class Location
             throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
 
+        ArgumentNullException.ThrowIfNull(name);
+
         var normalizedName = name.Trim();
 
         if (normalizedName.Length is < 2 or > 80)
