@@ -39,4 +39,22 @@ public sealed class ItemAttributeValueTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Fact]
+    public void Create_ShouldThrowArgumentNullException_WhenValueIsNull()
+    {
+        var definition = AttributeDefinition.Create(
+            Guid.NewGuid(),
+            "Notes",
+            AttributeDataType.Text,
+            isRequired: false,
+            isFilterable: true,
+            sortOrder: 0,
+            createdUtc: DateTime.UtcNow);
+
+        var act = () => ItemAttributeValue.Create(Guid.NewGuid(), definition, null!);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("value");
+    }
 }

@@ -52,6 +52,7 @@ public sealed class ItemAttributeValue
         }
 
         ArgumentNullException.ThrowIfNull(attributeDefinition);
+        ArgumentNullException.ThrowIfNull(value);
 
         var normalizedValue = value.Trim();
 
