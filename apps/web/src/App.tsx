@@ -33,7 +33,15 @@ const attributeDataTypes: AttributeDataType[] = [
   "SingleSelect"
 ];
 
+interface SavedItemView {
+  id: string;
+  name: string;
+  filters: ItemFilters;
+}
+
 export function App() {
+  const defaultSortBy: ItemFilters["sortBy"] = "updatedUtc";
+  const defaultSortDirection: ItemFilters["sortDirection"] = "desc";
   const queryClient = useQueryClient();
   const [collectionName, setCollectionName] = useState("");
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>("");
@@ -58,11 +66,24 @@ export function App() {
   const [itemSearchText, setItemSearchText] = useState("");
   const [itemFilterLocationId, setItemFilterLocationId] = useState("");
   const [itemFilterTagIds, setItemFilterTagIds] = useState<string[]>([]);
+  const [itemAttributeFilters, setItemAttributeFilters] = useState<
+    Record<string, string>
+  >({});
+  const [itemSortBy, setItemSortBy] =
+    useState<ItemFilters["sortBy"]>(defaultSortBy);
+  const [itemSortDirection, setItemSortDirection] =
+    useState<ItemFilters["sortDirection"]>(defaultSortDirection);
+  const [savedViewName, setSavedViewName] = useState("");
+  const [savedViews, setSavedViews] = useState<SavedItemView[]>([]);
+  const [savedViewsCollectionId, setSavedViewsCollectionId] = useState("");
 
   const itemFilters: ItemFilters = {
     searchText: itemSearchText,
     locationId: itemFilterLocationId,
-    tagIds: itemFilterTagIds
+    tagIds: itemFilterTagIds,
+    attributeFilters: itemAttributeFilters,
+    sortBy: itemSortBy,
+    sortDirection: itemSortDirection
   };
 
   const collectionsQuery = useQuery({
@@ -88,6 +109,9 @@ export function App() {
       selectedCollectionId,
       itemSearchText,
       itemFilterLocationId,
+      itemSortBy,
+      itemSortDirection,
+      JSON.stringify(itemAttributeFilters),
       ...itemFilterTagIds
     ],
     queryFn: () => listItems(selectedCollectionId, itemFilters),
@@ -309,6 +333,9 @@ export function App() {
     setItemSearchText("");
     setItemFilterLocationId("");
     setItemFilterTagIds([]);
+    setItemAttributeFilters({});
+    setItemSortBy(defaultSortBy);
+    setItemSortDirection(defaultSortDirection);
   }
 
   function toggleFilterTag(tagId: string) {
@@ -316,6 +343,52 @@ export function App() {
       currentTagIds.includes(tagId)
         ? currentTagIds.filter((currentTagId) => currentTagId !== tagId)
         : [...currentTagIds, tagId]
+    );
+  }
+
+  function handleAttributeFilterChange(attributeKey: string, value: string) {
+    setItemAttributeFilters((currentFilters) => ({
+      ...currentFilters,
+      [attributeKey]: value
+    }));
+  }
+
+  function saveCurrentView() {
+    const normalizedName = savedViewName.trim();
+
+    if (!selectedCollectionId || normalizedName.length === 0) {
+      return;
+    }
+
+    const nextView: SavedItemView = {
+      id: crypto.randomUUID(),
+      name: normalizedName,
+      filters: {
+        searchText: itemSearchText,
+        locationId: itemFilterLocationId,
+        tagIds: itemFilterTagIds,
+        attributeFilters: itemAttributeFilters,
+        sortBy: itemSortBy,
+        sortDirection: itemSortDirection
+      }
+    };
+
+    setSavedViews((currentViews) => [...currentViews, nextView]);
+    setSavedViewName("");
+  }
+
+  function applySavedView(view: SavedItemView) {
+    setItemSearchText(view.filters.searchText ?? "");
+    setItemFilterLocationId(view.filters.locationId ?? "");
+    setItemFilterTagIds(view.filters.tagIds ?? []);
+    setItemAttributeFilters(view.filters.attributeFilters ?? {});
+    setItemSortBy(view.filters.sortBy ?? defaultSortBy);
+    setItemSortDirection(view.filters.sortDirection ?? defaultSortDirection);
+  }
+
+  function deleteSavedView(viewId: string) {
+    setSavedViews((currentViews) =>
+      currentViews.filter((view) => view.id !== viewId)
     );
   }
 
@@ -346,6 +419,33 @@ export function App() {
   useEffect(() => {
     clearItemFilters();
   }, [selectedCollectionId]);
+
+  useEffect(() => {
+    if (!selectedCollectionId) {
+      setSavedViews([]);
+      setSavedViewName("");
+      setSavedViewsCollectionId("");
+      return;
+    }
+
+    setSavedViews(readSavedViews(selectedCollectionId));
+    setSavedViewName("");
+    setSavedViewsCollectionId(selectedCollectionId);
+  }, [selectedCollectionId]);
+
+  useEffect(() => {
+    if (
+      !selectedCollectionId ||
+      savedViewsCollectionId !== selectedCollectionId
+    ) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      getSavedViewsStorageKey(selectedCollectionId),
+      JSON.stringify(savedViews)
+    );
+  }, [savedViews, savedViewsCollectionId, selectedCollectionId]);
 
   return (
     <main className="page-shell">
@@ -676,15 +776,30 @@ export function App() {
 
             <div className="item-results">
               <ItemFiltersPanel
+                attributeDefinitions={(attributeDefinitionsQuery.data ?? []).filter(
+                  (attributeDefinition) => attributeDefinition.isFilterable
+                )}
+                attributeFilters={itemAttributeFilters}
                 disabled={!selectedCollection}
                 locationId={itemFilterLocationId}
                 locations={locationsQuery.data ?? []}
                 searchText={itemSearchText}
                 selectedTagIds={itemFilterTagIds}
+                sortBy={itemSortBy}
+                sortDirection={itemSortDirection}
+                savedViewName={savedViewName}
+                savedViews={savedViews}
                 tags={tagsQuery.data ?? []}
+                onAttributeFilterChange={handleAttributeFilterChange}
+                onDeleteSavedView={deleteSavedView}
                 onClear={clearItemFilters}
                 onLocationChange={setItemFilterLocationId}
+                onApplySavedView={applySavedView}
                 onSearchTextChange={setItemSearchText}
+                onSavedViewNameChange={setSavedViewName}
+                onSaveView={saveCurrentView}
+                onSortByChange={setItemSortBy}
+                onSortDirectionChange={setItemSortDirection}
                 onToggleTag={toggleFilterTag}
               />
 
@@ -874,32 +989,61 @@ function TagSelector({
 }
 
 function ItemFiltersPanel({
+  attributeDefinitions,
+  attributeFilters,
   disabled,
   locationId,
   locations,
   searchText,
   selectedTagIds,
+  sortBy,
+  sortDirection,
+  savedViewName,
+  savedViews,
   tags,
+  onAttributeFilterChange,
+  onDeleteSavedView,
   onClear,
+  onApplySavedView,
   onLocationChange,
   onSearchTextChange,
+  onSavedViewNameChange,
+  onSaveView,
+  onSortByChange,
+  onSortDirectionChange,
   onToggleTag
 }: Readonly<{
+  attributeDefinitions: AttributeDefinition[];
+  attributeFilters: Record<string, string>;
   disabled: boolean;
   locationId: string;
   locations: Location[];
   searchText: string;
   selectedTagIds: string[];
+  sortBy: ItemFilters["sortBy"];
+  sortDirection: ItemFilters["sortDirection"];
+  savedViewName: string;
+  savedViews: SavedItemView[];
   tags: Tag[];
+  onAttributeFilterChange: (attributeKey: string, value: string) => void;
+  onDeleteSavedView: (viewId: string) => void;
   onClear: () => void;
+  onApplySavedView: (view: SavedItemView) => void;
   onLocationChange: (locationId: string) => void;
   onSearchTextChange: (searchText: string) => void;
+  onSavedViewNameChange: (name: string) => void;
+  onSaveView: () => void;
+  onSortByChange: (sortBy: ItemFilters["sortBy"]) => void;
+  onSortDirectionChange: (sortDirection: ItemFilters["sortDirection"]) => void;
   onToggleTag: (tagId: string) => void;
 }>) {
   const hasActiveFilters =
     searchText.trim().length > 0 ||
     locationId.length > 0 ||
-    selectedTagIds.length > 0;
+    selectedTagIds.length > 0 ||
+    Object.values(attributeFilters).some((value) => value.trim().length > 0) ||
+    sortBy !== "updatedUtc" ||
+    sortDirection !== "desc";
 
   return (
     <section className="filter-panel">
@@ -934,7 +1078,61 @@ function ItemFiltersPanel({
             ))}
           </select>
         </label>
+
+        <label className="field">
+          <span>Sort By</span>
+          <select
+            value={sortBy}
+            onChange={(event) =>
+              onSortByChange(event.target.value as ItemFilters["sortBy"])
+            }
+            disabled={disabled}
+          >
+            <option value="updatedUtc">Recently updated</option>
+            <option value="createdUtc">Recently created</option>
+            <option value="name">Name</option>
+            <option value="quantity">Quantity</option>
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Direction</span>
+          <select
+            value={sortDirection}
+            onChange={(event) =>
+              onSortDirectionChange(
+                event.target.value as ItemFilters["sortDirection"]
+              )
+            }
+            disabled={disabled}
+          >
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+          </select>
+        </label>
       </div>
+
+      {attributeDefinitions.length > 0 ? (
+        <div className="dynamic-field-grid">
+          {attributeDefinitions.map((attributeDefinition) => (
+            <label className="field" key={attributeDefinition.id}>
+              <span>{attributeDefinition.name}</span>
+              {renderAttributeInput(
+                attributeDefinition,
+                attributeFilters,
+                disabled,
+                onAttributeFilterChange,
+                attributeDefinition.key
+              )}
+            </label>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state compact">
+          <p>No custom attribute filters yet.</p>
+          <p>Mark attributes as filterable and they will appear here.</p>
+        </div>
+      )}
 
       {tags.length === 0 ? (
         <div className="empty-state compact">
@@ -972,6 +1170,69 @@ function ItemFiltersPanel({
         >
           Clear Filters
         </button>
+      </div>
+
+      <div className="saved-view-panel">
+        <div className="panel-header">
+          <h3>Saved Views</h3>
+          <p>Keep favorite filter and sort combinations ready for later.</p>
+        </div>
+
+        <div className="saved-view-create">
+          <label className="field">
+            <span>View Name</span>
+            <input
+              value={savedViewName}
+              onChange={(event) => onSavedViewNameChange(event.target.value)}
+              disabled={disabled}
+              placeholder="Wishlist on shelf"
+              maxLength={60}
+            />
+          </label>
+
+          <button
+            className="secondary-button"
+            disabled={disabled || savedViewName.trim().length === 0}
+            onClick={onSaveView}
+            type="button"
+          >
+            Save View
+          </button>
+        </div>
+
+        {savedViews.length === 0 ? (
+          <div className="empty-state compact">
+            <p>No saved views yet.</p>
+            <p>Save a filter set once and reuse it whenever this collection comes back up.</p>
+          </div>
+        ) : (
+          <ul className="saved-view-list">
+            {savedViews.map((view) => (
+              <li className="saved-view-card" key={view.id}>
+                <div>
+                  <h3>{view.name}</h3>
+                  <p>{describeSavedView(view.filters)}</p>
+                </div>
+                <div className="saved-view-actions">
+                  <button
+                    className="secondary-button"
+                    onClick={() => onApplySavedView(view)}
+                    type="button"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    className="secondary-button"
+                    onClick={() => onDeleteSavedView(view.id)}
+                    type="button"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );
@@ -1016,9 +1277,11 @@ function renderAttributeInput(
   attributeDefinition: AttributeDefinition,
   values: Record<string, string>,
   disabled: boolean,
-  onChange: (attributeDefinitionId: string, value: string) => void
+  onChange: (attributeDefinitionId: string, value: string) => void,
+  valueKey?: string
 ) {
-  const value = values[attributeDefinition.id] ?? "";
+  const resolvedValueKey = valueKey ?? attributeDefinition.id;
+  const value = values[resolvedValueKey] ?? "";
 
   switch (attributeDefinition.dataType) {
     case "Boolean":
@@ -1027,7 +1290,7 @@ function renderAttributeInput(
           value={value}
           disabled={disabled}
           onChange={(event) =>
-            onChange(attributeDefinition.id, event.target.value)
+            onChange(resolvedValueKey, event.target.value)
           }
         >
           <option value="">Select one</option>
@@ -1041,7 +1304,7 @@ function renderAttributeInput(
           value={value}
           disabled={disabled}
           onChange={(event) =>
-            onChange(attributeDefinition.id, event.target.value)
+            onChange(resolvedValueKey, event.target.value)
           }
           type="date"
         />
@@ -1052,7 +1315,7 @@ function renderAttributeInput(
           value={value}
           disabled={disabled}
           onChange={(event) =>
-            onChange(attributeDefinition.id, event.target.value)
+            onChange(resolvedValueKey, event.target.value)
           }
           type="number"
           step={1}
@@ -1064,7 +1327,7 @@ function renderAttributeInput(
           value={value}
           disabled={disabled}
           onChange={(event) =>
-            onChange(attributeDefinition.id, event.target.value)
+            onChange(resolvedValueKey, event.target.value)
           }
           type="number"
           step="0.01"
@@ -1076,7 +1339,7 @@ function renderAttributeInput(
           value={value}
           disabled={disabled}
           onChange={(event) =>
-            onChange(attributeDefinition.id, event.target.value)
+            onChange(resolvedValueKey, event.target.value)
           }
           placeholder={`Enter ${attributeDefinition.name.toLowerCase()}`}
           type="text"
@@ -1227,4 +1490,71 @@ function ItemDetailCard({
       )}
     </section>
   );
+}
+
+function getSavedViewsStorageKey(collectionId: string) {
+  return `curateds:item-views:${collectionId}`;
+}
+
+function readSavedViews(collectionId: string): SavedItemView[] {
+  const savedViewsJson = window.localStorage.getItem(
+    getSavedViewsStorageKey(collectionId)
+  );
+
+  if (!savedViewsJson) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(savedViewsJson) as SavedItemView[] | null;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function describeSavedView(filters: ItemFilters) {
+  const segments: string[] = [];
+
+  if (filters.searchText?.trim()) {
+    segments.push(`Search: ${filters.searchText.trim()}`);
+  }
+
+  if (filters.locationId) {
+    segments.push("Location scoped");
+  }
+
+  if ((filters.tagIds?.length ?? 0) > 0) {
+    segments.push(`${filters.tagIds!.length} tag filter${filters.tagIds!.length === 1 ? "" : "s"}`);
+  }
+
+  const attributeFilterCount = Object.values(filters.attributeFilters ?? {}).filter(
+    (value) => value.trim().length > 0
+  ).length;
+
+  if (attributeFilterCount > 0) {
+    segments.push(`${attributeFilterCount} attribute filter${attributeFilterCount === 1 ? "" : "s"}`);
+  }
+
+  segments.push(
+    `Sort: ${describeSort(filters.sortBy ?? "updatedUtc", filters.sortDirection ?? "desc")}`
+  );
+
+  return segments.join(" | ");
+}
+
+function describeSort(
+  sortBy: NonNullable<ItemFilters["sortBy"]>,
+  sortDirection: NonNullable<ItemFilters["sortDirection"]>
+) {
+  const sortLabel =
+    sortBy === "createdUtc"
+      ? "created date"
+      : sortBy === "name"
+        ? "name"
+        : sortBy === "quantity"
+          ? "quantity"
+          : "updated date";
+
+  return `${sortLabel} ${sortDirection === "asc" ? "ascending" : "descending"}`;
 }

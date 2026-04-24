@@ -80,6 +80,9 @@ export interface ItemFilters {
   searchText?: string;
   locationId?: string;
   tagIds?: string[];
+  attributeFilters?: Record<string, string>;
+  sortBy?: "updatedUtc" | "createdUtc" | "name" | "quantity";
+  sortDirection?: "asc" | "desc";
 }
 
 export async function listCollections(): Promise<Collection[]> {
@@ -234,6 +237,28 @@ export async function listItems(
     if (tagId.trim().length > 0) {
       searchParams.append("tagIds", tagId);
     }
+  }
+
+  for (const [attributeKey, value] of Object.entries(
+    filters?.attributeFilters ?? {}
+  )) {
+    const normalizedKey = attributeKey.trim();
+    const normalizedValue = value.trim();
+
+    if (normalizedKey.length > 0 && normalizedValue.length > 0) {
+      searchParams.append(
+        "attributeFilters",
+        `${normalizedKey}=${normalizedValue}`
+      );
+    }
+  }
+
+  if (filters?.sortBy) {
+    searchParams.set("sortBy", filters.sortBy);
+  }
+
+  if (filters?.sortDirection) {
+    searchParams.set("sortDirection", filters.sortDirection);
   }
 
   const queryString = searchParams.toString();

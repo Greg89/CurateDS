@@ -212,7 +212,10 @@ public static class CollectionEndpoints
                         collectionId,
                         request.SearchText,
                         request.LocationId,
-                        request.TagIds ?? []),
+                        request.TagIds ?? [],
+                        ParseAttributeFilters(request.AttributeFilters),
+                        request.SortBy,
+                        request.SortDirection),
                     cancellationToken);
 
                 return Results.Ok(items.Select(ToResponse));
@@ -415,4 +418,40 @@ public static class CollectionEndpoints
                 attributeValue.AttributeKey,
                 attributeValue.DataType,
                 attributeValue.Value)).ToArray());
+
+    private static IReadOnlyList<ListItemsAttributeFilter> ParseAttributeFilters(string[]? attributeFilters)
+    {
+        if (attributeFilters is null || attributeFilters.Length == 0)
+        {
+            return [];
+        }
+
+        return attributeFilters
+            .Select(ParseAttributeFilter)
+            .Where(filter => filter is not null)
+            .Cast<ListItemsAttributeFilter>()
+            .ToArray();
+    }
+
+    private static ListItemsAttributeFilter? ParseAttributeFilter(string attributeFilter)
+    {
+        if (string.IsNullOrWhiteSpace(attributeFilter))
+        {
+            return null;
+        }
+
+        var separatorIndex = attributeFilter.IndexOf('=');
+
+        if (separatorIndex <= 0 || separatorIndex >= attributeFilter.Length - 1)
+        {
+            return null;
+        }
+
+        var attributeKey = attributeFilter[..separatorIndex].Trim();
+        var value = attributeFilter[(separatorIndex + 1)..].Trim();
+
+        return string.IsNullOrWhiteSpace(attributeKey) || string.IsNullOrWhiteSpace(value)
+            ? null
+            : new ListItemsAttributeFilter(attributeKey, value);
+    }
 }

@@ -70,9 +70,12 @@ The current vertical slice covers:
 7. editing items after creation
 8. organizing items with reusable tags and locations
 9. filtering a collection's items by search text, location, and tags
+10. filtering item lists by custom attribute values
+11. sorting item lists by updated date, created date, name, or quantity
+12. saving collection-specific item views in the web app for reuse
 
 The next vertical slice should cover:
 
-1. adding richer collection-aware filters around custom attributes
-2. expanding item organization into saved views or sort/group behavior
-3. starting item history or media metadata
+1. adding grouping or denser list/table views for larger collections
+2. starting item history or media metadata
+3. exploring image/file attachments per item

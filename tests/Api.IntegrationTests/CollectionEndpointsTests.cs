@@ -418,6 +418,93 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         items![0].Name.Should().Be("Dune");
     }
 
+    [Fact]
+    public async Task GetItems_ShouldFilterByCustomAttributeValue()
+    {
+        var collection = await CreateCollectionAsync("Movies");
+        var director = await CreateAttributeDefinitionAsync(collection.Id, "Director", AttributeDataType.Text, false);
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Arrival",
+                description = "Steelbook",
+                quantity = 1,
+                attributeValues = new[]
+                {
+                    new
+                    {
+                        attributeDefinitionId = director.Id,
+                        value = "Denis Villeneuve"
+                    }
+                }
+            });
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Interstellar",
+                description = "Blu-ray",
+                quantity = 1,
+                attributeValues = new[]
+                {
+                    new
+                    {
+                        attributeDefinitionId = director.Id,
+                        value = "Christopher Nolan"
+                    }
+                }
+            });
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?attributeFilters={director.Key}=Villeneuve");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+
+        items.Should().ContainSingle();
+        items![0].Name.Should().Be("Arrival");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldSortByNameAscending()
+    {
+        var collection = await CreateCollectionAsync("Games");
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Zelda",
+                description = "Adventure",
+                quantity = 1,
+                attributeValues = Array.Empty<object>()
+            });
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Animal Crossing",
+                description = "Cozy",
+                quantity = 1,
+                attributeValues = Array.Empty<object>()
+            });
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=name&sortDirection=asc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+
+        items.Should().NotBeNull();
+        items!.Select(item => item.Name).Should().ContainInOrder("Animal Crossing", "Zelda");
+    }
+
     private async Task<CollectionResponse> CreateCollectionAsync(string name)
     {
         var response = await _client.PostAsJsonAsync("/collections", new { name });

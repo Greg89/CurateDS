@@ -5,4 +5,9 @@ public sealed record ListItemsQuery(
     Guid CollectionId,
     string? SearchText,
     Guid? LocationId,
-    IReadOnlyList<Guid> TagIds);
+    IReadOnlyList<Guid> TagIds,
+    IReadOnlyList<ListItemsAttributeFilter> AttributeFilters,
+    string? SortBy,
+    string? SortDirection);
+
+public sealed record ListItemsAttributeFilter(string AttributeKey, string Value);
