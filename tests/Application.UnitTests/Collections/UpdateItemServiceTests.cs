@@ -134,6 +134,53 @@ public sealed class UpdateItemServiceTests
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ShouldNotPersistCoreChanges_WhenAttributeParsingFails()
+    {
+        var createdUtc = DateTime.UtcNow;
+        var collection = Collection.Create(Guid.NewGuid(), "Records", createdUtc);
+        var releaseYear = AttributeDefinition.Create(
+            collection.Id,
+            "Release Year",
+            AttributeDataType.Number,
+            isRequired: true,
+            isFilterable: true,
+            sortOrder: 0,
+            createdUtc: DateTime.UtcNow);
+        var item = Item.Create(collection.Id, "Original Name", "Original Description", 1, createdUtc);
+        item.ReplaceAttributeValues(
+            [ItemAttributeValue.Create(item.Id, releaseYear, "1959")],
+            createdUtc);
+
+        var itemRepository = new FakeItemRepository(item);
+        var service = new UpdateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(releaseYear),
+            new FakeLocationRepository(),
+            itemRepository,
+            new FakeTagRepository(),
+            new UpdateItemCommandValidator());
+
+        var act = () => service.ExecuteAsync(
+            new UpdateItemCommand(
+                collection.OwnerId,
+                collection.Id,
+                item.Id,
+                "Changed Name",
+                "Changed Description",
+                2,
+                null,
+                [],
+                [new CreateItemAttributeValueInput(releaseYear.Id, "not-a-number")]),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        item.Name.Should().Be("Original Name");
+        item.Description.Should().Be("Original Description");
+        item.Quantity.Should().Be(1);
+        itemRepository.SaveChangesCallCount.Should().Be(0);
+    }
+
     private sealed class FakeCollectionRepository : ICollectionRepository
     {
         private readonly List<Collection> _collections;

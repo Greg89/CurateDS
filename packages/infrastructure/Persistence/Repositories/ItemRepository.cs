@@ -30,7 +30,6 @@ public sealed class ItemRepository : IItemRepository
 
         _dbContext.ItemAttributeValues.RemoveRange(existingAttributeValues);
         await _dbContext.ItemAttributeValues.AddRangeAsync(attributeValues, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task ReplaceTagsAsync(
@@ -44,7 +43,6 @@ public sealed class ItemRepository : IItemRepository
 
         _dbContext.ItemTags.RemoveRange(existingItemTags);
         await _dbContext.ItemTags.AddRangeAsync(itemTags, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<Item?> GetByIdAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken)

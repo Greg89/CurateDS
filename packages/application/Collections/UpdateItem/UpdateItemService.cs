@@ -72,12 +72,6 @@ public sealed class UpdateItemService
 
         ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup);
 
-        var updatedUtc = DateTime.UtcNow;
-
-        item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc);
-        item.AssignLocation(organization.Location?.Id, updatedUtc);
-        await _itemRepository.SaveChangesAsync(cancellationToken);
-
         var attributeValues = command.AttributeValues
             .Select(attributeValue =>
             {
@@ -86,11 +80,16 @@ public sealed class UpdateItemService
             })
             .ToArray();
 
+        var updatedUtc = DateTime.UtcNow;
+
+        item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc);
+        item.AssignLocation(organization.Location?.Id, updatedUtc);
         await _itemRepository.ReplaceAttributeValuesAsync(item.Id, attributeValues, cancellationToken);
         await _itemRepository.ReplaceTagsAsync(
             item.Id,
             ItemOrganizationValidator.BuildItemTags(item.Id, organization.Tags),
             cancellationToken);
+        await _itemRepository.SaveChangesAsync(cancellationToken);
 
         return new UpdateItemResult(
             item.Id,
