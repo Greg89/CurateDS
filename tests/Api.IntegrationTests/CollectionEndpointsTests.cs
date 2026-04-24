@@ -314,10 +314,13 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     [Fact]
     public async Task PostTagsAndLocations_ShouldCreateOrganizationRecords()
     {
-        var tagResponse = await _client.PostAsJsonAsync("/tags", new { name = "Backlog" });
+        var tagName = UniqueName("Backlog");
+        var locationName = UniqueName("Hall Closet");
+
+        var tagResponse = await _client.PostAsJsonAsync("/tags", new { name = tagName });
         var locationResponse = await _client.PostAsJsonAsync("/locations", new
         {
-            name = "Hall Closet",
+            name = locationName,
             description = "Top shelf bin"
         });
 
@@ -327,8 +330,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         var tags = await (await _client.GetAsync("/tags")).Content.ReadFromJsonAsync<IReadOnlyList<TagResponse>>(JsonOptions);
         var locations = await (await _client.GetAsync("/locations")).Content.ReadFromJsonAsync<IReadOnlyList<LocationResponse>>(JsonOptions);
 
-        tags.Should().Contain(tag => tag.Name == "Backlog");
-        locations.Should().Contain(location => location.Name == "Hall Closet");
+        tags.Should().Contain(tag => tag.Name == tagName);
+        locations.Should().Contain(location => location.Name == locationName);
     }
 
     [Fact]
@@ -336,8 +339,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     {
         var collection = await CreateCollectionAsync("Board Games");
         var playerCount = await CreateAttributeDefinitionAsync(collection.Id, "Players", AttributeDataType.Number, false);
-        var tag = await CreateTagAsync("Favorite");
-        var location = await CreateLocationAsync("Game Cabinet", "Living room");
+        var tag = await CreateTagAsync(UniqueName("Favorite"));
+        var location = await CreateLocationAsync(UniqueName("Game Cabinet"), "Living room");
 
         var response = await _client.PostAsJsonAsync(
             $"/collections/{collection.Id}/items",
@@ -363,8 +366,56 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         var created = await response.Content.ReadFromJsonAsync<ItemDetailResponse>(JsonOptions);
 
         created.Should().NotBeNull();
-        created!.LocationName.Should().Be("Game Cabinet");
-        created.Tags.Should().ContainSingle(savedTag => savedTag.Name == "Favorite");
+        created!.LocationName.Should().Be(location.Name);
+        created.Tags.Should().ContainSingle(savedTag => savedTag.Name == tag.Name);
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldFilterBySearchTextTagAndLocation()
+    {
+        var collection = await CreateCollectionAsync("Books");
+        var tag = await CreateTagAsync(UniqueName("Wishlist"));
+        var location = await CreateLocationAsync(UniqueName("Office Shelf"), "Top row");
+        var author = await CreateAttributeDefinitionAsync(collection.Id, "Author", AttributeDataType.Text, false);
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Dune",
+                description = "Hardcover edition",
+                quantity = 1,
+                locationId = location.Id,
+                tagIds = new[] { tag.Id },
+                attributeValues = new[]
+                {
+                    new
+                    {
+                        attributeDefinitionId = author.Id,
+                        value = "Frank Herbert"
+                    }
+                }
+            });
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Foundation",
+                description = "Paperback",
+                quantity = 1,
+                attributeValues = Array.Empty<object>()
+            });
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?searchText=Herbert&locationId={location.Id}&tagIds={tag.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+
+        items.Should().ContainSingle();
+        items![0].Name.Should().Be("Dune");
     }
 
     private async Task<CollectionResponse> CreateCollectionAsync(string name)
@@ -405,6 +456,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         var response = await _client.PostAsJsonAsync("/locations", new { name, description });
         return (await response.Content.ReadFromJsonAsync<LocationResponse>(JsonOptions))!;
     }
+
+    private static string UniqueName(string prefix) => $"{prefix} {Guid.NewGuid():N}".Substring(0, prefix.Length + 9);
 
     private sealed record CollectionResponse(Guid Id, string Name, DateTime CreatedUtc);
 

@@ -76,6 +76,12 @@ export interface ItemDetail {
   attributeValues: ItemAttributeValue[];
 }
 
+export interface ItemFilters {
+  searchText?: string;
+  locationId?: string;
+  tagIds?: string[];
+}
+
 export async function listCollections(): Promise<Collection[]> {
   const response = await fetch(`${appConfig.apiBaseUrl}/collections`);
 
@@ -208,9 +214,31 @@ export async function createLocation(input: {
   return (await response.json()) as Location;
 }
 
-export async function listItems(collectionId: string): Promise<ItemSummary[]> {
+export async function listItems(
+  collectionId: string,
+  filters?: Readonly<ItemFilters>
+): Promise<ItemSummary[]> {
+  const searchParams = new URLSearchParams();
+
+  const searchText = filters?.searchText?.trim();
+  if (searchText) {
+    searchParams.set("searchText", searchText);
+  }
+
+  const locationId = filters?.locationId?.trim();
+  if (locationId) {
+    searchParams.set("locationId", locationId);
+  }
+
+  for (const tagId of filters?.tagIds ?? []) {
+    if (tagId.trim().length > 0) {
+      searchParams.append("tagIds", tagId);
+    }
+  }
+
+  const queryString = searchParams.toString();
   const response = await fetch(
-    `${appConfig.apiBaseUrl}/collections/${collectionId}/items`
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/items${queryString ? `?${queryString}` : ""}`
   );
 
   if (!response.ok) {

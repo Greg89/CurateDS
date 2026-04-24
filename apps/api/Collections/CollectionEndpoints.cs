@@ -198,6 +198,7 @@ public static class CollectionEndpoints
 
         group.MapGet("/{collectionId:guid}/items", async (
             Guid collectionId,
+            [AsParameters] ListItemsRequest request,
             ListItemsService service,
             IConfiguration configuration,
             CancellationToken cancellationToken) =>
@@ -206,7 +207,12 @@ public static class CollectionEndpoints
             {
                 var ownerId = GetDefaultOwnerId(configuration);
                 var items = await service.ExecuteAsync(
-                    new ListItemsQuery(ownerId, collectionId),
+                    new ListItemsQuery(
+                        ownerId,
+                        collectionId,
+                        request.SearchText,
+                        request.LocationId,
+                        request.TagIds ?? []),
                     cancellationToken);
 
                 return Results.Ok(items.Select(ToResponse));

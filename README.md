@@ -69,9 +69,10 @@ The current vertical slice covers:
 6. viewing item detail
 7. editing items after creation
 8. organizing items with reusable tags and locations
+9. filtering a collection's items by search text, location, and tags
 
 The next vertical slice should cover:
 
-1. adding collection-aware search and filtering
-2. expanding the web workflow around item organization
+1. adding richer collection-aware filters around custom attributes
+2. expanding item organization into saved views or sort/group behavior
 3. starting item history or media metadata

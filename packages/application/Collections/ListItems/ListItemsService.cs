@@ -41,8 +41,12 @@ public sealed class ListItemsService
         var tags = await _tagRepository.ListByOwnerAsync(query.OwnerId, cancellationToken);
         var locationLookup = locations.ToDictionary(location => location.Id);
         var tagLookup = tags.ToDictionary(tag => tag.Id);
+        var normalizedSearchText = query.SearchText?.Trim();
 
         return items
+            .Where(item => MatchesLocationFilter(item, query.LocationId))
+            .Where(item => MatchesTagFilter(item, query.TagIds))
+            .Where(item => MatchesSearchText(item, normalizedSearchText, locationLookup, tagLookup))
             .Select(item => new ItemSummaryDto(
                 item.Id,
                 item.CollectionId,
@@ -62,5 +66,95 @@ public sealed class ListItemsService
                 item.CreatedUtc,
                 item.UpdatedUtc))
             .ToArray();
+    }
+
+    private static bool MatchesLocationFilter(Domain.Collections.Item item, Guid? locationId)
+    {
+        return !locationId.HasValue || item.LocationId == locationId.Value;
+    }
+
+    private static bool MatchesTagFilter(Domain.Collections.Item item, IReadOnlyList<Guid> tagIds)
+    {
+        if (tagIds.Count == 0)
+        {
+            return true;
+        }
+
+        var itemTagIds = item.ItemTags.Select(itemTag => itemTag.TagId).ToHashSet();
+        return tagIds.All(itemTagIds.Contains);
+    }
+
+    private static bool MatchesSearchText(
+        Domain.Collections.Item item,
+        string? searchText,
+        IReadOnlyDictionary<Guid, Domain.Collections.Location> locationLookup,
+        IReadOnlyDictionary<Guid, Domain.Collections.Tag> tagLookup)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            return true;
+        }
+
+        return EnumerateSearchValues(item, locationLookup, tagLookup)
+            .Any(value => value.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static IEnumerable<string> EnumerateSearchValues(
+        Domain.Collections.Item item,
+        IReadOnlyDictionary<Guid, Domain.Collections.Location> locationLookup,
+        IReadOnlyDictionary<Guid, Domain.Collections.Tag> tagLookup)
+    {
+        yield return item.Name;
+
+        if (!string.IsNullOrWhiteSpace(item.Description))
+        {
+            yield return item.Description;
+        }
+
+        if (item.LocationId.HasValue && locationLookup.TryGetValue(item.LocationId.Value, out var location))
+        {
+            yield return location.Name;
+
+            if (!string.IsNullOrWhiteSpace(location.Description))
+            {
+                yield return location.Description;
+            }
+        }
+
+        foreach (var itemTag in item.ItemTags)
+        {
+            if (tagLookup.TryGetValue(itemTag.TagId, out var tag))
+            {
+                yield return tag.Name;
+            }
+        }
+
+        foreach (var attributeValue in item.AttributeValues)
+        {
+            if (!string.IsNullOrWhiteSpace(attributeValue.ValueText))
+            {
+                yield return attributeValue.ValueText;
+            }
+
+            if (attributeValue.ValueNumber.HasValue)
+            {
+                yield return attributeValue.ValueNumber.Value.ToString();
+            }
+
+            if (attributeValue.ValueDecimal.HasValue)
+            {
+                yield return attributeValue.ValueDecimal.Value.ToString("0.##");
+            }
+
+            if (attributeValue.ValueBoolean.HasValue)
+            {
+                yield return attributeValue.ValueBoolean.Value.ToString();
+            }
+
+            if (attributeValue.ValueDate.HasValue)
+            {
+                yield return attributeValue.ValueDate.Value.ToString("yyyy-MM-dd");
+            }
+        }
     }
 }

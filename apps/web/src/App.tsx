@@ -11,6 +11,7 @@ import {
   createTag,
   getItemDetail,
   ItemDetail,
+  ItemFilters,
   ItemSummary,
   listLocations,
   listAttributeDefinitions,
@@ -54,6 +55,15 @@ export function App() {
   >({});
   const [selectedItemId, setSelectedItemId] = useState("");
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [itemSearchText, setItemSearchText] = useState("");
+  const [itemFilterLocationId, setItemFilterLocationId] = useState("");
+  const [itemFilterTagIds, setItemFilterTagIds] = useState<string[]>([]);
+
+  const itemFilters: ItemFilters = {
+    searchText: itemSearchText,
+    locationId: itemFilterLocationId,
+    tagIds: itemFilterTagIds
+  };
 
   const collectionsQuery = useQuery({
     queryKey: ["collections"],
@@ -73,8 +83,14 @@ export function App() {
   });
 
   const itemsQuery = useQuery({
-    queryKey: ["items", selectedCollectionId],
-    queryFn: () => listItems(selectedCollectionId),
+    queryKey: [
+      "items",
+      selectedCollectionId,
+      itemSearchText,
+      itemFilterLocationId,
+      ...itemFilterTagIds
+    ],
+    queryFn: () => listItems(selectedCollectionId, itemFilters),
     enabled: selectedCollectionId.length > 0
   });
 
@@ -289,6 +305,20 @@ export function App() {
     setEditingItemId(itemDetailQuery.data.id);
   }
 
+  function clearItemFilters() {
+    setItemSearchText("");
+    setItemFilterLocationId("");
+    setItemFilterTagIds([]);
+  }
+
+  function toggleFilterTag(tagId: string) {
+    setItemFilterTagIds((currentTagIds) =>
+      currentTagIds.includes(tagId)
+        ? currentTagIds.filter((currentTagId) => currentTagId !== tagId)
+        : [...currentTagIds, tagId]
+    );
+  }
+
   useEffect(() => {
     if (!itemsQuery.data) {
       return;
@@ -311,6 +341,10 @@ export function App() {
 
   useEffect(() => {
     resetItemForm();
+  }, [selectedCollectionId]);
+
+  useEffect(() => {
+    clearItemFilters();
   }, [selectedCollectionId]);
 
   return (
@@ -641,6 +675,19 @@ export function App() {
             </form>
 
             <div className="item-results">
+              <ItemFiltersPanel
+                disabled={!selectedCollection}
+                locationId={itemFilterLocationId}
+                locations={locationsQuery.data ?? []}
+                searchText={itemSearchText}
+                selectedTagIds={itemFilterTagIds}
+                tags={tagsQuery.data ?? []}
+                onClear={clearItemFilters}
+                onLocationChange={setItemFilterLocationId}
+                onSearchTextChange={setItemSearchText}
+                onToggleTag={toggleFilterTag}
+              />
+
               {itemsQuery.isLoading ? <p className="message">Loading items...</p> : null}
               {itemsQuery.isError ? (
                 <p className="message error">{itemsQuery.error.message}</p>
@@ -823,6 +870,110 @@ function TagSelector({
         ))}
       </div>
     </div>
+  );
+}
+
+function ItemFiltersPanel({
+  disabled,
+  locationId,
+  locations,
+  searchText,
+  selectedTagIds,
+  tags,
+  onClear,
+  onLocationChange,
+  onSearchTextChange,
+  onToggleTag
+}: Readonly<{
+  disabled: boolean;
+  locationId: string;
+  locations: Location[];
+  searchText: string;
+  selectedTagIds: string[];
+  tags: Tag[];
+  onClear: () => void;
+  onLocationChange: (locationId: string) => void;
+  onSearchTextChange: (searchText: string) => void;
+  onToggleTag: (tagId: string) => void;
+}>) {
+  const hasActiveFilters =
+    searchText.trim().length > 0 ||
+    locationId.length > 0 ||
+    selectedTagIds.length > 0;
+
+  return (
+    <section className="filter-panel">
+      <div className="panel-header">
+        <h3>Item Filters</h3>
+        <p>Search across item details, locations, tags, and saved attribute values.</p>
+      </div>
+
+      <div className="filter-grid">
+        <label className="field">
+          <span>Search</span>
+          <input
+            value={searchText}
+            onChange={(event) => onSearchTextChange(event.target.value)}
+            disabled={disabled}
+            placeholder="Search titles, notes, tags, or custom values"
+          />
+        </label>
+
+        <label className="field">
+          <span>Location</span>
+          <select
+            value={locationId}
+            onChange={(event) => onLocationChange(event.target.value)}
+            disabled={disabled}
+          >
+            <option value="">All locations</option>
+            {locations.map((location) => (
+              <option key={location.id} value={location.id}>
+                {location.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {tags.length === 0 ? (
+        <div className="empty-state compact">
+          <p>No tags available for filtering yet.</p>
+          <p>Create a tag in the organization panel and it will appear here.</p>
+        </div>
+      ) : (
+        <div className="field">
+          <span>Tags</span>
+          <div className="tag-picker">
+            {tags.map((tag) => (
+              <label className="tag-option" key={tag.id}>
+                <input
+                  checked={selectedTagIds.includes(tag.id)}
+                  disabled={disabled}
+                  onChange={() => onToggleTag(tag.id)}
+                  type="checkbox"
+                />
+                <span>{tag.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="filter-actions">
+        <p className="message">
+          {hasActiveFilters ? "Showing the narrowed item list." : "No filters applied yet."}
+        </p>
+        <button
+          className="secondary-button"
+          disabled={disabled || !hasActiveFilters}
+          onClick={onClear}
+          type="button"
+        >
+          Clear Filters
+        </button>
+      </div>
+    </section>
   );
 }
 

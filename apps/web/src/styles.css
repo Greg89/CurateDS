@@ -263,6 +263,27 @@ h1 {
   align-content: start;
 }
 
+.filter-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
 .dynamic-field-grid {
   display: grid;
   gap: 1rem;
@@ -411,5 +432,14 @@ h1 {
 
   .item-workspace {
     grid-template-columns: 1fr;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
