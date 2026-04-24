@@ -146,9 +146,23 @@ h1 {
   cursor: pointer;
 }
 
+.secondary-button {
+  border: 1px solid rgba(234, 219, 199, 0.24);
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  color: #f0e8dd;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+
 .primary-button:disabled {
   opacity: 0.7;
   cursor: wait;
+}
+
+.secondary-button:disabled {
+  opacity: 0.8;
+  cursor: default;
 }
 
 .message {
@@ -248,6 +262,14 @@ h1 {
 .dynamic-field-grid {
   display: grid;
   gap: 1rem;
+}
+
+.form-mode-row,
+.detail-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
 }
 
 .item-list,

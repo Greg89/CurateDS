@@ -90,6 +90,54 @@ public sealed class Item
         UpdatedUtc = DateTime.UtcNow;
     }
 
+    public void UpdateDetails(string name, string? description, int quantity, DateTime updatedUtc)
+    {
+        var normalizedName = name.Trim();
+
+        if (normalizedName.Length is < 3 or > 120)
+        {
+            throw new ArgumentException("Item name must be between 3 and 120 characters.", nameof(name));
+        }
+
+        if (quantity is < 1 or > 9999)
+        {
+            throw new ArgumentException("Quantity must be between 1 and 9999.", nameof(quantity));
+        }
+
+        Name = normalizedName;
+        Description = NormalizeDescription(description);
+        Quantity = quantity;
+        UpdatedUtc = updatedUtc;
+    }
+
+    public void ReplaceAttributeValues(IEnumerable<ItemAttributeValue> attributeValues, DateTime updatedUtc)
+    {
+        var normalizedValues = attributeValues.ToList();
+
+        if (normalizedValues.Any(attributeValue => attributeValue.ItemId != Id))
+        {
+            throw new ArgumentException("All attribute values must belong to the item.", nameof(attributeValues));
+        }
+
+        AttributeValues.Clear();
+        AttributeValues.AddRange(normalizedValues);
+        UpdatedUtc = updatedUtc;
+    }
+
+    public void RemoveAttributeValue(Guid attributeDefinitionId, DateTime updatedUtc)
+    {
+        var existingAttributeValue = AttributeValues.SingleOrDefault(
+            attributeValue => attributeValue.AttributeDefinitionId == attributeDefinitionId);
+
+        if (existingAttributeValue is null)
+        {
+            return;
+        }
+
+        AttributeValues.Remove(existingAttributeValue);
+        UpdatedUtc = updatedUtc;
+    }
+
     private static string? NormalizeDescription(string? description)
     {
         if (string.IsNullOrWhiteSpace(description))

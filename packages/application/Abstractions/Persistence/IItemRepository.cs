@@ -6,7 +6,14 @@ public interface IItemRepository
 {
     Task AddAsync(Item item, CancellationToken cancellationToken);
 
+    Task ReplaceAttributeValuesAsync(
+        Guid itemId,
+        IReadOnlyList<ItemAttributeValue> attributeValues,
+        CancellationToken cancellationToken);
+
     Task<Item?> GetByIdAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Item>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken);
+
+    Task SaveChangesAsync(CancellationToken cancellationToken);
 }

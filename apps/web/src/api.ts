@@ -191,6 +191,40 @@ export async function createItem(input: {
   return (await response.json()) as ItemDetail;
 }
 
+export async function updateItem(input: {
+  collectionId: string;
+  itemId: string;
+  name: string;
+  description: string;
+  quantity: number;
+  attributeValues: Array<{
+    attributeDefinitionId: string;
+    value: string;
+  }>;
+}): Promise<ItemDetail> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${input.collectionId}/items/${input.itemId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: input.name,
+        description: input.description,
+        quantity: input.quantity,
+        attributeValues: input.attributeValues
+      })
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error((await readValidationMessage(response)) ?? "Failed to update item.");
+  }
+
+  return (await response.json()) as ItemDetail;
+}
+
 async function readValidationMessage(response: Response): Promise<string | null> {
   const details = (await response.json().catch(() => null)) as
     | { errors?: Record<string, string[]> }

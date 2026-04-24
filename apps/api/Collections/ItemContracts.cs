@@ -8,6 +8,12 @@ public sealed record CreateItemRequest(
     int Quantity,
     IReadOnlyList<CreateItemAttributeValueRequest> AttributeValues);
 
+public sealed record UpdateItemRequest(
+    string Name,
+    string? Description,
+    int Quantity,
+    IReadOnlyList<CreateItemAttributeValueRequest> AttributeValues);
+
 public sealed record CreateItemAttributeValueRequest(Guid AttributeDefinitionId, string Value);
 
 public sealed record ItemSummaryResponse(

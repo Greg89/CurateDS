@@ -1,0 +1,148 @@
+using CurateDS.Application.Abstractions.Persistence;
+using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Common;
+using CurateDS.Domain.Collections;
+using FluentValidation;
+using FluentValidation.Results;
+
+namespace CurateDS.Application.Collections.UpdateItem;
+
+public sealed class UpdateItemService
+{
+    private readonly ICollectionRepository _collectionRepository;
+    private readonly IAttributeDefinitionRepository _attributeDefinitionRepository;
+    private readonly IItemRepository _itemRepository;
+    private readonly IValidator<UpdateItemCommand> _validator;
+
+    public UpdateItemService(
+        ICollectionRepository collectionRepository,
+        IAttributeDefinitionRepository attributeDefinitionRepository,
+        IItemRepository itemRepository,
+        IValidator<UpdateItemCommand> validator)
+    {
+        _collectionRepository = collectionRepository;
+        _attributeDefinitionRepository = attributeDefinitionRepository;
+        _itemRepository = itemRepository;
+        _validator = validator;
+    }
+
+    public async Task<UpdateItemResult> ExecuteAsync(
+        UpdateItemCommand command,
+        CancellationToken cancellationToken)
+    {
+        await _validator.ValidateAndThrowAsync(command, cancellationToken);
+
+        var collection = await _collectionRepository.GetByIdAndOwnerAsync(
+            command.CollectionId,
+            command.OwnerId,
+            cancellationToken);
+
+        if (collection is null)
+        {
+            throw new NotFoundException("Collection was not found.");
+        }
+
+        var item = await _itemRepository.GetByIdAsync(command.ItemId, command.CollectionId, cancellationToken);
+
+        if (item is null)
+        {
+            throw new NotFoundException("Item was not found.");
+        }
+
+        var attributeDefinitions = await _attributeDefinitionRepository.ListByCollectionAsync(
+            command.CollectionId,
+            cancellationToken);
+
+        var attributeDefinitionLookup = attributeDefinitions.ToDictionary(definition => definition.Id);
+
+        ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup);
+
+        var updatedUtc = DateTime.UtcNow;
+
+        item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc);
+        await _itemRepository.SaveChangesAsync(cancellationToken);
+
+        var attributeValues = command.AttributeValues
+            .Select(attributeValue =>
+            {
+                var attributeDefinition = attributeDefinitionLookup[attributeValue.AttributeDefinitionId];
+                return ItemAttributeValue.Create(item.Id, attributeDefinition, attributeValue.Value);
+            })
+            .ToArray();
+
+        await _itemRepository.ReplaceAttributeValuesAsync(item.Id, attributeValues, cancellationToken);
+
+        return new UpdateItemResult(
+            item.Id,
+            item.CollectionId,
+            item.Name,
+            item.Description,
+            item.Quantity,
+            item.CreatedUtc,
+            item.UpdatedUtc,
+            MapAttributeValues(attributeValues, attributeDefinitions));
+    }
+
+    private static IReadOnlyList<ItemAttributeValueDto> MapAttributeValues(
+        IEnumerable<ItemAttributeValue> attributeValues,
+        IReadOnlyList<AttributeDefinition> attributeDefinitions)
+    {
+        var definitionLookup = attributeDefinitions.ToDictionary(definition => definition.Id);
+
+        return attributeValues
+            .OrderBy(attributeValue => definitionLookup[attributeValue.AttributeDefinitionId].SortOrder)
+            .Select(attributeValue =>
+            {
+                var attributeDefinition = definitionLookup[attributeValue.AttributeDefinitionId];
+
+                return new ItemAttributeValueDto(
+                    attributeDefinition.Id,
+                    attributeDefinition.Name,
+                    attributeDefinition.Key,
+                    attributeDefinition.DataType,
+                    attributeValue.GetDisplayValue(attributeDefinition.DataType));
+            })
+            .ToArray();
+    }
+
+    private static void ValidateAttributeValues(
+        IReadOnlyList<CreateItemAttributeValueInput> attributeValues,
+        IReadOnlyList<AttributeDefinition> attributeDefinitions,
+        IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup)
+    {
+        var failures = new List<ValidationFailure>();
+
+        var requiredDefinitionIds = attributeDefinitions
+            .Where(definition => definition.IsRequired)
+            .Select(definition => definition.Id)
+            .ToHashSet();
+
+        var providedDefinitionIds = attributeValues
+            .Select(attributeValue => attributeValue.AttributeDefinitionId)
+            .ToHashSet();
+
+        foreach (var attributeValue in attributeValues)
+        {
+            if (!attributeDefinitionLookup.ContainsKey(attributeValue.AttributeDefinitionId))
+            {
+                failures.Add(new ValidationFailure(
+                    nameof(UpdateItemCommand.AttributeValues),
+                    "Attribute values must belong to the selected collection."));
+            }
+        }
+
+        foreach (var missingDefinitionId in requiredDefinitionIds.Except(providedDefinitionIds))
+        {
+            var attributeDefinition = attributeDefinitionLookup[missingDefinitionId];
+
+            failures.Add(new ValidationFailure(
+                nameof(UpdateItemCommand.AttributeValues),
+                $"A value for '{attributeDefinition.Name}' is required."));
+        }
+
+        if (failures.Count > 0)
+        {
+            throw new ValidationException(failures);
+        }
+    }
+}

@@ -7,6 +7,7 @@ using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
 using CurateDS.Application.Collections.ListItems;
+using CurateDS.Application.Collections.UpdateItem;
 using CurateDS.Infrastructure.Persistence;
 using CurateDS.Infrastructure.Persistence.Repositories;
 using FluentValidation;
@@ -81,6 +82,7 @@ builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddScoped<IValidator<CreateAttributeDefinitionCommand>, CreateAttributeDefinitionCommandValidator>();
 builder.Services.AddScoped<IValidator<CreateCollectionCommand>, CreateCollectionCommandValidator>();
 builder.Services.AddScoped<IValidator<CreateItemCommand>, CreateItemCommandValidator>();
+builder.Services.AddScoped<IValidator<UpdateItemCommand>, UpdateItemCommandValidator>();
 builder.Services.AddScoped<CreateAttributeDefinitionService>();
 builder.Services.AddScoped<CreateCollectionService>();
 builder.Services.AddScoped<CreateItemService>();
@@ -88,6 +90,7 @@ builder.Services.AddScoped<GetItemDetailService>();
 builder.Services.AddScoped<ListAttributeDefinitionsService>();
 builder.Services.AddScoped<ListCollectionsService>();
 builder.Services.AddScoped<ListItemsService>();
+builder.Services.AddScoped<UpdateItemService>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<CatalogDbContext>("catalog-db");
@@ -109,7 +112,16 @@ await using (var scope = app.Services.CreateAsyncScope())
 }
 
 app.UseSerilogRequestLogging();
-app.UseExceptionHandler();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler();
+}
+
 app.UseCors("WebClient");
 
 app.MapGet("/ready", () => Results.Ok(new

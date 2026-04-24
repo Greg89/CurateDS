@@ -67,9 +67,10 @@ The current vertical slice covers:
 4. creating items with typed custom attribute values
 5. listing items for a collection
 6. viewing item detail
+7. editing items after creation
 
 The next vertical slice should cover:
 
-1. editing items after creation
-2. introducing tags and locations
-3. adding collection-aware search and filtering
+1. introducing tags and locations
+2. adding collection-aware search and filtering
+3. expanding the web workflow around item organization

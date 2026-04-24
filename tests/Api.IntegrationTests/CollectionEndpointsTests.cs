@@ -251,6 +251,66 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         item!.AttributeValues.Should().ContainSingle(value => value.AttributeName == "Release Year" && value.Value == "1959");
     }
 
+    [Fact]
+    public async Task PutItem_ShouldUpdateItemAndAttributeValues()
+    {
+        var collection = await CreateCollectionAsync("Video Games");
+        var platform = await CreateAttributeDefinitionAsync(collection.Id, "Platform", AttributeDataType.Text, true);
+        var completed = await CreateAttributeDefinitionAsync(collection.Id, "Completed", AttributeDataType.Boolean, false);
+
+        var createResponse = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Chrono Trigger",
+                description = "Super Famicom copy",
+                quantity = 1,
+                attributeValues = new[]
+                {
+                    new
+                    {
+                        attributeDefinitionId = platform.Id,
+                        value = "SNES"
+                    }
+                }
+            });
+
+        var createdItem = await createResponse.Content.ReadFromJsonAsync<ItemDetailResponse>(JsonOptions);
+
+        var response = await _client.PutAsJsonAsync(
+            $"/collections/{collection.Id}/items/{createdItem!.Id}",
+            new
+            {
+                name = "Chrono Trigger DS",
+                description = "Updated release",
+                quantity = 2,
+                attributeValues = new[]
+                {
+                    new
+                    {
+                        attributeDefinitionId = platform.Id,
+                        value = "Nintendo DS"
+                    },
+                    new
+                    {
+                        attributeDefinitionId = completed.Id,
+                        value = "true"
+                    }
+                }
+            });
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, responseBody);
+
+        var updated = await response.Content.ReadFromJsonAsync<ItemDetailResponse>(JsonOptions);
+
+        updated.Should().NotBeNull();
+        updated!.Name.Should().Be("Chrono Trigger DS");
+        updated.Quantity.Should().Be(2);
+        updated.AttributeValues.Should().Contain(value => value.AttributeName == "Completed" && value.Value == "True");
+    }
+
     private async Task<CollectionResponse> CreateCollectionAsync(string name)
     {
         var response = await _client.PostAsJsonAsync("/collections", new { name });

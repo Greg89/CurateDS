@@ -1,5 +1,6 @@
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.UpdateItem;
 using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
 using FluentAssertions;
@@ -7,10 +8,10 @@ using FluentValidation;
 
 namespace CurateDS.Application.UnitTests.Collections;
 
-public sealed class CreateItemServiceTests
+public sealed class UpdateItemServiceTests
 {
     [Fact]
-    public async Task ExecuteAsync_ShouldPersistItemWithAttributeValues()
+    public async Task ExecuteAsync_ShouldUpdateItemAndReplaceAttributeValues()
     {
         var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow);
         var issueNumber = AttributeDefinition.Create(
@@ -21,38 +22,45 @@ public sealed class CreateItemServiceTests
             isFilterable: true,
             sortOrder: 0,
             createdUtc: DateTime.UtcNow);
-        var isFoil = AttributeDefinition.Create(
+        var condition = AttributeDefinition.Create(
             collection.Id,
-            "Foil",
-            AttributeDataType.Boolean,
+            "Condition",
+            AttributeDataType.Text,
             isRequired: false,
             isFilterable: true,
             sortOrder: 1,
             createdUtc: DateTime.UtcNow);
 
-        var itemRepository = new FakeItemRepository();
-        var service = new CreateItemService(
+        var item = Item.Create(collection.Id, "Original Card", "Original", 1, DateTime.UtcNow);
+        item.ReplaceAttributeValues(
+            [ItemAttributeValue.Create(item.Id, issueNumber, "1")],
+            DateTime.UtcNow);
+
+        var itemRepository = new FakeItemRepository(item);
+        var service = new UpdateItemService(
             new FakeCollectionRepository(collection),
-            new FakeAttributeDefinitionRepository(issueNumber, isFoil),
+            new FakeAttributeDefinitionRepository(issueNumber, condition),
             itemRepository,
-            new CreateItemCommandValidator());
+            new UpdateItemCommandValidator());
 
         var result = await service.ExecuteAsync(
-            new CreateItemCommand(
+            new UpdateItemCommand(
                 collection.OwnerId,
                 collection.Id,
-                "Blue-Eyes White Dragon",
-                "First edition",
-                1,
+                item.Id,
+                "Updated Card",
+                "Better copy",
+                2,
                 [
                     new CreateItemAttributeValueInput(issueNumber.Id, "12"),
-                    new CreateItemAttributeValueInput(isFoil.Id, "true")
+                    new CreateItemAttributeValueInput(condition.Id, "Near Mint")
                 ]),
             CancellationToken.None);
 
-        result.Name.Should().Be("Blue-Eyes White Dragon");
+        result.Name.Should().Be("Updated Card");
+        result.Quantity.Should().Be(2);
         result.AttributeValues.Should().HaveCount(2);
-        itemRepository.Items.Should().ContainSingle();
+        itemRepository.SaveChangesCallCount.Should().Be(1);
     }
 
     [Fact]
@@ -67,17 +75,19 @@ public sealed class CreateItemServiceTests
             isFilterable: true,
             sortOrder: 0,
             createdUtc: DateTime.UtcNow);
+        var item = Item.Create(collection.Id, "Amazing Fantasy #15", null, 1, DateTime.UtcNow);
 
-        var service = new CreateItemService(
+        var service = new UpdateItemService(
             new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(issueNumber),
-            new FakeItemRepository(),
-            new CreateItemCommandValidator());
+            new FakeItemRepository(item),
+            new UpdateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
-            new CreateItemCommand(
+            new UpdateItemCommand(
                 collection.OwnerId,
                 collection.Id,
+                item.Id,
                 "Amazing Fantasy #15",
                 null,
                 1,
@@ -88,19 +98,22 @@ public sealed class CreateItemServiceTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldThrow_WhenCollectionDoesNotExist()
+    public async Task ExecuteAsync_ShouldThrow_WhenItemDoesNotExist()
     {
-        var service = new CreateItemService(
-            new FakeCollectionRepository(),
+        var collection = Collection.Create(Guid.NewGuid(), "Books", DateTime.UtcNow);
+
+        var service = new UpdateItemService(
+            new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(),
             new FakeItemRepository(),
-            new CreateItemCommandValidator());
+            new UpdateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
-            new CreateItemCommand(
+            new UpdateItemCommand(
+                collection.OwnerId,
+                collection.Id,
                 Guid.NewGuid(),
-                Guid.NewGuid(),
-                "Missing Collection Item",
+                "Missing Item",
                 null,
                 1,
                 []),
@@ -166,11 +179,18 @@ public sealed class CreateItemServiceTests
 
     private sealed class FakeItemRepository : IItemRepository
     {
-        public List<Item> Items { get; } = [];
+        private readonly List<Item> _items;
+
+        public FakeItemRepository(params Item[] items)
+        {
+            _items = items.ToList();
+        }
+
+        public int SaveChangesCallCount { get; private set; }
 
         public Task AddAsync(Item item, CancellationToken cancellationToken)
         {
-            Items.Add(item);
+            _items.Add(item);
             return Task.CompletedTask;
         }
 
@@ -179,23 +199,24 @@ public sealed class CreateItemServiceTests
             IReadOnlyList<ItemAttributeValue> attributeValues,
             CancellationToken cancellationToken)
         {
-            var item = Items.Single(existingItem => existingItem.Id == itemId);
+            var item = _items.Single(existingItem => existingItem.Id == itemId);
             item.ReplaceAttributeValues(attributeValues, DateTime.UtcNow);
             return Task.CompletedTask;
         }
 
         public Task<Item?> GetByIdAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Items.SingleOrDefault(item => item.Id == itemId && item.CollectionId == collectionId));
+            return Task.FromResult(_items.SingleOrDefault(item => item.Id == itemId && item.CollectionId == collectionId));
         }
 
         public Task<IReadOnlyList<Item>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
         {
-            return Task.FromResult<IReadOnlyList<Item>>(Items.Where(item => item.CollectionId == collectionId).ToArray());
+            return Task.FromResult<IReadOnlyList<Item>>(_items.Where(item => item.CollectionId == collectionId).ToArray());
         }
 
         public Task SaveChangesAsync(CancellationToken cancellationToken)
         {
+            SaveChangesCallCount++;
             return Task.CompletedTask;
         }
     }

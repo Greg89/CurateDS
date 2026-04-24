@@ -12,7 +12,8 @@ import {
   ItemSummary,
   listAttributeDefinitions,
   listCollections,
-  listItems
+  listItems,
+  updateItem
 } from "./api";
 import { appConfig } from "./config";
 
@@ -41,6 +42,7 @@ export function App() {
     Record<string, string>
   >({});
   const [selectedItemId, setSelectedItemId] = useState("");
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   const collectionsQuery = useQuery({
     queryKey: ["collections"],
@@ -96,11 +98,21 @@ export function App() {
   const createItemMutation = useMutation({
     mutationFn: createItem,
     onSuccess: async (item) => {
-      setItemName("");
-      setItemDescription("");
-      setItemQuantity("1");
-      setItemAttributeValues({});
+      resetItemForm();
       setSelectedItemId(item.id);
+      await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["item-detail", selectedCollectionId, item.id]
+      });
+    }
+  });
+
+  const updateItemMutation = useMutation({
+    mutationFn: updateItem,
+    onSuccess: async (item) => {
+      populateItemForm(item);
+      setSelectedItemId(item.id);
+      setEditingItemId(item.id);
       await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
       await queryClient.invalidateQueries({
         queryKey: ["item-detail", selectedCollectionId, item.id]
@@ -143,6 +155,19 @@ export function App() {
       }))
       .filter((attributeValue) => attributeValue.value.trim().length > 0);
 
+    if (editingItemId) {
+      updateItemMutation.mutate({
+        collectionId: selectedCollectionId,
+        itemId: editingItemId,
+        name: itemName,
+        description: itemDescription,
+        quantity: Number(itemQuantity),
+        attributeValues
+      });
+
+      return;
+    }
+
     createItemMutation.mutate({
       collectionId: selectedCollectionId,
       name: itemName,
@@ -163,6 +188,40 @@ export function App() {
     (collection) => collection.id == selectedCollectionId
   );
 
+  function populateItemForm(item: ItemDetail) {
+    setItemName(item.name);
+    setItemDescription(item.description ?? "");
+    setItemQuantity(item.quantity.toString());
+    setItemAttributeValues(
+      Object.fromEntries(
+        item.attributeValues.map((attributeValue) => [
+          attributeValue.attributeDefinitionId,
+          attributeValue.value.toLowerCase() === "true" ||
+          attributeValue.value.toLowerCase() === "false"
+            ? attributeValue.value.toLowerCase()
+            : attributeValue.value
+        ])
+      )
+    );
+  }
+
+  function resetItemForm() {
+    setItemName("");
+    setItemDescription("");
+    setItemQuantity("1");
+    setItemAttributeValues({});
+    setEditingItemId(null);
+  }
+
+  function beginEditingSelectedItem() {
+    if (!itemDetailQuery.data) {
+      return;
+    }
+
+    populateItemForm(itemDetailQuery.data);
+    setEditingItemId(itemDetailQuery.data.id);
+  }
+
   useEffect(() => {
     if (!itemsQuery.data) {
       return;
@@ -182,6 +241,10 @@ export function App() {
       setSelectedItemId(itemsQuery.data[0].id);
     }
   }, [itemsQuery.data, selectedItemId]);
+
+  useEffect(() => {
+    resetItemForm();
+  }, [selectedCollectionId]);
 
   return (
     <main className="page-shell">
@@ -339,13 +402,32 @@ export function App() {
             <h2>Items</h2>
             <p>
               {selectedCollection
-                ? `Create real catalog entries for ${selectedCollection.name}.`
+                ? editingItemId
+                  ? `Update the selected entry for ${selectedCollection.name}.`
+                  : `Create real catalog entries for ${selectedCollection.name}.`
                 : "Choose a collection before creating items."}
             </p>
           </div>
 
           <div className="item-workspace">
             <form className="collection-form" onSubmit={handleItemSubmit}>
+              <div className="form-mode-row">
+                <p className="message">
+                  {editingItemId
+                    ? "Editing the selected item."
+                    : "Creating a new item draft."}
+                </p>
+                {editingItemId ? (
+                  <button
+                    className="secondary-button"
+                    onClick={resetItemForm}
+                    type="button"
+                  >
+                    Start New Item
+                  </button>
+                ) : null}
+              </div>
+
               <label className="field">
                 <span>Name</span>
                 <input
@@ -392,14 +474,25 @@ export function App() {
 
               <button
                 className="primary-button"
-                disabled={!selectedCollection || createItemMutation.isPending}
+                disabled={
+                  !selectedCollection ||
+                  createItemMutation.isPending ||
+                  updateItemMutation.isPending
+                }
                 type="submit"
               >
-                {createItemMutation.isPending ? "Saving Item..." : "Create Item"}
+                {createItemMutation.isPending || updateItemMutation.isPending
+                  ? "Saving Item..."
+                  : editingItemId
+                    ? "Save Item Changes"
+                    : "Create Item"}
               </button>
 
-              {createItemMutation.error ? (
-                <p className="message error">{createItemMutation.error.message}</p>
+              {createItemMutation.error || updateItemMutation.error ? (
+                <p className="message error">
+                  {createItemMutation.error?.message ??
+                    updateItemMutation.error?.message}
+                </p>
               ) : null}
             </form>
 
@@ -425,6 +518,8 @@ export function App() {
 
               <ItemDetailCard
                 item={itemDetailQuery.data ?? null}
+                isEditing={editingItemId === itemDetailQuery.data?.id}
+                onEdit={beginEditingSelectedItem}
                 selectedCollectionName={selectedCollection?.name ?? null}
               />
             </div>
@@ -685,9 +780,13 @@ function ItemList({
 
 function ItemDetailCard({
   item,
+  isEditing,
+  onEdit,
   selectedCollectionName
 }: Readonly<{
   item: ItemDetail | null;
+  isEditing: boolean;
+  onEdit: () => void;
   selectedCollectionName: string | null;
 }>) {
   if (!selectedCollectionName) {
@@ -710,7 +809,12 @@ function ItemDetailCard({
           <p className="eyebrow subtle">Item Detail</p>
           <h3>{item.name}</h3>
         </div>
-        <span className="attribute-pill">Qty {item.quantity}</span>
+        <div className="detail-actions">
+          <span className="attribute-pill">Qty {item.quantity}</span>
+          <button className="secondary-button" onClick={onEdit} type="button">
+            {isEditing ? "Editing" : "Edit Item"}
+          </button>
+        </div>
       </div>
 
       <p className="item-detail-copy">

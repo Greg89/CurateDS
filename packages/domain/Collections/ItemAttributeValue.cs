@@ -99,6 +99,18 @@ public sealed class ItemAttributeValue
         };
     }
 
+    public void Update(AttributeDefinition attributeDefinition, string value)
+    {
+        var updatedValue = Create(ItemId, attributeDefinition, value);
+
+        AttributeDefinitionId = updatedValue.AttributeDefinitionId;
+        ValueText = updatedValue.ValueText;
+        ValueNumber = updatedValue.ValueNumber;
+        ValueDecimal = updatedValue.ValueDecimal;
+        ValueBoolean = updatedValue.ValueBoolean;
+        ValueDate = updatedValue.ValueDate;
+    }
+
     private static ItemAttributeValue CreateTextValue(Guid itemId, Guid attributeDefinitionId, string value)
     {
         if (value.Length > 500)

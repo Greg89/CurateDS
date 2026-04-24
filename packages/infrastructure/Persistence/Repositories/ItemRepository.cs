@@ -19,6 +19,20 @@ public sealed class ItemRepository : IItemRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task ReplaceAttributeValuesAsync(
+        Guid itemId,
+        IReadOnlyList<ItemAttributeValue> attributeValues,
+        CancellationToken cancellationToken)
+    {
+        var existingAttributeValues = await _dbContext.ItemAttributeValues
+            .Where(attributeValue => attributeValue.ItemId == itemId)
+            .ToListAsync(cancellationToken);
+
+        _dbContext.ItemAttributeValues.RemoveRange(existingAttributeValues);
+        await _dbContext.ItemAttributeValues.AddRangeAsync(attributeValues, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<Item?> GetByIdAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken)
     {
         return await _dbContext.Items
@@ -35,5 +49,10 @@ public sealed class ItemRepository : IItemRepository
             .Where(item => item.CollectionId == collectionId)
             .OrderByDescending(item => item.CreatedUtc)
             .ToListAsync(cancellationToken);
+    }
+
+    public Task SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        return _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

@@ -32,4 +32,24 @@ public sealed class ItemTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Fact]
+    public void UpdateDetails_ShouldReplaceCoreFields()
+    {
+        var item = Item.Create(
+            Guid.NewGuid(),
+            "Original Name",
+            "Original Description",
+            1,
+            DateTime.UtcNow);
+        var previousUpdatedUtc = item.UpdatedUtc;
+        var nextUpdatedUtc = previousUpdatedUtc.AddMinutes(5);
+
+        item.UpdateDetails(" Updated Name ", " Updated Description ", 3, nextUpdatedUtc);
+
+        item.Name.Should().Be("Updated Name");
+        item.Description.Should().Be("Updated Description");
+        item.Quantity.Should().Be(3);
+        item.UpdatedUtc.Should().Be(nextUpdatedUtc);
+    }
 }

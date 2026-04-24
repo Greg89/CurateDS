@@ -6,6 +6,7 @@ using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
 using CurateDS.Application.Collections.ListItems;
+using CurateDS.Application.Collections.UpdateItem;
 using CurateDS.Application.Common;
 using FluentValidation;
 
@@ -207,6 +208,55 @@ public static class CollectionEndpoints
                     cancellationToken);
 
                 return Results.Ok(ToResponse(item));
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
+            }
+        });
+
+        group.MapPut("/{collectionId:guid}/items/{itemId:guid}", async (
+            Guid collectionId,
+            Guid itemId,
+            UpdateItemRequest request,
+            UpdateItemService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var result = await service.ExecuteAsync(
+                    new UpdateItemCommand(
+                        ownerId,
+                        collectionId,
+                        itemId,
+                        request.Name,
+                        request.Description,
+                        request.Quantity,
+                        request.AttributeValues.Select(attributeValue =>
+                            new CreateItemAttributeValueInput(
+                                attributeValue.AttributeDefinitionId,
+                                attributeValue.Value)).ToArray()),
+                    cancellationToken);
+
+                return Results.Ok(ToResponse(new ItemDetailDto(
+                    result.Id,
+                    result.CollectionId,
+                    result.Name,
+                    result.Description,
+                    result.Quantity,
+                    result.CreatedUtc,
+                    result.UpdatedUtc,
+                    result.AttributeValues)));
+            }
+            catch (ValidationException exception)
+            {
+                return Results.ValidationProblem(exception.Errors
+                    .GroupBy(error => error.PropertyName)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => group.Select(error => error.ErrorMessage).ToArray()));
             }
             catch (NotFoundException)
             {
