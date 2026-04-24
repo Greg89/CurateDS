@@ -1,11 +1,22 @@
 using CurateDS.Api.Collections;
 using CurateDS.Application.Abstractions.Persistence;
+using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
+using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.CreateLocation;
+using CurateDS.Application.Collections.CreateTag;
+using CurateDS.Application.Collections.GetItemDetail;
+using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
+using CurateDS.Application.Collections.ListItems;
+using CurateDS.Application.Collections.ListLocations;
+using CurateDS.Application.Collections.ListTags;
+using CurateDS.Application.Collections.UpdateItem;
 using CurateDS.Infrastructure.Persistence;
 using CurateDS.Infrastructure.Persistence.Repositories;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using Serilog;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Seq;
@@ -31,6 +42,10 @@ builder.Host.UseSerilog((context, services, configuration) =>
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
@@ -66,9 +81,28 @@ builder.Services.AddDbContext<CatalogDbContext>(options =>
 });
 
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
+builder.Services.AddScoped<IAttributeDefinitionRepository, AttributeDefinitionRepository>();
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<IValidator<CreateAttributeDefinitionCommand>, CreateAttributeDefinitionCommandValidator>();
 builder.Services.AddScoped<IValidator<CreateCollectionCommand>, CreateCollectionCommandValidator>();
+builder.Services.AddScoped<IValidator<CreateItemCommand>, CreateItemCommandValidator>();
+builder.Services.AddScoped<IValidator<CreateLocationCommand>, CreateLocationCommandValidator>();
+builder.Services.AddScoped<IValidator<CreateTagCommand>, CreateTagCommandValidator>();
+builder.Services.AddScoped<IValidator<UpdateItemCommand>, UpdateItemCommandValidator>();
+builder.Services.AddScoped<CreateAttributeDefinitionService>();
 builder.Services.AddScoped<CreateCollectionService>();
+builder.Services.AddScoped<CreateItemService>();
+builder.Services.AddScoped<CreateLocationService>();
+builder.Services.AddScoped<CreateTagService>();
+builder.Services.AddScoped<GetItemDetailService>();
+builder.Services.AddScoped<ListAttributeDefinitionsService>();
 builder.Services.AddScoped<ListCollectionsService>();
+builder.Services.AddScoped<ListItemsService>();
+builder.Services.AddScoped<ListLocationsService>();
+builder.Services.AddScoped<ListTagsService>();
+builder.Services.AddScoped<UpdateItemService>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<CatalogDbContext>("catalog-db");
@@ -90,7 +124,16 @@ await using (var scope = app.Services.CreateAsyncScope())
 }
 
 app.UseSerilogRequestLogging();
-app.UseExceptionHandler();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler();
+}
+
 app.UseCors("WebClient");
 
 app.MapGet("/ready", () => Results.Ok(new
@@ -116,4 +159,9 @@ app.MapHealthChecks("/health");
 
 app.Run();
 
-public partial class Program;
+public partial class Program
+{
+    protected Program()
+    {
+    }
+}
