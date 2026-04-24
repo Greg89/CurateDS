@@ -302,6 +302,9 @@ public sealed class UpdateItemServiceTests
     {
         public Task AddAsync(Tag tag, CancellationToken cancellationToken) => Task.CompletedTask;
 
+        public Task<bool> ExistsByKeyAsync(Guid ownerId, string key, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
         public Task<IReadOnlyList<Tag>> ListByIdsAsync(Guid ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Tag>>([]);
 

@@ -13,6 +13,7 @@ using CurateDS.Application.Collections.ListTags;
 using CurateDS.Application.Collections.UpdateItem;
 using CurateDS.Application.Common;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace CurateDS.Api.Collections;
 
@@ -86,6 +87,15 @@ public static class CollectionEndpoints
                 return Results.ValidationProblem(exception.Errors
                     .GroupBy(error => error.PropertyName)
                     .ToDictionary(group => group.Key, group => group.Select(error => error.ErrorMessage).ToArray()));
+            }
+            catch (DbUpdateException)
+            {
+                return Results.ValidationProblem(
+                    new Dictionary<string, string[]>
+                    {
+                        [nameof(CreateTagRequest.Name)] = ["A tag with this name already exists."]
+                    },
+                    statusCode: StatusCodes.Status409Conflict);
             }
         });
 

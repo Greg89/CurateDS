@@ -335,6 +335,24 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     }
 
     [Fact]
+    public async Task PostTags_ShouldReturnConflict_WhenDuplicateNameIsSubmitted()
+    {
+        var tagName = UniqueName("Wishlist");
+
+        var firstResponse = await _client.PostAsJsonAsync("/tags", new { name = tagName });
+        var duplicateResponse = await _client.PostAsJsonAsync("/tags", new { name = $" {tagName} " });
+
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        duplicateResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await duplicateResponse.Content.ReadFromJsonAsync<ValidationProblemResponse>(JsonOptions);
+
+        problem.Should().NotBeNull();
+        problem!.Errors.Should().ContainKey("Name");
+        problem.Errors["Name"].Should().Contain("A tag with this name already exists.");
+    }
+
+    [Fact]
     public async Task PostItems_ShouldPersistLocationAndTags()
     {
         var collection = await CreateCollectionAsync("Board Games");
@@ -595,4 +613,6 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     private sealed record TagResponse(Guid Id, string Name, string Key, DateTime CreatedUtc);
 
     private sealed record LocationResponse(Guid Id, string Name, string? Description, DateTime CreatedUtc);
+
+    private sealed record ValidationProblemResponse(Dictionary<string, string[]> Errors);
 }

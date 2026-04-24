@@ -19,6 +19,13 @@ public sealed class TagRepository : ITagRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public Task<bool> ExistsByKeyAsync(Guid ownerId, string key, CancellationToken cancellationToken)
+    {
+        return _dbContext.Tags.AnyAsync(
+            tag => tag.OwnerId == ownerId && tag.Key == key,
+            cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Tag>> ListByIdsAsync(Guid ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
     {
         return await _dbContext.Tags
