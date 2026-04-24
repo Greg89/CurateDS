@@ -57,25 +57,36 @@ The local compose setup starts Seq without authentication for convenience. For R
 - `tests/Web.UnitTests`
 - `tests/EndToEndTests`
 
+## Client Testing
+
+The web client now supports a layered TDD workflow:
+
+- `npm run test:web` runs fast client-side tests with Vitest, Testing Library, jsdom, and MSW
+- `npm run test:web:watch` starts the watch-mode loop for frontend TDD
+- `npm run test:e2e` runs the Playwright browser smoke tests
+
+Use the web unit tests for most client behavior and routing changes, and keep Playwright focused on a small number of critical real-browser flows.
+
 ## Next Implementation Focus
 
 The current vertical slice covers:
 
 1. creating a collection
 2. listing collections
-3. defining custom attribute definitions per collection
-4. creating items with typed custom attribute values
-5. listing items for a collection
-6. viewing item detail
-7. editing items after creation
-8. organizing items with reusable tags and locations
-9. filtering a collection's items by search text, location, and tags
-10. filtering item lists by custom attribute values
-11. sorting item lists by updated date, created date, name, or quantity
-12. saving collection-specific item views in the web app for reuse
+3. navigating a routed collection workspace with overview, items, and settings screens
+4. defining custom attribute definitions per collection
+5. creating items with typed custom attribute values
+6. listing items for a collection
+7. viewing item detail
+8. editing items after creation
+9. organizing items with reusable tags and locations
+10. filtering a collection's items by search text, location, and tags
+11. filtering item lists by custom attribute values
+12. sorting item lists by updated date, created date, name, or quantity
+13. saving collection-specific item views in the web app for reuse
 
 The next vertical slice should cover:
 
 1. adding grouping or denser list/table views for larger collections
-2. starting item history or media metadata
-3. exploring image/file attachments per item
+2. tightening the routed client into more reusable feature-level components
+3. starting item history or media metadata

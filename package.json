@@ -9,6 +9,7 @@
   "scripts": {
     "build:web": "npm run build --workspace @curateds/web",
     "test:web": "npm run test --workspace @curateds/web-tests",
+    "test:web:watch": "npm run test:watch --workspace @curateds/web-tests",
     "test:e2e": "npm run test --workspace @curateds/e2e"
   }
 }
