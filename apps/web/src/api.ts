@@ -26,6 +26,20 @@ export interface AttributeDefinition {
   createdUtc: string;
 }
 
+export interface Tag {
+  id: string;
+  name: string;
+  key: string;
+  createdUtc: string;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  description: string | null;
+  createdUtc: string;
+}
+
 export interface ItemAttributeValue {
   attributeDefinitionId: string;
   attributeName: string;
@@ -40,6 +54,9 @@ export interface ItemSummary {
   name: string;
   description: string | null;
   quantity: number;
+  locationId: string | null;
+  locationName: string | null;
+  tags: string[];
   attributeValueCount: number;
   createdUtc: string;
   updatedUtc: string;
@@ -51,6 +68,9 @@ export interface ItemDetail {
   name: string;
   description: string | null;
   quantity: number;
+  locationId: string | null;
+  locationName: string | null;
+  tags: Tag[];
   createdUtc: string;
   updatedUtc: string;
   attributeValues: ItemAttributeValue[];
@@ -131,6 +151,63 @@ export async function createAttributeDefinition(input: {
   return (await response.json()) as AttributeDefinition;
 }
 
+export async function listTags(): Promise<Tag[]> {
+  const response = await fetch(`${appConfig.apiBaseUrl}/tags`);
+
+  if (!response.ok) {
+    throw new Error("Failed to load tags.");
+  }
+
+  return (await response.json()) as Tag[];
+}
+
+export async function createTag(name: string): Promise<Tag> {
+  const response = await fetch(`${appConfig.apiBaseUrl}/tags`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ name })
+  });
+
+  if (!response.ok) {
+    throw new Error((await readValidationMessage(response)) ?? "Failed to create tag.");
+  }
+
+  return (await response.json()) as Tag;
+}
+
+export async function listLocations(): Promise<Location[]> {
+  const response = await fetch(`${appConfig.apiBaseUrl}/locations`);
+
+  if (!response.ok) {
+    throw new Error("Failed to load locations.");
+  }
+
+  return (await response.json()) as Location[];
+}
+
+export async function createLocation(input: {
+  name: string;
+  description: string;
+}): Promise<Location> {
+  const response = await fetch(`${appConfig.apiBaseUrl}/locations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(input)
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      (await readValidationMessage(response)) ?? "Failed to create location."
+    );
+  }
+
+  return (await response.json()) as Location;
+}
+
 export async function listItems(collectionId: string): Promise<ItemSummary[]> {
   const response = await fetch(
     `${appConfig.apiBaseUrl}/collections/${collectionId}/items`
@@ -163,6 +240,8 @@ export async function createItem(input: {
   name: string;
   description: string;
   quantity: number;
+  locationId: string | null;
+  tagIds: string[];
   attributeValues: Array<{
     attributeDefinitionId: string;
     value: string;
@@ -179,6 +258,8 @@ export async function createItem(input: {
         name: input.name,
         description: input.description,
         quantity: input.quantity,
+        locationId: input.locationId,
+        tagIds: input.tagIds,
         attributeValues: input.attributeValues
       })
     }
@@ -197,6 +278,8 @@ export async function updateItem(input: {
   name: string;
   description: string;
   quantity: number;
+  locationId: string | null;
+  tagIds: string[];
   attributeValues: Array<{
     attributeDefinitionId: string;
     value: string;
@@ -213,6 +296,8 @@ export async function updateItem(input: {
         name: input.name,
         description: input.description,
         quantity: input.quantity,
+        locationId: input.locationId,
+        tagIds: input.tagIds,
         attributeValues: input.attributeValues
       })
     }

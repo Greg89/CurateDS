@@ -17,6 +17,8 @@ public sealed class UpdateItemCommandValidatorTests
             " a ",
             null,
             1,
+            null,
+            [],
             []);
 
         var result = validator.Validate(command);
@@ -36,6 +38,8 @@ public sealed class UpdateItemCommandValidatorTests
             "Vintage Card",
             null,
             1,
+            null,
+            [],
             [
                 new CreateItemAttributeValueInput(attributeDefinitionId, "Blue"),
                 new CreateItemAttributeValueInput(attributeDefinitionId, "Red")

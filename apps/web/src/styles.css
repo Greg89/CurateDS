@@ -101,6 +101,10 @@ h1 {
   margin-top: 1.5rem;
 }
 
+.section-gap {
+  margin-top: 1rem;
+}
+
 .field {
   display: grid;
   gap: 0.5rem;
@@ -262,6 +266,28 @@ h1 {
 .dynamic-field-grid {
   display: grid;
   gap: 1rem;
+}
+
+.organization-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tag-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #eadbc7;
 }
 
 .form-mode-row,

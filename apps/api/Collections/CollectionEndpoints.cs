@@ -2,10 +2,14 @@ using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.CreateLocation;
+using CurateDS.Application.Collections.CreateTag;
 using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
 using CurateDS.Application.Collections.ListItems;
+using CurateDS.Application.Collections.ListLocations;
+using CurateDS.Application.Collections.ListTags;
 using CurateDS.Application.Collections.UpdateItem;
 using CurateDS.Application.Common;
 using FluentValidation;
@@ -52,6 +56,75 @@ public static class CollectionEndpoints
                     .ToDictionary(
                         group => group.Key,
                         group => group.Select(error => error.ErrorMessage).ToArray()));
+            }
+        });
+
+        app.MapGet("/tags", async (
+            ListTagsService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            var ownerId = GetDefaultOwnerId(configuration);
+            var tags = await service.ExecuteAsync(new ListTagsQuery(ownerId), cancellationToken);
+            return Results.Ok(tags.Select(tag => new TagResponse(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)));
+        });
+
+        app.MapPost("/tags", async (
+            CreateTagRequest request,
+            CreateTagService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var result = await service.ExecuteAsync(new CreateTagCommand(ownerId, request.Name), cancellationToken);
+                return Results.Created($"/tags/{result.Id}", new TagResponse(result.Id, result.Name, result.Key, result.CreatedUtc));
+            }
+            catch (ValidationException exception)
+            {
+                return Results.ValidationProblem(exception.Errors
+                    .GroupBy(error => error.PropertyName)
+                    .ToDictionary(group => group.Key, group => group.Select(error => error.ErrorMessage).ToArray()));
+            }
+        });
+
+        app.MapGet("/locations", async (
+            ListLocationsService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            var ownerId = GetDefaultOwnerId(configuration);
+            var locations = await service.ExecuteAsync(new ListLocationsQuery(ownerId), cancellationToken);
+            return Results.Ok(locations.Select(location => new LocationResponse(
+                location.Id,
+                location.Name,
+                location.Description,
+                location.CreatedUtc)));
+        });
+
+        app.MapPost("/locations", async (
+            CreateLocationRequest request,
+            CreateLocationService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var result = await service.ExecuteAsync(
+                    new CreateLocationCommand(ownerId, request.Name, request.Description),
+                    cancellationToken);
+
+                return Results.Created(
+                    $"/locations/{result.Id}",
+                    new LocationResponse(result.Id, result.Name, result.Description, result.CreatedUtc));
+            }
+            catch (ValidationException exception)
+            {
+                return Results.ValidationProblem(exception.Errors
+                    .GroupBy(error => error.PropertyName)
+                    .ToDictionary(group => group.Key, group => group.Select(error => error.ErrorMessage).ToArray()));
             }
         });
 
@@ -161,7 +234,9 @@ public static class CollectionEndpoints
                         request.Name,
                         request.Description,
                         request.Quantity,
-                        request.AttributeValues.Select(attributeValue =>
+                        request.LocationId,
+                        request.TagIds ?? [],
+                        (request.AttributeValues ?? []).Select(attributeValue =>
                             new CreateItemAttributeValueInput(
                                 attributeValue.AttributeDefinitionId,
                                 attributeValue.Value)).ToArray()),
@@ -175,6 +250,9 @@ public static class CollectionEndpoints
                         result.Name,
                         result.Description,
                         result.Quantity,
+                        result.LocationId,
+                        result.LocationName,
+                        result.Tags,
                         result.CreatedUtc,
                         result.UpdatedUtc,
                         result.AttributeValues)));
@@ -234,7 +312,9 @@ public static class CollectionEndpoints
                         request.Name,
                         request.Description,
                         request.Quantity,
-                        request.AttributeValues.Select(attributeValue =>
+                        request.LocationId,
+                        request.TagIds ?? [],
+                        (request.AttributeValues ?? []).Select(attributeValue =>
                             new CreateItemAttributeValueInput(
                                 attributeValue.AttributeDefinitionId,
                                 attributeValue.Value)).ToArray()),
@@ -246,6 +326,9 @@ public static class CollectionEndpoints
                     result.Name,
                     result.Description,
                     result.Quantity,
+                    result.LocationId,
+                    result.LocationName,
+                    result.Tags,
                     result.CreatedUtc,
                     result.UpdatedUtc,
                     result.AttributeValues)));
@@ -301,6 +384,9 @@ public static class CollectionEndpoints
             item.Name,
             item.Description,
             item.Quantity,
+            item.LocationId,
+            item.LocationName,
+            item.Tags,
             item.AttributeValueCount,
             item.CreatedUtc,
             item.UpdatedUtc);
@@ -312,6 +398,9 @@ public static class CollectionEndpoints
             item.Name,
             item.Description,
             item.Quantity,
+            item.LocationId,
+            item.LocationName,
+            item.Tags.Select(tag => new TagResponse(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)).ToArray(),
             item.CreatedUtc,
             item.UpdatedUtc,
             item.AttributeValues.Select(attributeValue => new ItemAttributeValueResponse(

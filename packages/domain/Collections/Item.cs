@@ -6,6 +6,7 @@ public sealed class Item
     {
         Name = null!;
         AttributeValues = [];
+        ItemTags = [];
     }
 
     private Item(
@@ -25,6 +26,7 @@ public sealed class Item
         CreatedUtc = createdUtc;
         UpdatedUtc = updatedUtc;
         AttributeValues = [];
+        ItemTags = [];
     }
 
     public Guid Id { get; }
@@ -37,11 +39,15 @@ public sealed class Item
 
     public int Quantity { get; private set; }
 
+    public Guid? LocationId { get; private set; }
+
     public DateTime CreatedUtc { get; private set; }
 
     public DateTime UpdatedUtc { get; private set; }
 
     public List<ItemAttributeValue> AttributeValues { get; private set; }
+
+    public List<ItemTag> ItemTags { get; private set; }
 
     public static Item Create(
         Guid collectionId,
@@ -121,6 +127,26 @@ public sealed class Item
 
         AttributeValues.Clear();
         AttributeValues.AddRange(normalizedValues);
+        UpdatedUtc = updatedUtc;
+    }
+
+    public void AssignLocation(Guid? locationId, DateTime updatedUtc)
+    {
+        LocationId = locationId;
+        UpdatedUtc = updatedUtc;
+    }
+
+    public void ReplaceTags(IEnumerable<ItemTag> itemTags, DateTime updatedUtc)
+    {
+        var normalizedTags = itemTags.ToList();
+
+        if (normalizedTags.Any(itemTag => itemTag.ItemId != Id))
+        {
+            throw new ArgumentException("All tags must belong to the item.", nameof(itemTags));
+        }
+
+        ItemTags.Clear();
+        ItemTags.AddRange(normalizedTags);
         UpdatedUtc = updatedUtc;
     }
 

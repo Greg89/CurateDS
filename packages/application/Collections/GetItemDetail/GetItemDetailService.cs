@@ -7,16 +7,22 @@ public sealed class GetItemDetailService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly IAttributeDefinitionRepository _attributeDefinitionRepository;
+    private readonly ILocationRepository _locationRepository;
     private readonly IItemRepository _itemRepository;
+    private readonly ITagRepository _tagRepository;
 
     public GetItemDetailService(
         ICollectionRepository collectionRepository,
         IAttributeDefinitionRepository attributeDefinitionRepository,
-        IItemRepository itemRepository)
+        ILocationRepository locationRepository,
+        IItemRepository itemRepository,
+        ITagRepository tagRepository)
     {
         _collectionRepository = collectionRepository;
         _attributeDefinitionRepository = attributeDefinitionRepository;
+        _locationRepository = locationRepository;
         _itemRepository = itemRepository;
+        _tagRepository = tagRepository;
     }
 
     public async Task<ItemDetailDto> ExecuteAsync(
@@ -43,8 +49,12 @@ public sealed class GetItemDetailService
         var attributeDefinitions = await _attributeDefinitionRepository.ListByCollectionAsync(
             query.CollectionId,
             cancellationToken);
+        var locations = await _locationRepository.ListByOwnerAsync(query.OwnerId, cancellationToken);
+        var tags = await _tagRepository.ListByOwnerAsync(query.OwnerId, cancellationToken);
 
         var attributeDefinitionLookup = attributeDefinitions.ToDictionary(definition => definition.Id);
+        var locationLookup = locations.ToDictionary(location => location.Id);
+        var tagLookup = tags.ToDictionary(tag => tag.Id);
 
         var attributeValues = item.AttributeValues
             .Where(attributeValue => attributeDefinitionLookup.ContainsKey(attributeValue.AttributeDefinitionId))
@@ -68,6 +78,19 @@ public sealed class GetItemDetailService
             item.Name,
             item.Description,
             item.Quantity,
+            item.LocationId,
+            item.LocationId.HasValue && locationLookup.TryGetValue(item.LocationId.Value, out var location)
+                ? location.Name
+                : null,
+            item.ItemTags
+                .Where(itemTag => tagLookup.ContainsKey(itemTag.TagId))
+                .Select(itemTag =>
+                {
+                    var tag = tagLookup[itemTag.TagId];
+                    return new TagDto(tag.Id, tag.Name, tag.Key, tag.CreatedUtc);
+                })
+                .OrderBy(tag => tag.Name)
+                .ToArray(),
             item.CreatedUtc,
             item.UpdatedUtc,
             attributeValues);

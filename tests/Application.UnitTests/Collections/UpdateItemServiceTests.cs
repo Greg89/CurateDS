@@ -40,7 +40,9 @@ public sealed class UpdateItemServiceTests
         var service = new UpdateItemService(
             new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(issueNumber, condition),
+            new FakeLocationRepository(),
             itemRepository,
+            new FakeTagRepository(),
             new UpdateItemCommandValidator());
 
         var result = await service.ExecuteAsync(
@@ -51,6 +53,8 @@ public sealed class UpdateItemServiceTests
                 "Updated Card",
                 "Better copy",
                 2,
+                null,
+                [],
                 [
                     new CreateItemAttributeValueInput(issueNumber.Id, "12"),
                     new CreateItemAttributeValueInput(condition.Id, "Near Mint")
@@ -80,7 +84,9 @@ public sealed class UpdateItemServiceTests
         var service = new UpdateItemService(
             new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(issueNumber),
+            new FakeLocationRepository(),
             new FakeItemRepository(item),
+            new FakeTagRepository(),
             new UpdateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
@@ -91,6 +97,8 @@ public sealed class UpdateItemServiceTests
                 "Amazing Fantasy #15",
                 null,
                 1,
+                null,
+                [],
                 []),
             CancellationToken.None);
 
@@ -105,7 +113,9 @@ public sealed class UpdateItemServiceTests
         var service = new UpdateItemService(
             new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(),
+            new FakeLocationRepository(),
             new FakeItemRepository(),
+            new FakeTagRepository(),
             new UpdateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
@@ -116,6 +126,8 @@ public sealed class UpdateItemServiceTests
                 "Missing Item",
                 null,
                 1,
+                null,
+                [],
                 []),
             CancellationToken.None);
 
@@ -204,6 +216,13 @@ public sealed class UpdateItemServiceTests
             return Task.CompletedTask;
         }
 
+        public Task ReplaceTagsAsync(Guid itemId, IReadOnlyList<ItemTag> itemTags, CancellationToken cancellationToken)
+        {
+            var item = _items.Single(existingItem => existingItem.Id == itemId);
+            item.ReplaceTags(itemTags, DateTime.UtcNow);
+            return Task.CompletedTask;
+        }
+
         public Task<Item?> GetByIdAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken)
         {
             return Task.FromResult(_items.SingleOrDefault(item => item.Id == itemId && item.CollectionId == collectionId));
@@ -219,5 +238,27 @@ public sealed class UpdateItemServiceTests
             SaveChangesCallCount++;
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class FakeLocationRepository : ILocationRepository
+    {
+        public Task AddAsync(Location location, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<Location?> GetByIdAndOwnerAsync(Guid locationId, Guid ownerId, CancellationToken cancellationToken)
+            => Task.FromResult<Location?>(null);
+
+        public Task<IReadOnlyList<Location>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Location>>([]);
+    }
+
+    private sealed class FakeTagRepository : ITagRepository
+    {
+        public Task AddAsync(Tag tag, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<IReadOnlyList<Tag>> ListByIdsAsync(Guid ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Tag>>([]);
+
+        public Task<IReadOnlyList<Tag>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Tag>>([]);
     }
 }

@@ -311,6 +311,62 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         updated.AttributeValues.Should().Contain(value => value.AttributeName == "Completed" && value.Value == "True");
     }
 
+    [Fact]
+    public async Task PostTagsAndLocations_ShouldCreateOrganizationRecords()
+    {
+        var tagResponse = await _client.PostAsJsonAsync("/tags", new { name = "Backlog" });
+        var locationResponse = await _client.PostAsJsonAsync("/locations", new
+        {
+            name = "Hall Closet",
+            description = "Top shelf bin"
+        });
+
+        tagResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        locationResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var tags = await (await _client.GetAsync("/tags")).Content.ReadFromJsonAsync<IReadOnlyList<TagResponse>>(JsonOptions);
+        var locations = await (await _client.GetAsync("/locations")).Content.ReadFromJsonAsync<IReadOnlyList<LocationResponse>>(JsonOptions);
+
+        tags.Should().Contain(tag => tag.Name == "Backlog");
+        locations.Should().Contain(location => location.Name == "Hall Closet");
+    }
+
+    [Fact]
+    public async Task PostItems_ShouldPersistLocationAndTags()
+    {
+        var collection = await CreateCollectionAsync("Board Games");
+        var playerCount = await CreateAttributeDefinitionAsync(collection.Id, "Players", AttributeDataType.Number, false);
+        var tag = await CreateTagAsync("Favorite");
+        var location = await CreateLocationAsync("Game Cabinet", "Living room");
+
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Spirit Island",
+                description = "Jagged Earth included",
+                quantity = 1,
+                locationId = location.Id,
+                tagIds = new[] { tag.Id },
+                attributeValues = new[]
+                {
+                    new
+                    {
+                        attributeDefinitionId = playerCount.Id,
+                        value = "4"
+                    }
+                }
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var created = await response.Content.ReadFromJsonAsync<ItemDetailResponse>(JsonOptions);
+
+        created.Should().NotBeNull();
+        created!.LocationName.Should().Be("Game Cabinet");
+        created.Tags.Should().ContainSingle(savedTag => savedTag.Name == "Favorite");
+    }
+
     private async Task<CollectionResponse> CreateCollectionAsync(string name)
     {
         var response = await _client.PostAsJsonAsync("/collections", new { name });
@@ -338,6 +394,18 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         return attributeDefinition!;
     }
 
+    private async Task<TagResponse> CreateTagAsync(string name)
+    {
+        var response = await _client.PostAsJsonAsync("/tags", new { name });
+        return (await response.Content.ReadFromJsonAsync<TagResponse>(JsonOptions))!;
+    }
+
+    private async Task<LocationResponse> CreateLocationAsync(string name, string description)
+    {
+        var response = await _client.PostAsJsonAsync("/locations", new { name, description });
+        return (await response.Content.ReadFromJsonAsync<LocationResponse>(JsonOptions))!;
+    }
+
     private sealed record CollectionResponse(Guid Id, string Name, DateTime CreatedUtc);
 
     private sealed record AttributeDefinitionResponse(
@@ -357,6 +425,9 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         string Name,
         string? Description,
         int Quantity,
+        Guid? LocationId,
+        string? LocationName,
+        IReadOnlyList<string> Tags,
         int AttributeValueCount,
         DateTime CreatedUtc,
         DateTime UpdatedUtc);
@@ -367,6 +438,9 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         string Name,
         string? Description,
         int Quantity,
+        Guid? LocationId,
+        string? LocationName,
+        IReadOnlyList<TagResponse> Tags,
         DateTime CreatedUtc,
         DateTime UpdatedUtc,
         IReadOnlyList<ItemAttributeValueResponse> AttributeValues);
@@ -377,4 +451,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         string AttributeKey,
         AttributeDataType DataType,
         string Value);
+
+    private sealed record TagResponse(Guid Id, string Name, string Key, DateTime CreatedUtc);
+
+    private sealed record LocationResponse(Guid Id, string Name, string? Description, DateTime CreatedUtc);
 }

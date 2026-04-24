@@ -34,7 +34,9 @@ public sealed class CreateItemServiceTests
         var service = new CreateItemService(
             new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(issueNumber, isFoil),
+            new FakeLocationRepository(),
             itemRepository,
+            new FakeTagRepository(),
             new CreateItemCommandValidator());
 
         var result = await service.ExecuteAsync(
@@ -44,6 +46,8 @@ public sealed class CreateItemServiceTests
                 "Blue-Eyes White Dragon",
                 "First edition",
                 1,
+                null,
+                [],
                 [
                     new CreateItemAttributeValueInput(issueNumber.Id, "12"),
                     new CreateItemAttributeValueInput(isFoil.Id, "true")
@@ -71,7 +75,9 @@ public sealed class CreateItemServiceTests
         var service = new CreateItemService(
             new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(issueNumber),
+            new FakeLocationRepository(),
             new FakeItemRepository(),
+            new FakeTagRepository(),
             new CreateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
@@ -81,6 +87,8 @@ public sealed class CreateItemServiceTests
                 "Amazing Fantasy #15",
                 null,
                 1,
+                null,
+                [],
                 []),
             CancellationToken.None);
 
@@ -93,7 +101,9 @@ public sealed class CreateItemServiceTests
         var service = new CreateItemService(
             new FakeCollectionRepository(),
             new FakeAttributeDefinitionRepository(),
+            new FakeLocationRepository(),
             new FakeItemRepository(),
+            new FakeTagRepository(),
             new CreateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
@@ -103,6 +113,8 @@ public sealed class CreateItemServiceTests
                 "Missing Collection Item",
                 null,
                 1,
+                null,
+                [],
                 []),
             CancellationToken.None);
 
@@ -184,6 +196,13 @@ public sealed class CreateItemServiceTests
             return Task.CompletedTask;
         }
 
+        public Task ReplaceTagsAsync(Guid itemId, IReadOnlyList<ItemTag> itemTags, CancellationToken cancellationToken)
+        {
+            var item = Items.Single(existingItem => existingItem.Id == itemId);
+            item.ReplaceTags(itemTags, DateTime.UtcNow);
+            return Task.CompletedTask;
+        }
+
         public Task<Item?> GetByIdAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken)
         {
             return Task.FromResult(Items.SingleOrDefault(item => item.Id == itemId && item.CollectionId == collectionId));
@@ -198,5 +217,27 @@ public sealed class CreateItemServiceTests
         {
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class FakeLocationRepository : ILocationRepository
+    {
+        public Task AddAsync(Location location, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<Location?> GetByIdAndOwnerAsync(Guid locationId, Guid ownerId, CancellationToken cancellationToken)
+            => Task.FromResult<Location?>(null);
+
+        public Task<IReadOnlyList<Location>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Location>>([]);
+    }
+
+    private sealed class FakeTagRepository : ITagRepository
+    {
+        public Task AddAsync(Tag tag, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<IReadOnlyList<Tag>> ListByIdsAsync(Guid ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Tag>>([]);
+
+        public Task<IReadOnlyList<Tag>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Tag>>([]);
     }
 }

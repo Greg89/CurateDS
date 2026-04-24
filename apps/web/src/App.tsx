@@ -7,12 +7,18 @@ import {
   createAttributeDefinition,
   createCollection,
   createItem,
+  createLocation,
+  createTag,
   getItemDetail,
   ItemDetail,
   ItemSummary,
+  listLocations,
   listAttributeDefinitions,
   listCollections,
   listItems,
+  listTags,
+  Location,
+  Tag,
   updateItem
 } from "./api";
 import { appConfig } from "./config";
@@ -35,9 +41,14 @@ export function App() {
     useState<AttributeDataType>("Text");
   const [attributeIsRequired, setAttributeIsRequired] = useState(false);
   const [attributeIsFilterable, setAttributeIsFilterable] = useState(true);
+  const [tagName, setTagName] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [locationDescription, setLocationDescription] = useState("");
   const [itemName, setItemName] = useState("");
   const [itemDescription, setItemDescription] = useState("");
   const [itemQuantity, setItemQuantity] = useState("1");
+  const [itemLocationId, setItemLocationId] = useState("");
+  const [itemTagIds, setItemTagIds] = useState<string[]>([]);
   const [itemAttributeValues, setItemAttributeValues] = useState<
     Record<string, string>
   >({});
@@ -65,6 +76,16 @@ export function App() {
     queryKey: ["items", selectedCollectionId],
     queryFn: () => listItems(selectedCollectionId),
     enabled: selectedCollectionId.length > 0
+  });
+
+  const tagsQuery = useQuery({
+    queryKey: ["tags"],
+    queryFn: listTags
+  });
+
+  const locationsQuery = useQuery({
+    queryKey: ["locations"],
+    queryFn: listLocations
   });
 
   const itemDetailQuery = useQuery({
@@ -104,6 +125,23 @@ export function App() {
       await queryClient.invalidateQueries({
         queryKey: ["item-detail", selectedCollectionId, item.id]
       });
+    }
+  });
+
+  const createTagMutation = useMutation({
+    mutationFn: createTag,
+    onSuccess: async () => {
+      setTagName("");
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
+    }
+  });
+
+  const createLocationMutation = useMutation({
+    mutationFn: createLocation,
+    onSuccess: async () => {
+      setLocationName("");
+      setLocationDescription("");
+      await queryClient.invalidateQueries({ queryKey: ["locations"] });
     }
   });
 
@@ -162,6 +200,8 @@ export function App() {
         name: itemName,
         description: itemDescription,
         quantity: Number(itemQuantity),
+        locationId: itemLocationId || null,
+        tagIds: itemTagIds,
         attributeValues
       });
 
@@ -173,7 +213,22 @@ export function App() {
       name: itemName,
       description: itemDescription,
       quantity: Number(itemQuantity),
+      locationId: itemLocationId || null,
+      tagIds: itemTagIds,
       attributeValues
+    });
+  }
+
+  function handleTagSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    createTagMutation.mutate(tagName);
+  }
+
+  function handleLocationSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    createLocationMutation.mutate({
+      name: locationName,
+      description: locationDescription
     });
   }
 
@@ -192,6 +247,8 @@ export function App() {
     setItemName(item.name);
     setItemDescription(item.description ?? "");
     setItemQuantity(item.quantity.toString());
+    setItemLocationId(item.locationId ?? "");
+    setItemTagIds(item.tags.map((tag) => tag.id));
     setItemAttributeValues(
       Object.fromEntries(
         item.attributeValues.map((attributeValue) => [
@@ -209,8 +266,18 @@ export function App() {
     setItemName("");
     setItemDescription("");
     setItemQuantity("1");
+    setItemLocationId("");
+    setItemTagIds([]);
     setItemAttributeValues({});
     setEditingItemId(null);
+  }
+
+  function toggleItemTag(tagId: string) {
+    setItemTagIds((currentTagIds) =>
+      currentTagIds.includes(tagId)
+        ? currentTagIds.filter((currentTagId) => currentTagId !== tagId)
+        : [...currentTagIds, tagId]
+    );
   }
 
   function beginEditingSelectedItem() {
@@ -397,6 +464,60 @@ export function App() {
           />
         </section>
 
+        <section className="panel">
+          <div className="panel-header">
+            <h2>Organization</h2>
+            <p>Create reusable tags and storage locations for your items.</p>
+          </div>
+
+          <form className="collection-form" onSubmit={handleTagSubmit}>
+            <label className="field">
+              <span>Tag Name</span>
+              <input
+                value={tagName}
+                onChange={(event) => setTagName(event.target.value)}
+                placeholder="Wishlist"
+                maxLength={50}
+              />
+            </label>
+
+            <button className="primary-button" disabled={createTagMutation.isPending} type="submit">
+              {createTagMutation.isPending ? "Saving..." : "Add Tag"}
+            </button>
+          </form>
+
+          <form className="collection-form section-gap" onSubmit={handleLocationSubmit}>
+            <label className="field">
+              <span>Location Name</span>
+              <input
+                value={locationName}
+                onChange={(event) => setLocationName(event.target.value)}
+                placeholder="Office Shelf"
+                maxLength={80}
+              />
+            </label>
+
+            <label className="field">
+              <span>Description</span>
+              <input
+                value={locationDescription}
+                onChange={(event) => setLocationDescription(event.target.value)}
+                placeholder="Upper left bookcase"
+                maxLength={240}
+              />
+            </label>
+
+            <button className="primary-button" disabled={createLocationMutation.isPending} type="submit">
+              {createLocationMutation.isPending ? "Saving..." : "Add Location"}
+            </button>
+          </form>
+
+          <OrganizationSummary
+            locations={locationsQuery.data ?? []}
+            tags={tagsQuery.data ?? []}
+          />
+        </section>
+
         <section className="panel panel-wide">
           <div className="panel-header">
             <h2>Items</h2>
@@ -464,6 +585,29 @@ export function App() {
                   type="number"
                 />
               </label>
+
+              <label className="field">
+                <span>Location</span>
+                <select
+                  value={itemLocationId}
+                  onChange={(event) => setItemLocationId(event.target.value)}
+                  disabled={!selectedCollection}
+                >
+                  <option value="">No location</option>
+                  {(locationsQuery.data ?? []).map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <TagSelector
+                disabled={!selectedCollection}
+                selectedTagIds={itemTagIds}
+                tags={tagsQuery.data ?? []}
+                onToggle={toggleItemTag}
+              />
 
               <DynamicAttributeFields
                 attributeDefinitions={attributeDefinitionsQuery.data ?? []}
@@ -614,6 +758,71 @@ function AttributeDefinitionList({
         </li>
       ))}
     </ul>
+  );
+}
+
+function OrganizationSummary({
+  locations,
+  tags
+}: Readonly<{
+  locations: Location[];
+  tags: Tag[];
+}>) {
+  return (
+    <div className="organization-grid">
+      <div className="empty-state compact">
+        <p>{tags.length} tag{tags.length === 1 ? "" : "s"} ready.</p>
+        <p>{tags.length > 0 ? tags.map((tag) => tag.name).join(", ") : "Create your first reusable tag."}</p>
+      </div>
+      <div className="empty-state compact">
+        <p>{locations.length} location{locations.length === 1 ? "" : "s"} ready.</p>
+        <p>
+          {locations.length > 0
+            ? locations.map((location) => location.name).join(", ")
+            : "Add a storage location for item organization."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function TagSelector({
+  disabled,
+  selectedTagIds,
+  tags,
+  onToggle
+}: Readonly<{
+  disabled: boolean;
+  selectedTagIds: string[];
+  tags: Tag[];
+  onToggle: (tagId: string) => void;
+}>) {
+  if (tags.length === 0) {
+    return (
+      <div className="empty-state compact">
+        <p>No tags available yet.</p>
+        <p>Add one in the organization panel and it will appear here.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="field">
+      <span>Tags</span>
+      <div className="tag-picker">
+        {tags.map((tag) => (
+          <label className="tag-option" key={tag.id}>
+            <input
+              checked={selectedTagIds.includes(tag.id)}
+              disabled={disabled}
+              onChange={() => onToggle(tag.id)}
+              type="checkbox"
+            />
+            <span>{tag.name}</span>
+          </label>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -768,6 +977,10 @@ function ItemList({
             </div>
             <p>{item.description ?? "No description yet."}</p>
             <p>
+              {item.locationName ? `Location: ${item.locationName}` : "No location assigned"}
+            </p>
+            <p>{item.tags.length > 0 ? `Tags: ${item.tags.join(", ")}` : "No tags assigned"}</p>
+            <p>
               {item.attributeValueCount} custom value
               {item.attributeValueCount === 1 ? "" : "s"}
             </p>
@@ -822,6 +1035,8 @@ function ItemDetailCard({
       </p>
 
       <div className="detail-meta-grid">
+        <p>{item.locationName ? `Location: ${item.locationName}` : "Location: None"}</p>
+        <p>{item.tags.length > 0 ? `Tags: ${item.tags.map((tag) => tag.name).join(", ")}` : "Tags: None"}</p>
         <p>
           Created{" "}
           {new Intl.DateTimeFormat("en-US", {

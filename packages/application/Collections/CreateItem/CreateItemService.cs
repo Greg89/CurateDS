@@ -1,5 +1,6 @@
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Common;
+using CurateDS.Application.Collections.Shared;
 using CurateDS.Domain.Collections;
 using FluentValidation;
 using FluentValidation.Results;
@@ -10,18 +11,24 @@ public sealed class CreateItemService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly IAttributeDefinitionRepository _attributeDefinitionRepository;
+    private readonly ILocationRepository _locationRepository;
     private readonly IItemRepository _itemRepository;
+    private readonly ITagRepository _tagRepository;
     private readonly IValidator<CreateItemCommand> _validator;
 
     public CreateItemService(
         ICollectionRepository collectionRepository,
         IAttributeDefinitionRepository attributeDefinitionRepository,
+        ILocationRepository locationRepository,
         IItemRepository itemRepository,
+        ITagRepository tagRepository,
         IValidator<CreateItemCommand> validator)
     {
         _collectionRepository = collectionRepository;
         _attributeDefinitionRepository = attributeDefinitionRepository;
+        _locationRepository = locationRepository;
         _itemRepository = itemRepository;
+        _tagRepository = tagRepository;
         _validator = validator;
     }
 
@@ -47,6 +54,14 @@ public sealed class CreateItemService
 
         var attributeDefinitionLookup = attributeDefinitions.ToDictionary(definition => definition.Id);
 
+        var organization = await ItemOrganizationValidator.ValidateAsync(
+            command.OwnerId,
+            command.LocationId,
+            command.TagIds,
+            _locationRepository,
+            _tagRepository,
+            cancellationToken);
+
         ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup);
 
         var item = Item.Create(
@@ -63,6 +78,9 @@ public sealed class CreateItemService
             item.AddAttributeValue(attributeValue);
         }
 
+        item.AssignLocation(organization.Location?.Id, item.UpdatedUtc);
+        item.ReplaceTags(ItemOrganizationValidator.BuildItemTags(item.Id, organization.Tags), item.UpdatedUtc);
+
         await _itemRepository.AddAsync(item, cancellationToken);
 
         return new CreateItemResult(
@@ -71,6 +89,9 @@ public sealed class CreateItemService
             item.Name,
             item.Description,
             item.Quantity,
+            organization.Location?.Id,
+            organization.Location?.Name,
+            organization.Tags.Select(tag => new TagDto(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)).ToArray(),
             item.CreatedUtc,
             item.UpdatedUtc,
             MapAttributeValues(item, attributeDefinitions));

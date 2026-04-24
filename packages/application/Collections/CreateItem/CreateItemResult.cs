@@ -6,6 +6,9 @@ public sealed record CreateItemResult(
     string Name,
     string? Description,
     int Quantity,
+    Guid? LocationId,
+    string? LocationName,
+    IReadOnlyList<TagDto> Tags,
     DateTime CreatedUtc,
     DateTime UpdatedUtc,
     IReadOnlyList<ItemAttributeValueDto> AttributeValues);

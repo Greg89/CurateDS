@@ -30,6 +30,10 @@ public sealed class UpdateItemCommandValidator : AbstractValidator<UpdateItemCom
         RuleFor(command => command.Quantity)
             .InclusiveBetween(1, 9999);
 
+        RuleFor(command => command.TagIds)
+            .Must(tagIds => tagIds.Distinct().Count() == tagIds.Count)
+            .WithMessage("Tag IDs must not contain duplicates.");
+
         RuleFor(command => command.AttributeValues)
             .Must(HaveUniqueAttributeDefinitionIds)
             .WithMessage("Attribute values must not contain duplicate definitions.");

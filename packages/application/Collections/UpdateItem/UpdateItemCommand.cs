@@ -7,4 +7,6 @@ public sealed record UpdateItemCommand(
     string Name,
     string? Description,
     int Quantity,
+    Guid? LocationId,
+    IReadOnlyList<Guid> TagIds,
     IReadOnlyList<CreateItem.CreateItemAttributeValueInput> AttributeValues);

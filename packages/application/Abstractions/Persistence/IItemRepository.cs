@@ -11,6 +11,11 @@ public interface IItemRepository
         IReadOnlyList<ItemAttributeValue> attributeValues,
         CancellationToken cancellationToken);
 
+    Task ReplaceTagsAsync(
+        Guid itemId,
+        IReadOnlyList<ItemTag> itemTags,
+        CancellationToken cancellationToken);
+
     Task<Item?> GetByIdAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Item>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken);
