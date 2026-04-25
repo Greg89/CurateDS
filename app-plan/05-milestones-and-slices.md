@@ -45,16 +45,25 @@ Exit criteria:
 Goal:
 Deliver a personally useful catalog app.
 
-Deliverables:
+Completed in the current implementation:
 
 - item list and detail screens
 - tags
 - locations
 - item editing
 - search/filter
+- custom attribute filtering
+- item sorting
+- saved views
+- routed collection workspace with overview, items, and settings screens
+
+Still remaining from the original MVP direction:
+
 - media metadata support
 - item event history
-- saved views
+- denser browsing views for larger collections
+- scalable server-side item querying and pagination
+- deeper client decomposition into reusable feature components and hooks
 
 Exit criteria:
 
@@ -102,7 +111,18 @@ Deliverables:
 2. Collection creation slice
 3. Attribute-definition slice
 4. Item creation and detail slice
-5. Search/filter slice
-6. Tag/location slice
-7. Media/event slice
-8. Dashboard/reporting slice
+5. Tag/location slice
+6. Search/filter slice
+7. Routed workspace and saved views slice
+8. API contract standardization pass
+9. Scalable item query and pagination slice
+10. Media/event slice
+11. Dashboard/reporting slice
+
+## Immediate Next Roadmap
+
+1. Refactor item listing so search, filter, and sort run in the repository and EF query rather than in-memory application logic.
+2. Introduce a paged item-list API contract and update the web client to consume it.
+3. Preserve the current Problem Details strategy while tightening list and pagination contracts.
+4. Split the routed web client into smaller feature components and hooks for maintainability and TDD.
+5. Resume the remaining MVP feature work with media metadata, item history, and denser browsing views.
