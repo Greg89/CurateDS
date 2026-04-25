@@ -34,6 +34,11 @@ textarea {
   width: min(1380px, calc(100% - 2rem));
   margin: 0 auto;
   padding: 1.5rem 0 3rem;
+  align-items: start;
+}
+
+.app-shell.sidebar-is-collapsed {
+  grid-template-columns: 104px minmax(0, 1fr);
 }
 
 .sidebar,
@@ -46,12 +51,60 @@ textarea {
 
 .sidebar {
   display: grid;
-  align-content: start;
-  gap: 1rem;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1.25rem;
   padding: 1.5rem;
   position: sticky;
   top: 1rem;
-  height: fit-content;
+  max-height: calc(100vh - 2rem);
+  overflow: hidden;
+}
+
+.sidebar-top,
+.sidebar-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.sidebar-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+.sidebar-collapsed {
+  padding: 1rem 0.85rem;
+}
+
+.sidebar-collapsed .sidebar-header {
+  justify-items: center;
+  text-align: center;
+}
+
+.sidebar-collapsed .eyebrow {
+  margin-bottom: 0;
+}
+
+.sidebar-collapsed-summary {
+  display: grid;
+  gap: 0.6rem;
+  text-align: center;
+}
+
+.collapsed-count,
+.collapsed-selection {
+  color: #d9d4cb;
+  line-height: 1.4;
+}
+
+.collapsed-selection {
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.sidebar-toggle {
+  width: 100%;
+  min-height: 2.75rem;
 }
 
 .sidebar-header {
@@ -421,13 +474,27 @@ h1 {
   align-items: end;
 }
 
+.sidebar-body::-webkit-scrollbar {
+  width: 0.65rem;
+}
+
+.sidebar-body::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(214, 152, 87, 0.35);
+}
+
 @media (max-width: 1120px) {
   .app-shell {
     grid-template-columns: 1fr;
   }
 
+  .app-shell.sidebar-is-collapsed {
+    grid-template-columns: 1fr;
+  }
+
   .sidebar {
     position: static;
+    max-height: none;
   }
 
   .content-header,
@@ -437,6 +504,11 @@ h1 {
   .saved-view-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .sidebar-body {
+    overflow: visible;
+    padding-right: 0;
   }
 }
 

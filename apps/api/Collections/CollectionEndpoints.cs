@@ -87,7 +87,8 @@ public static class CollectionEndpoints
             {
                 return ApiResponses.Conflict(
                     nameof(CreateTagRequest.Name),
-                    "A tag with this name already exists.");
+                    "A tag with this name already exists.",
+                    "duplicate_tag");
             }
         });
 

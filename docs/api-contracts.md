@@ -28,7 +28,21 @@ Current contract rules:
 - missing resources: `ProblemDetails` with `404 Not Found`
 - unexpected server failures: framework-generated `ProblemDetails`
 
+Current standardized fields:
+
+- `type`: stable app-specific problem identifier
+- `title`: short human-readable summary
+- `status`: HTTP status code
+- `detail`: human-readable detail when applicable
+- `code`: compact app-specific error code in `extensions`
+
 The goal is that clients can always expect structured error payloads instead of empty `404` responses or ad hoc error objects.
+
+Current problem types and codes:
+
+- validation: `type = "urn:curateds:problem:validation"`, `code = "validation_error"`
+- conflict: `type = "urn:curateds:problem:conflict"`, default `code = "conflict"`
+- not found: `type = "urn:curateds:problem:not-found"`, default `code = "resource_not_found"`
 
 ## Recommended Status Codes
 

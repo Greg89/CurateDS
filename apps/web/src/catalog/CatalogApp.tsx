@@ -44,6 +44,8 @@ interface SavedItemView {
   filters: ItemFilters;
 }
 
+const sidebarStateStorageKey = "curateds:sidebar-collapsed";
+
 export function CatalogApp({
   section
 }: Readonly<{
@@ -88,6 +90,7 @@ export function CatalogApp({
   const [savedViewName, setSavedViewName] = useState("");
   const [savedViews, setSavedViews] = useState<SavedItemView[]>([]);
   const [savedViewsCollectionId, setSavedViewsCollectionId] = useState("");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(readSidebarCollapsedState);
   const normalizedItemFilterTagIds = normalizeTagIds(itemFilterTagIds);
 
   const itemFilters: ItemFilters = {
@@ -470,86 +473,124 @@ export function CatalogApp({
     }
   }, [collectionsQuery.data, collectionsQuery.isSuccess, navigate, selectedCollectionId]);
 
+  useEffect(() => {
+    window.localStorage.setItem(
+      sidebarStateStorageKey,
+      JSON.stringify(isSidebarCollapsed)
+    );
+  }, [isSidebarCollapsed]);
+
   const savedViewsSummary = savedViews.length > 0
     ? savedViews.map((view) => view.name).join(", ")
     : "No saved views yet.";
 
   return (
-    <main className="app-shell">
-      <aside className="sidebar panel">
-        <div className="sidebar-header">
-          <p className="eyebrow">CurateDS</p>
-          <h1>Catalog Workspace</h1>
-          <p className="copy">
-            A web-first, hobby-agnostic catalog workspace focused on maintainable,
-            stable growth.
-          </p>
-          <p className="meta">API base URL: {appConfig.apiBaseUrl}</p>
-        </div>
-
-        <form className="collection-form" onSubmit={handleCollectionSubmit}>
-          <label className="field">
-            <span>New Collection</span>
-            <input
-              value={collectionName}
-              onChange={(event) => setCollectionName(event.target.value)}
-              placeholder="Board Games"
-              maxLength={100}
-            />
-          </label>
+    <main className={`app-shell${isSidebarCollapsed ? " sidebar-is-collapsed" : ""}`}>
+      <aside className={`sidebar panel${isSidebarCollapsed ? " sidebar-collapsed" : ""}`}>
+        <div className="sidebar-top">
+          <div className="sidebar-header">
+            <p className="eyebrow">CurateDS</p>
+            {!isSidebarCollapsed ? (
+              <>
+                <h1>Catalog Workspace</h1>
+                <p className="copy">
+                  A web-first, hobby-agnostic catalog workspace focused on maintainable,
+                  stable growth.
+                </p>
+                <p className="meta">API base URL: {appConfig.apiBaseUrl}</p>
+              </>
+            ) : null}
+          </div>
 
           <button
-            className="primary-button"
-            disabled={createCollectionMutation.isPending}
-            type="submit"
+            aria-expanded={!isSidebarCollapsed}
+            aria-label={isSidebarCollapsed ? "Expand collection sidebar" : "Collapse collection sidebar"}
+            className="secondary-button sidebar-toggle"
+            onClick={() => setIsSidebarCollapsed((currentValue) => !currentValue)}
+            type="button"
           >
-            {createCollectionMutation.isPending ? "Creating..." : "Create Collection"}
+            {isSidebarCollapsed ? "Open Collections" : "Collapse"}
           </button>
+        </div>
 
-          {createCollectionMutation.error ? (
-            <p className="message error">{createCollectionMutation.error.message}</p>
-          ) : null}
-        </form>
+        {!isSidebarCollapsed ? (
+          <div className="sidebar-body">
+            <form className="collection-form" onSubmit={handleCollectionSubmit}>
+              <label className="field">
+                <span>New Collection</span>
+                <input
+                  value={collectionName}
+                  onChange={(event) => setCollectionName(event.target.value)}
+                  placeholder="Board Games"
+                  maxLength={100}
+                />
+              </label>
 
-        {collectionsQuery.isLoading ? <p className="message">Loading collections...</p> : null}
-        {collectionsQuery.isError ? (
-          <p className="message error">{collectionsQuery.error.message}</p>
-        ) : null}
+              <button
+                className="primary-button"
+                disabled={createCollectionMutation.isPending}
+                type="submit"
+              >
+                {createCollectionMutation.isPending ? "Creating..." : "Create Collection"}
+              </button>
 
-        <CollectionList
-          collections={collectionsQuery.data ?? []}
-          selectedCollectionId={selectedCollectionId}
-          onSelect={(collectionId) => navigateToCollection(collectionId)}
-        />
+              {createCollectionMutation.error ? (
+                <p className="message error">{createCollectionMutation.error.message}</p>
+              ) : null}
+            </form>
 
-        {selectedCollection ? (
-          <nav className="sidebar-nav">
-            <NavLink
-              className={({ isActive }) =>
-                `tab-link sidebar-link${isActive ? " active" : ""}`
-              }
-              to={`/collections/${selectedCollection.id}/overview`}
-            >
-              Overview
-            </NavLink>
-            <NavLink
-              className={({ isActive }) =>
-                `tab-link sidebar-link${isActive ? " active" : ""}`
-              }
-              to={`/collections/${selectedCollection.id}/items`}
-            >
-              Items
-            </NavLink>
-            <NavLink
-              className={({ isActive }) =>
-                `tab-link sidebar-link${isActive ? " active" : ""}`
-              }
-              to={`/collections/${selectedCollection.id}/settings`}
-            >
-              Settings
-            </NavLink>
-          </nav>
-        ) : null}
+            {collectionsQuery.isLoading ? <p className="message">Loading collections...</p> : null}
+            {collectionsQuery.isError ? (
+              <p className="message error">{collectionsQuery.error.message}</p>
+            ) : null}
+
+            <CollectionList
+              collections={collectionsQuery.data ?? []}
+              selectedCollectionId={selectedCollectionId}
+              onSelect={(collectionId) => navigateToCollection(collectionId)}
+            />
+
+            {selectedCollection ? (
+              <nav className="sidebar-nav">
+                <NavLink
+                  className={({ isActive }) =>
+                    `tab-link sidebar-link${isActive ? " active" : ""}`
+                  }
+                  to={`/collections/${selectedCollection.id}/overview`}
+                >
+                  Overview
+                </NavLink>
+                <NavLink
+                  className={({ isActive }) =>
+                    `tab-link sidebar-link${isActive ? " active" : ""}`
+                  }
+                  to={`/collections/${selectedCollection.id}/items`}
+                >
+                  Items
+                </NavLink>
+                <NavLink
+                  className={({ isActive }) =>
+                    `tab-link sidebar-link${isActive ? " active" : ""}`
+                  }
+                  to={`/collections/${selectedCollection.id}/settings`}
+                >
+                  Settings
+                </NavLink>
+              </nav>
+            ) : null}
+          </div>
+        ) : (
+          <div className="sidebar-collapsed-summary">
+            <p className="eyebrow subtle">Focused</p>
+            <p className="collapsed-count">
+              {collectionsQuery.data?.length ?? 0} collection
+              {(collectionsQuery.data?.length ?? 0) === 1 ? "" : "s"}
+            </p>
+            <p className="collapsed-selection">
+              {selectedCollection ? selectedCollection.name : "No collection selected"}
+            </p>
+          </div>
+        )}
       </aside>
 
       <section className="content-shell">
@@ -1968,4 +2009,18 @@ function describeSort(
 function normalizeTagIds(tagIds: readonly string[]) {
   return [...new Set(tagIds.map((tagId) => tagId.trim()).filter((tagId) => tagId.length > 0))]
     .sort((left, right) => left.localeCompare(right));
+}
+
+function readSidebarCollapsedState() {
+  const storedValue = window.localStorage.getItem(sidebarStateStorageKey);
+
+  if (!storedValue) {
+    return false;
+  }
+
+  try {
+    return JSON.parse(storedValue) === true;
+  } catch {
+    return false;
+  }
 }
