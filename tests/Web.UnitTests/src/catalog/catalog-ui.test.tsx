@@ -1,0 +1,93 @@
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
+import { describe, expect, it } from "vitest";
+import { App } from "@app/App";
+import { renderApp } from "../test-utils";
+import { defaultCollection, defaultItemSummary, server } from "../mocks/server";
+
+describe("CatalogApp UI structure", () => {
+  it("does not display the raw API base URL in the page header", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/overview`]
+    });
+
+    await screen.findByRole("heading", { name: "Collection Overview" });
+
+    expect(screen.queryByText(/API:/i)).not.toBeInTheDocument();
+  });
+
+  it("renders tab navigation below the title row, not in a right-aligned side column", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/overview`]
+    });
+
+    await screen.findByRole("heading", { name: "Collection Overview" });
+
+    // Wait for nav to appear — it renders only after the selected collection loads
+    const nav = await screen.findByRole("navigation");
+
+    // After the refactor the .top-bar-meta container is gone — nav must not live inside it
+    expect(nav.closest(".top-bar-meta")).toBeNull();
+  });
+
+  it("collapse sidebar button uses a typographic chevron, not a raw angle bracket", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/overview`]
+    });
+
+    await screen.findByRole("heading", { name: "Collection Overview" });
+
+    const collapseBtn = screen.getByRole("button", { name: "Collapse collection sidebar" });
+
+    expect(collapseBtn.textContent?.trim()).not.toBe("<");
+  });
+
+  it("expand sidebar button uses a typographic chevron, not a raw angle bracket", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/overview`]
+    });
+
+    await screen.findByRole("heading", { name: "Collection Overview" });
+
+    await user.click(screen.getByRole("button", { name: "Collapse collection sidebar" }));
+
+    const expandBtn = screen.getByRole("button", { name: "Expand collection sidebar" });
+
+    expect(expandBtn.textContent?.trim()).not.toBe(">");
+  });
+
+  it("shows tag usage in settings organization summary when items are tagged", async () => {
+    server.use(
+      http.get("http://localhost:8080/tags", () =>
+        HttpResponse.json([
+          { id: "tag-jazz", name: "Jazz", key: "jazz", createdUtc: "2026-04-20T00:00:00Z" }
+        ])
+      ),
+      http.get(
+        `http://localhost:8080/collections/${defaultCollection.id}/items`,
+        () =>
+          HttpResponse.json([
+            { ...defaultItemSummary, tags: ["Jazz"] }
+          ])
+      )
+    );
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/settings`]
+    });
+
+    await screen.findByRole("heading", { name: "Collection Settings" });
+
+    // Wait for the Top Tags usage breakdown to show the Jazz entry
+    const tagEntry = await screen.findByText("Jazz");
+    expect(tagEntry).toBeInTheDocument();
+
+    // The Top Tags section must not show the empty-state label
+    const topTagsHeading = screen.getByRole("heading", { name: "Top Tags" });
+    const topTagsCard = topTagsHeading.closest(".usage-card");
+    expect(topTagsCard).not.toHaveTextContent("No usage yet.");
+  });
+});

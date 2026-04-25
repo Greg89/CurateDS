@@ -2,9 +2,6 @@ import { FormEvent, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  appConfig
-} from "../config";
-import {
   AttributeDataType,
   AttributeDefinition,
   Collection,
@@ -505,7 +502,7 @@ export function CatalogApp({
               onClick={() => setIsSidebarCollapsed(false)}
               type="button"
             >
-              <span aria-hidden="true">&gt;</span>
+              <span aria-hidden="true">&#8250;</span>
             </button>
           </div>
         ) : (
@@ -527,7 +524,7 @@ export function CatalogApp({
                   onClick={() => setIsSidebarCollapsed(true)}
                   type="button"
                 >
-                  <span aria-hidden="true">&lt;</span>
+                  <span aria-hidden="true">&#8249;</span>
                 </button>
                 <button
                   aria-label="Close collection sidebar"
@@ -622,23 +619,19 @@ export function CatalogApp({
             </p>
           </div>
 
-          <div className="top-bar-meta">
-            {selectedCollection ? (
-              <nav className="tab-nav">
-                <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/overview`}>
-                  Overview
-                </NavLink>
-                <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/items`}>
-                  Items
-                </NavLink>
-                <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/settings`}>
-                  Settings
-                </NavLink>
-              </nav>
-            ) : null}
-
-            <p className="meta top-bar-api">API: {appConfig.apiBaseUrl}</p>
-          </div>
+          {selectedCollection ? (
+            <nav className="tab-nav">
+              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/overview`}>
+                Overview
+              </NavLink>
+              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/items`}>
+                Items
+              </NavLink>
+              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/settings`}>
+                Settings
+              </NavLink>
+            </nav>
+          ) : null}
         </header>
 
         <section className="content-shell">
@@ -728,6 +721,7 @@ export function CatalogApp({
               isCreateAttributePending={createAttributeDefinitionMutation.isPending}
               isCreateLocationPending={createLocationMutation.isPending}
               isCreateTagPending={createTagMutation.isPending}
+              items={itemsQuery.data ?? []}
               locationDescription={locationDescription}
               locationName={locationName}
               locations={locationsQuery.data ?? []}
@@ -1126,6 +1120,7 @@ function SettingsPage({
   isCreateAttributePending,
   isCreateLocationPending,
   isCreateTagPending,
+  items,
   locationDescription,
   locationName,
   locations,
@@ -1154,6 +1149,7 @@ function SettingsPage({
   isCreateAttributePending: boolean;
   isCreateLocationPending: boolean;
   isCreateTagPending: boolean;
+  items: ItemSummary[];
   locationDescription: string;
   locationName: string;
   locations: Location[];
@@ -1291,7 +1287,7 @@ function SettingsPage({
           {createLocationError ? <p className="message error">{createLocationError}</p> : null}
         </form>
 
-        <OrganizationSummary locations={locations} tags={tags} />
+        <OrganizationSummary items={items} locations={locations} tags={tags} />
       </section>
     </section>
   );
