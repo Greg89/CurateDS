@@ -1553,25 +1553,21 @@ function TagMultiSelect({
 
       {isOpen ? (
         <div className="multi-select-menu">
-          <div className="multi-select-actions">
-            <p className="message">
-              {selectedTags.length === 0
-                ? "No tags selected."
-                : `${selectedTags.length} selected.`}
-            </p>
-            <button
-              className="secondary-button"
-              disabled={selectedTags.length === 0}
-              onClick={() => {
-                for (const tagId of selectedTagIds) {
-                  onToggle(tagId);
-                }
-              }}
-              type="button"
-            >
-              Clear
-            </button>
-          </div>
+          {selectedTags.length > 0 ? (
+            <div className="multi-select-actions">
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  for (const tagId of selectedTagIds) {
+                    onToggle(tagId);
+                  }
+                }}
+                type="button"
+              >
+                Clear {selectedTags.length} selected
+              </button>
+            </div>
+          ) : null}
 
           <ul className="multi-select-list">
             {tags.map((tag) => (
