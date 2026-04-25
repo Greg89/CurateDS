@@ -91,6 +91,7 @@ export function CatalogApp({
   const [savedViews, setSavedViews] = useState<SavedItemView[]>([]);
   const [savedViewsCollectionId, setSavedViewsCollectionId] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(readSidebarCollapsedState);
+  const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
   const normalizedItemFilterTagIds = normalizeTagIds(itemFilterTagIds);
 
   const itemFilters: ItemFilters = {
@@ -485,128 +486,132 @@ export function CatalogApp({
     : "No saved views yet.";
 
   return (
-    <main className={`app-shell${isSidebarCollapsed ? " sidebar-is-collapsed" : ""}`}>
+    <main className={`app-shell${isSidebarCollapsed ? " sidebar-is-collapsed" : ""}${isSidebarMobileOpen ? " sidebar-mobile-open" : ""}`}>
+      <button
+        aria-hidden={!isSidebarMobileOpen}
+        className={`sidebar-backdrop${isSidebarMobileOpen ? " visible" : ""}`}
+        onClick={() => setIsSidebarMobileOpen(false)}
+        tabIndex={isSidebarMobileOpen ? 0 : -1}
+        type="button"
+      />
+
       <aside className={`sidebar panel${isSidebarCollapsed ? " sidebar-collapsed" : ""}`}>
-        <div className="sidebar-top">
-          <div className="sidebar-header">
-            <p className="eyebrow">CurateDS</p>
-            {!isSidebarCollapsed ? (
-              <>
-                <h1>Catalog Workspace</h1>
-                <p className="copy">
-                  A web-first, hobby-agnostic catalog workspace focused on maintainable,
-                  stable growth.
-                </p>
-                <p className="meta">API base URL: {appConfig.apiBaseUrl}</p>
-              </>
-            ) : null}
-          </div>
-
-          <button
-            aria-expanded={!isSidebarCollapsed}
-            aria-label={isSidebarCollapsed ? "Expand collection sidebar" : "Collapse collection sidebar"}
-            className="secondary-button sidebar-toggle"
-            onClick={() => setIsSidebarCollapsed((currentValue) => !currentValue)}
-            type="button"
-          >
-            {isSidebarCollapsed ? "Open Collections" : "Collapse"}
-          </button>
-        </div>
-
-        {!isSidebarCollapsed ? (
-          <div className="sidebar-body">
-            <form className="collection-form" onSubmit={handleCollectionSubmit}>
-              <label className="field">
-                <span>New Collection</span>
-                <input
-                  value={collectionName}
-                  onChange={(event) => setCollectionName(event.target.value)}
-                  placeholder="Board Games"
-                  maxLength={100}
-                />
-              </label>
-
-              <button
-                className="primary-button"
-                disabled={createCollectionMutation.isPending}
-                type="submit"
-              >
-                {createCollectionMutation.isPending ? "Creating..." : "Create Collection"}
-              </button>
-
-              {createCollectionMutation.error ? (
-                <p className="message error">{createCollectionMutation.error.message}</p>
-              ) : null}
-            </form>
-
-            {collectionsQuery.isLoading ? <p className="message">Loading collections...</p> : null}
-            {collectionsQuery.isError ? (
-              <p className="message error">{collectionsQuery.error.message}</p>
-            ) : null}
-
-            <CollectionList
-              collections={collectionsQuery.data ?? []}
-              selectedCollectionId={selectedCollectionId}
-              onSelect={(collectionId) => navigateToCollection(collectionId)}
-            />
-
-            {selectedCollection ? (
-              <nav className="sidebar-nav">
-                <NavLink
-                  className={({ isActive }) =>
-                    `tab-link sidebar-link${isActive ? " active" : ""}`
-                  }
-                  to={`/collections/${selectedCollection.id}/overview`}
-                >
-                  Overview
-                </NavLink>
-                <NavLink
-                  className={({ isActive }) =>
-                    `tab-link sidebar-link${isActive ? " active" : ""}`
-                  }
-                  to={`/collections/${selectedCollection.id}/items`}
-                >
-                  Items
-                </NavLink>
-                <NavLink
-                  className={({ isActive }) =>
-                    `tab-link sidebar-link${isActive ? " active" : ""}`
-                  }
-                  to={`/collections/${selectedCollection.id}/settings`}
-                >
-                  Settings
-                </NavLink>
-              </nav>
-            ) : null}
+        {isSidebarCollapsed ? (
+          <div className="sidebar-collapsed-rail">
+            <button
+              aria-expanded={false}
+              aria-label="Expand collection sidebar"
+              className="secondary-button sidebar-toggle-icon sidebar-desktop-toggle"
+              onClick={() => setIsSidebarCollapsed(false)}
+              type="button"
+            >
+              <span aria-hidden="true">&gt;</span>
+            </button>
           </div>
         ) : (
-          <div className="sidebar-collapsed-summary">
-            <p className="eyebrow subtle">Focused</p>
-            <p className="collapsed-count">
-              {collectionsQuery.data?.length ?? 0} collection
-              {(collectionsQuery.data?.length ?? 0) === 1 ? "" : "s"}
-            </p>
-            <p className="collapsed-selection">
-              {selectedCollection ? selectedCollection.name : "No collection selected"}
-            </p>
-          </div>
+          <>
+            <div className="sidebar-top">
+              <div className="sidebar-header">
+                <p className="eyebrow">CurateDS</p>
+                <h1>Collections</h1>
+                <p className="copy">
+                  Shape collections, switch context quickly, and keep the main workspace focused.
+                </p>
+              </div>
+
+              <div className="sidebar-controls">
+                <button
+                  aria-expanded={true}
+                  aria-label="Collapse collection sidebar"
+                  className="secondary-button sidebar-toggle-icon sidebar-desktop-toggle"
+                  onClick={() => setIsSidebarCollapsed(true)}
+                  type="button"
+                >
+                  <span aria-hidden="true">&lt;</span>
+                </button>
+                <button
+                  aria-label="Close collection sidebar"
+                  className="secondary-button sidebar-toggle sidebar-close-button"
+                  onClick={() => setIsSidebarMobileOpen(false)}
+                  type="button"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="sidebar-body">
+              <form className="collection-form" onSubmit={handleCollectionSubmit}>
+                <label className="field">
+                  <span>New Collection</span>
+                  <input
+                    value={collectionName}
+                    onChange={(event) => setCollectionName(event.target.value)}
+                    placeholder="Board Games"
+                    maxLength={100}
+                  />
+                </label>
+
+                <button
+                  className="primary-button"
+                  disabled={createCollectionMutation.isPending}
+                  type="submit"
+                >
+                  {createCollectionMutation.isPending ? "Creating..." : "Create Collection"}
+                </button>
+
+                {createCollectionMutation.error ? (
+                  <p className="message error">{createCollectionMutation.error.message}</p>
+                ) : null}
+              </form>
+
+              {collectionsQuery.isLoading ? <p className="message">Loading collections...</p> : null}
+              {collectionsQuery.isError ? (
+                <p className="message error">{collectionsQuery.error.message}</p>
+              ) : null}
+
+              <CollectionList
+                collections={collectionsQuery.data ?? []}
+                selectedCollectionId={selectedCollectionId}
+                onSelect={(collectionId) => {
+                  setIsSidebarMobileOpen(false);
+                  navigateToCollection(collectionId);
+                }}
+              />
+            </div>
+          </>
         )}
       </aside>
 
-      <section className="content-shell">
-        <header className="panel content-header">
-          <div>
-            <p className="eyebrow subtle">
-              {selectedCollection ? selectedCollection.name : "No collection selected"}
-            </p>
-            <h2>
-              {section === "overview"
-                ? "Collection Overview"
-                : section === "items"
-                  ? "Items Workspace"
-                  : "Collection Settings"}
-            </h2>
-            <p className="panel-copy">
+      <section className="workspace-shell">
+        <header className="panel top-bar">
+          <div className="top-bar-main">
+            <div className="top-bar-title-row">
+              <button
+                aria-expanded={isSidebarMobileOpen}
+                aria-label="Open collection sidebar"
+                className="secondary-button mobile-sidebar-toggle"
+                onClick={() => setIsSidebarMobileOpen(true)}
+                type="button"
+              >
+                Collections
+              </button>
+
+              <div>
+                <p className="eyebrow subtle">
+                  {selectedCollection ? selectedCollection.name : "No collection selected"}
+                </p>
+                <h2>
+                  {section === "overview"
+                    ? "Collection Overview"
+                    : section === "items"
+                      ? "Items Workspace"
+                      : "Collection Settings"}
+                </h2>
+              </div>
+            </div>
+
+            <p className="panel-copy top-bar-copy">
               {selectedCollection
                 ? section === "overview"
                   ? "See the collection at a glance before drilling into items or settings."
@@ -617,125 +622,131 @@ export function CatalogApp({
             </p>
           </div>
 
-          {selectedCollection ? (
-            <nav className="tab-nav">
-              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/overview`}>
-                Overview
-              </NavLink>
-              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/items`}>
-                Items
-              </NavLink>
-              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/settings`}>
-                Settings
-              </NavLink>
-            </nav>
-          ) : null}
+          <div className="top-bar-meta">
+            {selectedCollection ? (
+              <nav className="tab-nav">
+                <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/overview`}>
+                  Overview
+                </NavLink>
+                <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/items`}>
+                  Items
+                </NavLink>
+                <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/settings`}>
+                  Settings
+                </NavLink>
+              </nav>
+            ) : null}
+
+            <p className="meta top-bar-api">API: {appConfig.apiBaseUrl}</p>
+          </div>
         </header>
 
-        {!selectedCollection ? (
-          <section className="panel">
-            <div className="empty-state">
-              <p>No collection selected.</p>
-              <p>Create a collection from the sidebar to start shaping the catalog.</p>
-            </div>
-          </section>
-        ) : section === "overview" ? (
-          <OverviewPage
-            attributeDefinitions={attributeDefinitionsQuery.data ?? []}
-            items={itemsQuery.data ?? []}
-            itemDetail={itemDetailQuery.data ?? null}
-            locations={locationsQuery.data ?? []}
-            savedViewsSummary={savedViewsSummary}
-            selectedCollection={selectedCollection}
-            tags={tagsQuery.data ?? []}
-            onEditItem={beginEditingSelectedItem}
-          />
-        ) : section === "items" ? (
-          <ItemsPage
-            attributeDefinitions={attributeDefinitionsQuery.data ?? []}
-            createItemError={createItemMutation.error?.message ?? null}
-            isCreatePending={createItemMutation.isPending}
-            isUpdatePending={updateItemMutation.isPending}
-            itemAttributeFilters={itemAttributeFilters}
-            itemAttributeValues={itemAttributeValues}
-            itemDescription={itemDescription}
-            itemDetail={itemDetailQuery.data ?? null}
-            itemFilterLocationId={itemFilterLocationId}
-            itemFilterTagIds={itemFilterTagIds}
-            itemLocationId={itemLocationId}
-            itemName={itemName}
-            itemQuantity={itemQuantity}
-            itemSearchText={itemSearchText}
-            itemSortBy={itemSortBy}
-            itemSortDirection={itemSortDirection}
-            itemTagIds={itemTagIds}
-            items={itemsQuery.data ?? []}
-            itemsError={itemsQuery.isError ? itemsQuery.error.message : null}
-            isEditing={editingItemId !== null}
-            isItemDetailLoading={itemDetailQuery.isLoading}
-            isItemsLoading={itemsQuery.isLoading}
-            locations={locationsQuery.data ?? []}
-            savedViewName={savedViewName}
-            savedViews={savedViews}
-            selectedCollection={selectedCollection}
-            selectedItemId={selectedItemId}
-            tags={tagsQuery.data ?? []}
-            updateItemError={updateItemMutation.error?.message ?? null}
-            onApplySavedView={applySavedView}
-            onAttributeFilterChange={handleAttributeFilterChange}
-            onAttributeValueChange={handleAttributeValueChange}
-            onClearItemFilters={clearItemFilters}
-            onDeleteSavedView={deleteSavedView}
-            onEditItem={beginEditingSelectedItem}
-            onItemDescriptionChange={setItemDescription}
-            onItemLocationChange={setItemLocationId}
-            onItemNameChange={setItemName}
-            onItemQuantityChange={setItemQuantity}
-            onItemSearchTextChange={setItemSearchText}
-            onItemSortByChange={setItemSortBy}
-            onItemSortDirectionChange={setItemSortDirection}
-            onItemSubmit={handleItemSubmit}
-            onItemFilterLocationChange={setItemFilterLocationId}
-            onResetItemForm={resetItemForm}
-            onSaveCurrentView={saveCurrentView}
-            onSavedViewNameChange={setSavedViewName}
-            onSelectItem={setSelectedItemId}
-            onToggleFilterTag={toggleFilterTag}
-            onToggleItemTag={toggleItemTag}
-          />
-        ) : (
-          <SettingsPage
-            attributeDataType={attributeDataType}
-            attributeDefinitions={attributeDefinitionsQuery.data ?? []}
-            attributeIsFilterable={attributeIsFilterable}
-            attributeIsRequired={attributeIsRequired}
-            attributeName={attributeName}
-            createAttributeDefinitionError={
-              createAttributeDefinitionMutation.error?.message ?? null
-            }
-            createLocationError={createLocationMutation.error?.message ?? null}
-            createTagError={createTagMutation.error?.message ?? null}
-            isCreateAttributePending={createAttributeDefinitionMutation.isPending}
-            isCreateLocationPending={createLocationMutation.isPending}
-            isCreateTagPending={createTagMutation.isPending}
-            locationDescription={locationDescription}
-            locationName={locationName}
-            locations={locationsQuery.data ?? []}
-            selectedCollection={selectedCollection}
-            tagName={tagName}
-            tags={tagsQuery.data ?? []}
-            onAttributeDataTypeChange={setAttributeDataType}
-            onAttributeIsFilterableChange={setAttributeIsFilterable}
-            onAttributeIsRequiredChange={setAttributeIsRequired}
-            onAttributeNameChange={setAttributeName}
-            onAttributeSubmit={handleAttributeSubmit}
-            onLocationDescriptionChange={setLocationDescription}
-            onLocationNameChange={setLocationName}
-            onLocationSubmit={handleLocationSubmit}
-            onTagNameChange={setTagName}
-            onTagSubmit={handleTagSubmit}
-          />
-        )}
+        <section className="content-shell">
+          {!selectedCollection ? (
+            <section className="panel">
+              <div className="empty-state">
+                <p>No collection selected.</p>
+                <p>Create a collection from the sidebar to start shaping the catalog.</p>
+              </div>
+            </section>
+          ) : section === "overview" ? (
+            <OverviewPage
+              attributeDefinitions={attributeDefinitionsQuery.data ?? []}
+              items={itemsQuery.data ?? []}
+              itemDetail={itemDetailQuery.data ?? null}
+              locations={locationsQuery.data ?? []}
+              savedViewsSummary={savedViewsSummary}
+              selectedCollection={selectedCollection}
+              tags={tagsQuery.data ?? []}
+              onEditItem={beginEditingSelectedItem}
+            />
+          ) : section === "items" ? (
+            <ItemsPage
+              attributeDefinitions={attributeDefinitionsQuery.data ?? []}
+              createItemError={createItemMutation.error?.message ?? null}
+              isCreatePending={createItemMutation.isPending}
+              isUpdatePending={updateItemMutation.isPending}
+              itemAttributeFilters={itemAttributeFilters}
+              itemAttributeValues={itemAttributeValues}
+              itemDescription={itemDescription}
+              itemDetail={itemDetailQuery.data ?? null}
+              itemFilterLocationId={itemFilterLocationId}
+              itemFilterTagIds={itemFilterTagIds}
+              itemLocationId={itemLocationId}
+              itemName={itemName}
+              itemQuantity={itemQuantity}
+              itemSearchText={itemSearchText}
+              itemSortBy={itemSortBy}
+              itemSortDirection={itemSortDirection}
+              itemTagIds={itemTagIds}
+              items={itemsQuery.data ?? []}
+              itemsError={itemsQuery.isError ? itemsQuery.error.message : null}
+              isEditing={editingItemId !== null}
+              isItemDetailLoading={itemDetailQuery.isLoading}
+              isItemsLoading={itemsQuery.isLoading}
+              locations={locationsQuery.data ?? []}
+              savedViewName={savedViewName}
+              savedViews={savedViews}
+              selectedCollection={selectedCollection}
+              selectedItemId={selectedItemId}
+              tags={tagsQuery.data ?? []}
+              updateItemError={updateItemMutation.error?.message ?? null}
+              onApplySavedView={applySavedView}
+              onAttributeFilterChange={handleAttributeFilterChange}
+              onAttributeValueChange={handleAttributeValueChange}
+              onClearItemFilters={clearItemFilters}
+              onDeleteSavedView={deleteSavedView}
+              onEditItem={beginEditingSelectedItem}
+              onItemDescriptionChange={setItemDescription}
+              onItemLocationChange={setItemLocationId}
+              onItemNameChange={setItemName}
+              onItemQuantityChange={setItemQuantity}
+              onItemSearchTextChange={setItemSearchText}
+              onItemSortByChange={setItemSortBy}
+              onItemSortDirectionChange={setItemSortDirection}
+              onItemSubmit={handleItemSubmit}
+              onItemFilterLocationChange={setItemFilterLocationId}
+              onResetItemForm={resetItemForm}
+              onSaveCurrentView={saveCurrentView}
+              onSavedViewNameChange={setSavedViewName}
+              onSelectItem={setSelectedItemId}
+              onToggleFilterTag={toggleFilterTag}
+              onToggleItemTag={toggleItemTag}
+            />
+          ) : (
+            <SettingsPage
+              attributeDataType={attributeDataType}
+              attributeDefinitions={attributeDefinitionsQuery.data ?? []}
+              attributeIsFilterable={attributeIsFilterable}
+              attributeIsRequired={attributeIsRequired}
+              attributeName={attributeName}
+              createAttributeDefinitionError={
+                createAttributeDefinitionMutation.error?.message ?? null
+              }
+              createLocationError={createLocationMutation.error?.message ?? null}
+              createTagError={createTagMutation.error?.message ?? null}
+              isCreateAttributePending={createAttributeDefinitionMutation.isPending}
+              isCreateLocationPending={createLocationMutation.isPending}
+              isCreateTagPending={createTagMutation.isPending}
+              locationDescription={locationDescription}
+              locationName={locationName}
+              locations={locationsQuery.data ?? []}
+              selectedCollection={selectedCollection}
+              tagName={tagName}
+              tags={tagsQuery.data ?? []}
+              onAttributeDataTypeChange={setAttributeDataType}
+              onAttributeIsFilterableChange={setAttributeIsFilterable}
+              onAttributeIsRequiredChange={setAttributeIsRequired}
+              onAttributeNameChange={setAttributeName}
+              onAttributeSubmit={handleAttributeSubmit}
+              onLocationDescriptionChange={setLocationDescription}
+              onLocationNameChange={setLocationName}
+              onLocationSubmit={handleLocationSubmit}
+              onTagNameChange={setTagName}
+              onTagSubmit={handleTagSubmit}
+            />
+          )}
+        </section>
       </section>
     </main>
   );

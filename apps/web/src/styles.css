@@ -29,16 +29,14 @@ textarea {
 
 .app-shell {
   display: grid;
-  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
-  gap: 1.5rem;
-  width: min(1380px, calc(100% - 2rem));
-  margin: 0 auto;
-  padding: 1.5rem 0 3rem;
-  align-items: start;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 100vh;
+  align-items: stretch;
+  position: relative;
 }
 
 .app-shell.sidebar-is-collapsed {
-  grid-template-columns: 104px minmax(0, 1fr);
+  grid-template-columns: 60px minmax(0, 1fr);
 }
 
 .sidebar,
@@ -53,17 +51,27 @@ textarea {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 1.25rem;
-  padding: 1.5rem;
+  padding: 1.25rem;
   position: sticky;
-  top: 1rem;
-  max-height: calc(100vh - 2rem);
+  top: 0;
+  height: 100vh;
   overflow: hidden;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: 0;
+  box-shadow: 18px 0 48px rgba(0, 0, 0, 0.22);
 }
 
 .sidebar-top,
 .sidebar-body {
   display: grid;
   gap: 1rem;
+}
+
+.sidebar-controls {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
 }
 
 .sidebar-body {
@@ -73,33 +81,18 @@ textarea {
 }
 
 .sidebar-collapsed {
-  padding: 1rem 0.85rem;
-}
-
-.sidebar-collapsed .sidebar-header {
+  grid-template-rows: 1fr;
   justify-items: center;
-  text-align: center;
+  padding: 0.75rem 0.35rem;
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
 }
 
-.sidebar-collapsed .eyebrow {
-  margin-bottom: 0;
-}
-
-.sidebar-collapsed-summary {
+.sidebar-collapsed-rail {
   display: grid;
-  gap: 0.6rem;
-  text-align: center;
-}
-
-.collapsed-count,
-.collapsed-selection {
-  color: #d9d4cb;
-  line-height: 1.4;
-}
-
-.collapsed-selection {
-  font-size: 0.92rem;
-  overflow-wrap: anywhere;
+  align-content: start;
+  justify-items: center;
+  width: 100%;
 }
 
 .sidebar-toggle {
@@ -107,9 +100,33 @@ textarea {
   min-height: 2.75rem;
 }
 
+.sidebar-desktop-toggle {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  align-self: start;
+}
+
+.sidebar-toggle-icon {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
 .sidebar-header {
   display: grid;
   gap: 0.75rem;
+}
+
+.workspace-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1.25rem;
+  min-width: 0;
+  padding: 1rem 1.25rem 2rem;
 }
 
 .content-shell {
@@ -118,16 +135,55 @@ textarea {
   align-content: start;
 }
 
-.content-header,
+.top-bar,
 .panel {
   padding: 1.5rem;
 }
 
-.content-header {
+.top-bar {
   display: flex;
   justify-content: space-between;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.top-bar-main,
+.top-bar-meta {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.top-bar-main {
+  min-width: 0;
+}
+
+.top-bar-meta {
+  justify-items: end;
+}
+
+.top-bar-title-row {
+  display: flex;
   gap: 1rem;
-  align-items: start;
+  align-items: flex-start;
+}
+
+.top-bar-copy {
+  max-width: 56rem;
+}
+
+.top-bar-api {
+  margin: 0;
+}
+
+.mobile-sidebar-toggle,
+.sidebar-close-button {
+  display: none;
+}
+
+.sidebar-backdrop {
+  display: none;
+  border: 0;
+  background: rgba(0, 0, 0, 0.48);
 }
 
 .content-grid {
@@ -485,7 +541,7 @@ h1 {
 
 @media (max-width: 1120px) {
   .app-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .app-shell.sidebar-is-collapsed {
@@ -493,11 +549,36 @@ h1 {
   }
 
   .sidebar {
-    position: static;
-    max-height: none;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(320px, 86vw);
+    max-width: 86vw;
+    z-index: 30;
+    transform: translateX(-100%);
+    transition: transform 180ms ease;
   }
 
-  .content-header,
+  .app-shell.sidebar-mobile-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop.visible {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+  }
+
+  .mobile-sidebar-toggle,
+  .sidebar-close-button {
+    display: inline-flex;
+  }
+
+  .sidebar-desktop-toggle {
+    display: none;
+  }
+
+  .top-bar,
   .tab-nav,
   .filter-actions,
   .saved-view-card,
@@ -509,6 +590,15 @@ h1 {
   .sidebar-body {
     overflow: visible;
     padding-right: 0;
+  }
+
+  .workspace-shell {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .top-bar-meta {
+    justify-items: stretch;
   }
 }
 

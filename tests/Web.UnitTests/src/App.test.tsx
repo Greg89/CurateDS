@@ -54,7 +54,6 @@ describe("App routing", () => {
     await user.click(screen.getByRole("button", { name: "Create Collection" }));
 
     expect(await screen.findByRole("heading", { name: "Collection Overview" })).toBeInTheDocument();
-    expect(await screen.findByText("Books")).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getAllByText("Books").length).toBeGreaterThan(0);
@@ -74,7 +73,5 @@ describe("App routing", () => {
 
     expect(screen.queryByLabelText("New Collection")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Expand collection sidebar" })).toBeInTheDocument();
-    expect(screen.getByText("Focused")).toBeInTheDocument();
-    expect(screen.getByText("1 collection")).toBeInTheDocument();
   });
 });
