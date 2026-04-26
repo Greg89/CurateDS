@@ -103,7 +103,13 @@ export const server = setupServer(
     }
   ),
   http.get(`${apiBaseUrl}/collections/:collectionId/items`, () =>
-    HttpResponse.json([defaultItemSummary])),
+    HttpResponse.json({
+      items: [defaultItemSummary],
+      totalCount: 1,
+      page: 1,
+      pageSize: 50,
+      totalPages: 1
+    })),
   http.post(
     `${apiBaseUrl}/collections/:collectionId/items`,
     async ({ params, request }) => {

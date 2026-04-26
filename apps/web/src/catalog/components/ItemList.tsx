@@ -4,11 +4,13 @@ export function ItemList({
   items,
   selectedCollectionName,
   selectedItemId,
+  viewMode,
   onSelect
 }: Readonly<{
   items: ItemSummary[];
   selectedCollectionName: string | null;
   selectedItemId: string;
+  viewMode: "cards" | "table";
   onSelect: (itemId: string) => void;
 }>) {
   if (!selectedCollectionName) {
@@ -26,6 +28,41 @@ export function ItemList({
         <p>No items yet for {selectedCollectionName}.</p>
         <p>Create the first entry to validate the end-to-end slice.</p>
       </div>
+    );
+  }
+
+  if (viewMode === "table") {
+    return (
+      <table className="item-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Qty</th>
+            <th>Location</th>
+            <th>Tags</th>
+            <th>Attributes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr
+              className={item.id === selectedItemId ? "selected" : undefined}
+              key={item.id}
+              onClick={() => onSelect(item.id)}
+            >
+              <td>{item.name}</td>
+              <td>{item.quantity}</td>
+              <td>{item.locationName ?? <span className="text-muted">—</span>}</td>
+              <td>
+                {item.tags.length > 0
+                  ? item.tags.join(", ")
+                  : <span className="text-muted">—</span>}
+              </td>
+              <td>{item.attributeValueCount}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     );
   }
 

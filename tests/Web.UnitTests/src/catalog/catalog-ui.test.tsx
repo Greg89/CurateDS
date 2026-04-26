@@ -141,9 +141,13 @@ describe("CatalogApp UI structure", () => {
       http.get(
         `http://localhost:8080/collections/${defaultCollection.id}/items`,
         () =>
-          HttpResponse.json([
-            { ...defaultItemSummary, tags: ["Jazz"] }
-          ])
+          HttpResponse.json({
+            items: [{ ...defaultItemSummary, tags: ["Jazz"] }],
+            totalCount: 1,
+            page: 1,
+            pageSize: 50,
+            totalPages: 1
+          })
       )
     );
 
@@ -153,9 +157,8 @@ describe("CatalogApp UI structure", () => {
 
     await screen.findByRole("heading", { name: "Collection Settings" });
 
-    // Wait for the Top Tags usage breakdown to show the Jazz entry
-    const tagEntry = await screen.findByText("Jazz");
-    expect(tagEntry).toBeInTheDocument();
+    // Wait specifically for the usage subtitle that only renders once entries are computed
+    await screen.findByText("Based on current item usage.");
 
     // The Top Tags section must not show the empty-state label
     const topTagsHeading = screen.getByRole("heading", { name: "Top Tags" });
@@ -220,5 +223,54 @@ describe("CatalogApp UI structure", () => {
     expect(
       screen.queryByRole("heading", { name: "Organization Snapshot" })
     ).not.toBeInTheDocument();
+  });
+
+  it("items toolbar shows card and table view toggle buttons", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    await screen.findByRole("button", { name: /Filters/i });
+
+    expect(screen.getByRole("button", { name: /card view/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /table view/i })).toBeInTheDocument();
+  });
+
+  it("switching to table view renders items in a table and hides the card list", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Wait for items to load in default card view
+    await screen.findByRole("button", { name: /Kind of Blue/i });
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /table view/i }));
+
+    // Table appears and the item name is in a cell
+    const table = screen.getByRole("table");
+    expect(table).toBeInTheDocument();
+    expect(table).toHaveTextContent("Kind of Blue");
+
+    // Card-view buttons are gone
+    expect(screen.queryByRole("button", { name: /Kind of Blue/i })).not.toBeInTheDocument();
+  });
+
+  it("clicking a table row opens the item detail drawer", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    await screen.findByRole("button", { name: /Filters/i });
+    await user.click(screen.getByRole("button", { name: /table view/i }));
+
+    const cell = await screen.findByRole("cell", { name: /Kind of Blue/i });
+    await user.click(cell);
+
+    await screen.findByRole("dialog", { name: /item detail/i });
   });
 });

@@ -137,6 +137,7 @@ export function ItemsPage({
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [isFormDrawerOpen, setIsFormDrawerOpen] = useState(false);
   const [showDeleteItemConfirm, setShowDeleteItemConfirm] = useState(false);
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
   const anyDrawerOpen = isDetailDrawerOpen || isFormDrawerOpen;
 
@@ -212,6 +213,28 @@ export function ItemsPage({
             <span className="filter-badge">{activeFilterCount}</span>
           )}
         </button>
+        <div className="view-toggle" role="group" aria-label="View mode">
+          <button
+            aria-label="Card view"
+            aria-pressed={viewMode === "cards"}
+            className={`secondary-button view-toggle-btn${viewMode === "cards" ? " active" : ""}`}
+            onClick={() => setViewMode("cards")}
+            title="Card view"
+            type="button"
+          >
+            &#9646;&#9646;
+          </button>
+          <button
+            aria-label="Table view"
+            aria-pressed={viewMode === "table"}
+            className={`secondary-button view-toggle-btn${viewMode === "table" ? " active" : ""}`}
+            onClick={() => setViewMode("table")}
+            title="Table view"
+            type="button"
+          >
+            &#9776;
+          </button>
+        </div>
         <button
           className="primary-button"
           onClick={handleAddItem}
@@ -268,6 +291,7 @@ export function ItemsPage({
           items={items}
           selectedCollectionName={selectedCollection.name}
           selectedItemId={selectedItemId}
+          viewMode={viewMode}
           onSelect={handleSelectItem}
         />
 
