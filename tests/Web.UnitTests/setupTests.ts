@@ -3,15 +3,15 @@ import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { server } from "./src/mocks/server";
 
-// Mock Auth0 so tests don't need a real Auth0Provider.
-// useAuth0 returns an already-authenticated state and a stub token getter.
+// Mock Auth0 — plain functions (not vi.fn()) because this factory is hoisted
+// by Vitest and vi is not in scope inside the hoisted factory block.
 vi.mock("@auth0/auth0-react", () => ({
   useAuth0: () => ({
     isLoading: false,
     isAuthenticated: true,
-    loginWithRedirect: vi.fn(),
-    logout: vi.fn(),
-    getAccessTokenSilently: vi.fn().mockResolvedValue("test-token")
+    loginWithRedirect: () => Promise.resolve(),
+    logout: () => {},
+    getAccessTokenSilently: () => Promise.resolve("test-token")
   }),
   Auth0Provider: ({ children }: { children: React.ReactNode }) => children
 }));
