@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import {
   AttributeDataType,
   AttributeDefinition,
@@ -8,6 +8,7 @@ import {
   Tag
 } from "../../api";
 import { AttributeDefinitionList } from "../components/AttributeDefinitionList";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { OrganizationSummary } from "../components/OrganizationSummary";
 
 const attributeDataTypes: AttributeDataType[] = [
@@ -47,7 +48,9 @@ export function SettingsPage({
   onLocationNameChange,
   onLocationSubmit,
   onTagNameChange,
-  onTagSubmit
+  onTagSubmit,
+  isDeleteCollectionPending,
+  onDeleteCollection
 }: Readonly<{
   attributeDataType: AttributeDataType;
   attributeDefinitions: AttributeDefinition[];
@@ -77,7 +80,10 @@ export function SettingsPage({
   onLocationSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onTagNameChange: (value: string) => void;
   onTagSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  isDeleteCollectionPending: boolean;
+  onDeleteCollection: () => void;
 }>) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   return (
     <section className="content-grid">
       <section className="panel">
@@ -200,6 +206,29 @@ export function SettingsPage({
 
         <OrganizationSummary items={items} locations={locations} tags={tags} />
       </section>
+
+      <section className="panel panel-danger">
+        <div className="panel-header">
+          <h3>Danger Zone</h3>
+          <p>Permanently remove this collection and all its data.</p>
+        </div>
+        <button
+          className="danger-button"
+          onClick={() => setShowDeleteConfirm(true)}
+        >
+          Delete Collection
+        </button>
+      </section>
+
+      {showDeleteConfirm ? (
+        <ConfirmDialog
+          title={`Delete "${selectedCollection.name}"?`}
+          message="This will permanently delete the collection, all its items, attribute definitions, and associated data. This action cannot be undone."
+          isPending={isDeleteCollectionPending}
+          onConfirm={onDeleteCollection}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      ) : null}
     </section>
   );
 }

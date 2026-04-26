@@ -34,4 +34,21 @@ public sealed class CollectionRepository : ICollectionRepository
             .OrderByDescending(collection => collection.CreatedUtc)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<bool> SoftDeleteAsync(Guid collectionId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+    {
+        var collection = await _dbContext.Collections
+            .SingleOrDefaultAsync(
+                c => c.Id == collectionId && c.OwnerId == ownerId,
+                cancellationToken);
+
+        if (collection is null)
+        {
+            return false;
+        }
+
+        collection.SoftDelete(deletedUtc, deletedBy);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }

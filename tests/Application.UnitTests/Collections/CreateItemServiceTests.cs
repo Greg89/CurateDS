@@ -159,6 +159,9 @@ public sealed class CreateItemServiceTests
             return Task.FromResult<IReadOnlyList<Collection>>(
                 _collections.Where(collection => collection.OwnerId == ownerId).ToArray());
         }
+
+        public Task<bool> SoftDeleteAsync(Guid collectionId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 
     private sealed class FakeAttributeDefinitionRepository : IAttributeDefinitionRepository

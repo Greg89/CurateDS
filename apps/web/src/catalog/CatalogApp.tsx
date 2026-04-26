@@ -8,6 +8,7 @@ import {
   createItem,
   createLocation,
   createTag,
+  deleteCollection,
   getItemDetail,
   ItemDetail,
   ItemFilters,
@@ -199,6 +200,14 @@ export function CatalogApp({
       await queryClient.invalidateQueries({
         queryKey: ["item-detail", selectedCollectionId, item.id]
       });
+    }
+  });
+
+  const deleteCollectionMutation = useMutation({
+    mutationFn: deleteCollection,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["collections"] });
+      navigate("/");
     }
   });
 
@@ -723,6 +732,8 @@ export function CatalogApp({
               onLocationSubmit={handleLocationSubmit}
               onTagNameChange={setTagName}
               onTagSubmit={handleTagSubmit}
+              isDeleteCollectionPending={deleteCollectionMutation.isPending}
+              onDeleteCollection={() => deleteCollectionMutation.mutate(selectedCollectionId)}
             />
           )}
         </section>

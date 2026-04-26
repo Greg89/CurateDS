@@ -5,6 +5,7 @@ using CurateDS.Application.Collections.CreateCollection;
 using CurateDS.Application.Collections.CreateItem;
 using CurateDS.Application.Collections.CreateLocation;
 using CurateDS.Application.Collections.CreateTag;
+using CurateDS.Application.Collections.DeleteCollection;
 using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
@@ -54,6 +55,27 @@ public static class CollectionEndpoints
             catch (ValidationException exception)
             {
                 return ApiResponses.Validation(exception);
+            }
+        });
+
+        group.MapDelete("/{collectionId:guid}", async (
+            Guid collectionId,
+            DeleteCollectionService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                await service.ExecuteAsync(
+                    new DeleteCollectionCommand(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
             }
         });
 

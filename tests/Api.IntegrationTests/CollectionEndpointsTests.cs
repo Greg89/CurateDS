@@ -549,6 +549,29 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         items!.Select(item => item.Name).Should().ContainInOrder("Animal Crossing", "Zelda");
     }
 
+    [Fact]
+    public async Task DeleteCollection_ShouldReturn204_AndHideFromList()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Delete Me"));
+
+        var deleteResponse = await _client.DeleteAsync($"/collections/{collection.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync("/collections");
+        var collections = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<CollectionResponse>>(JsonOptions);
+
+        collections!.Should().NotContain(c => c.Id == collection.Id);
+    }
+
+    [Fact]
+    public async Task DeleteCollection_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.DeleteAsync($"/collections/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     private async Task<CollectionResponse> CreateCollectionAsync(string name)
     {
         var response = await _client.PostAsJsonAsync("/collections", new { name });
