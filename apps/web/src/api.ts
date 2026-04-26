@@ -111,6 +111,16 @@ export interface ItemFilters {
   sortDirection?: "asc" | "desc";
 }
 
+export interface ItemEvent {
+  id: string;
+  itemId: string;
+  collectionId: string;
+  eventType: string;
+  occurredUtc: string;
+  occurredBy: string;
+  notes: string | null;
+}
+
 export async function listCollections(): Promise<Collection[]> {
   const response = await fetch(`${appConfig.apiBaseUrl}/collections`, {
     headers: await authHeader()
@@ -330,6 +340,22 @@ export async function getItemDetail(
   }
 
   return (await response.json()) as ItemDetail;
+}
+
+export async function listItemEvents(
+  collectionId: string,
+  itemId: string
+): Promise<ItemEvent[]> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/items/${itemId}/events`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load item history.");
+  }
+
+  return (await response.json()) as ItemEvent[];
 }
 
 export async function createItem(input: {

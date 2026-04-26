@@ -47,6 +47,7 @@ public sealed class CreateItemServiceTests
             new FakeLocationRepository(),
             itemRepository,
             new FakeTagRepository(),
+            new FakeItemEventRepository(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -90,6 +91,7 @@ public sealed class CreateItemServiceTests
             new FakeLocationRepository(),
             new FakeItemRepository(),
             new FakeTagRepository(),
+            new FakeItemEventRepository(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -117,6 +119,7 @@ public sealed class CreateItemServiceTests
             new FakeLocationRepository(),
             new FakeItemRepository(),
             new FakeTagRepository(),
+            new FakeItemEventRepository(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -247,6 +250,18 @@ public sealed class CreateItemServiceTests
         public Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
             => Task.FromResult(new PagedResult<ItemSummaryDto>([], 0, 1, 50));
     }
+
+    private sealed class FakeItemEventRepository : IItemEventRepository
+    {
+        public Task RecordAsync(ItemEvent itemEvent, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<IReadOnlyList<ItemEvent>> ListByItemAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<ItemEvent>>([]);
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class FakeLocationRepository : ILocationRepository
     {
         public Task AddAsync(Location location, CancellationToken cancellationToken) => Task.CompletedTask;
 

@@ -16,6 +16,7 @@ public sealed class UpdateItemService
     private readonly ILocationRepository _locationRepository;
     private readonly IItemRepository _itemRepository;
     private readonly ITagRepository _tagRepository;
+    private readonly IItemEventRepository _itemEventRepository;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<UpdateItemCommand> _validator;
 
@@ -25,6 +26,7 @@ public sealed class UpdateItemService
         ILocationRepository locationRepository,
         IItemRepository itemRepository,
         ITagRepository tagRepository,
+        IItemEventRepository itemEventRepository,
         ICurrentUserService currentUser,
         IValidator<UpdateItemCommand> validator)
     {
@@ -33,6 +35,7 @@ public sealed class UpdateItemService
         _locationRepository = locationRepository;
         _itemRepository = itemRepository;
         _tagRepository = tagRepository;
+        _itemEventRepository = itemEventRepository;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -87,6 +90,8 @@ public sealed class UpdateItemService
         var updatedUtc = DateTime.UtcNow;
         var actor = _currentUser.GetCurrentUser();
 
+        var changeNotes = BuildChangeNotes(item, command, organization);
+
         item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc, actor);
         item.AssignLocation(organization.Location?.Id, updatedUtc, actor);
         await _itemRepository.ReplaceAttributeValuesAsync(item.Id, attributeValues, cancellationToken);
@@ -95,6 +100,11 @@ public sealed class UpdateItemService
             ItemOrganizationValidator.BuildItemTags(item.Id, organization.Tags),
             cancellationToken);
         await _itemRepository.SaveChangesAsync(cancellationToken);
+
+        await _itemEventRepository.RecordAsync(
+            ItemEvent.Record(item.Id, item.CollectionId, ItemEventType.Updated, updatedUtc, actor, changeNotes),
+            cancellationToken);
+        await _itemEventRepository.SaveChangesAsync(cancellationToken);
 
         return new UpdateItemResult(
             item.Id,
@@ -171,5 +181,53 @@ public sealed class UpdateItemService
         {
             throw new ValidationException(failures);
         }
+    }
+
+    private static string? BuildChangeNotes(
+        Item item,
+        UpdateItemCommand command,
+        (Location? Location, IReadOnlyList<Tag> Tags) organization)
+    {
+        var changes = new List<string>();
+
+        if (!string.Equals(item.Name, command.Name, StringComparison.Ordinal))
+            changes.Add($"Name: \"{item.Name}\" → \"{command.Name}\"");
+
+        if (!string.Equals(item.Description, command.Description, StringComparison.Ordinal))
+        {
+            if (item.Description is null)
+                changes.Add("Description added");
+            else if (command.Description is null)
+                changes.Add("Description removed");
+            else
+                changes.Add($"Description updated");
+        }
+
+        if (item.Quantity != command.Quantity)
+            changes.Add($"Quantity: {item.Quantity} → {command.Quantity}");
+
+        if (item.LocationId != command.LocationId)
+        {
+            var newLocationName = organization.Location?.Name ?? "None";
+            changes.Add($"Location → {newLocationName}");
+        }
+
+        var oldTagIds = item.ItemTags.Select(t => t.TagId).ToHashSet();
+        var newTagIds = command.TagIds.ToHashSet();
+        if (!oldTagIds.SetEquals(newTagIds))
+        {
+            var addedNames = organization.Tags
+                .Where(t => !oldTagIds.Contains(t.Id))
+                .Select(t => t.Name)
+                .ToArray();
+            var removedCount = oldTagIds.Except(newTagIds).Count();
+
+            if (addedNames.Length > 0)
+                changes.Add($"Tags added: {string.Join(", ", addedNames)}");
+            if (removedCount > 0)
+                changes.Add($"Tags removed: {removedCount}");
+        }
+
+        return changes.Count > 0 ? string.Join("; ", changes) : null;
     }
 }

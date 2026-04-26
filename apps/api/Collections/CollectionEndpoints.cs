@@ -13,6 +13,7 @@ using CurateDS.Application.Collections.DeleteAttributeDefinition;
 using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
+using CurateDS.Application.Collections.ListItemEvents;
 using CurateDS.Application.Collections.ListItems;
 using CurateDS.Application.Collections.ListLocations;
 using CurateDS.Application.Collections.ListTags;
@@ -382,6 +383,35 @@ public static class CollectionEndpoints
             catch (NotFoundException)
             {
                 return ApiResponses.NotFound("Item was not found.");
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/items/{itemId:guid}/events", async (
+            Guid collectionId,
+            Guid itemId,
+            ListItemEventsService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var events = await service.ExecuteAsync(
+                    new ListItemEventsQuery(ownerId, collectionId, itemId),
+                    cancellationToken);
+
+                return Results.Ok(events.Select(e => new ItemEventResponse(
+                    e.Id,
+                    e.ItemId,
+                    e.CollectionId,
+                    e.EventType.ToString(),
+                    e.OccurredUtc,
+                    e.OccurredBy,
+                    e.Notes)));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Item or collection was not found.");
             }
         });
 

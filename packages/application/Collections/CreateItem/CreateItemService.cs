@@ -15,6 +15,7 @@ public sealed class CreateItemService
     private readonly ILocationRepository _locationRepository;
     private readonly IItemRepository _itemRepository;
     private readonly ITagRepository _tagRepository;
+    private readonly IItemEventRepository _itemEventRepository;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<CreateItemCommand> _validator;
 
@@ -24,6 +25,7 @@ public sealed class CreateItemService
         ILocationRepository locationRepository,
         IItemRepository itemRepository,
         ITagRepository tagRepository,
+        IItemEventRepository itemEventRepository,
         ICurrentUserService currentUser,
         IValidator<CreateItemCommand> validator)
     {
@@ -32,6 +34,7 @@ public sealed class CreateItemService
         _locationRepository = locationRepository;
         _itemRepository = itemRepository;
         _tagRepository = tagRepository;
+        _itemEventRepository = itemEventRepository;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -99,6 +102,11 @@ public sealed class CreateItemService
             actor);
 
         await _itemRepository.AddAsync(item, cancellationToken);
+
+        await _itemEventRepository.RecordAsync(
+            ItemEvent.Record(item.Id, item.CollectionId, ItemEventType.Created, now, actor),
+            cancellationToken);
+        await _itemEventRepository.SaveChangesAsync(cancellationToken);
 
         return new CreateItemResult(
             item.Id,

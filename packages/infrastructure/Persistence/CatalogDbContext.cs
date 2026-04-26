@@ -13,6 +13,8 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
 
     public DbSet<ItemAttributeValue> ItemAttributeValues => Set<ItemAttributeValue>();
 
+    public DbSet<ItemEvent> ItemEvents => Set<ItemEvent>();
+
     public DbSet<ItemTag> ItemTags => Set<ItemTag>();
 
     public DbSet<Location> Locations => Set<Location>();
