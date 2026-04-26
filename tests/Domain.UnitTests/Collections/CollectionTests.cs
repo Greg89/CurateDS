@@ -10,7 +10,7 @@ public sealed class CollectionTests
     {
         var ownerId = Guid.NewGuid();
 
-        var collection = Collection.Create(ownerId, "  Board Games  ", DateTime.UtcNow);
+        var collection = Collection.Create(ownerId, "  Board Games  ", DateTime.UtcNow, "system");
 
         collection.Name.Should().Be("Board Games");
     }
@@ -18,7 +18,7 @@ public sealed class CollectionTests
     [Fact]
     public void Create_ShouldThrow_WhenNameIsTooShort()
     {
-        var act = () => Collection.Create(Guid.NewGuid(), "ab", DateTime.UtcNow);
+        var act = () => Collection.Create(Guid.NewGuid(), "ab", DateTime.UtcNow, "system");
 
         act.Should().Throw<ArgumentException>();
     }

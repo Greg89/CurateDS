@@ -1,3 +1,4 @@
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Collections.CreateItem;
 using CurateDS.Application.Collections.Shared;
@@ -15,6 +16,7 @@ public sealed class UpdateItemService
     private readonly ILocationRepository _locationRepository;
     private readonly IItemRepository _itemRepository;
     private readonly ITagRepository _tagRepository;
+    private readonly ICurrentUserService _currentUser;
     private readonly IValidator<UpdateItemCommand> _validator;
 
     public UpdateItemService(
@@ -23,6 +25,7 @@ public sealed class UpdateItemService
         ILocationRepository locationRepository,
         IItemRepository itemRepository,
         ITagRepository tagRepository,
+        ICurrentUserService currentUser,
         IValidator<UpdateItemCommand> validator)
     {
         _collectionRepository = collectionRepository;
@@ -30,6 +33,7 @@ public sealed class UpdateItemService
         _locationRepository = locationRepository;
         _itemRepository = itemRepository;
         _tagRepository = tagRepository;
+        _currentUser = currentUser;
         _validator = validator;
     }
 
@@ -81,9 +85,10 @@ public sealed class UpdateItemService
             .ToArray();
 
         var updatedUtc = DateTime.UtcNow;
+        var actor = _currentUser.GetCurrentUser();
 
-        item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc);
-        item.AssignLocation(organization.Location?.Id, updatedUtc);
+        item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc, actor);
+        item.AssignLocation(organization.Location?.Id, updatedUtc, actor);
         await _itemRepository.ReplaceAttributeValuesAsync(item.Id, attributeValues, cancellationToken);
         await _itemRepository.ReplaceTagsAsync(
             item.Id,

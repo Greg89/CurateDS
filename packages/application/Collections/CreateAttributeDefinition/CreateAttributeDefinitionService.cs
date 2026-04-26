@@ -1,3 +1,4 @@
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
@@ -9,15 +10,18 @@ public sealed class CreateAttributeDefinitionService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly IAttributeDefinitionRepository _attributeDefinitionRepository;
+    private readonly ICurrentUserService _currentUser;
     private readonly IValidator<CreateAttributeDefinitionCommand> _validator;
 
     public CreateAttributeDefinitionService(
         ICollectionRepository collectionRepository,
         IAttributeDefinitionRepository attributeDefinitionRepository,
+        ICurrentUserService currentUser,
         IValidator<CreateAttributeDefinitionCommand> validator)
     {
         _collectionRepository = collectionRepository;
         _attributeDefinitionRepository = attributeDefinitionRepository;
+        _currentUser = currentUser;
         _validator = validator;
     }
 
@@ -46,7 +50,8 @@ public sealed class CreateAttributeDefinitionService
             command.IsRequired,
             command.IsFilterable,
             sortOrder,
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            _currentUser.GetCurrentUser());
 
         await _attributeDefinitionRepository.AddAsync(attributeDefinition, cancellationToken);
 

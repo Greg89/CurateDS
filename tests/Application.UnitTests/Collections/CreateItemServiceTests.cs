@@ -1,3 +1,4 @@
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Collections.CreateItem;
 using CurateDS.Application.Common;
@@ -9,10 +10,15 @@ namespace CurateDS.Application.UnitTests.Collections;
 
 public sealed class CreateItemServiceTests
 {
+    private sealed class FakeCurrentUserService : ICurrentUserService
+    {
+        public string GetCurrentUser() => "system";
+    }
+
     [Fact]
     public async Task ExecuteAsync_ShouldPersistItemWithAttributeValues()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow);
+        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
         var issueNumber = AttributeDefinition.Create(
             collection.Id,
             "Issue Number",
@@ -20,7 +26,8 @@ public sealed class CreateItemServiceTests
             isRequired: true,
             isFilterable: true,
             sortOrder: 0,
-            createdUtc: DateTime.UtcNow);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
         var isFoil = AttributeDefinition.Create(
             collection.Id,
             "Foil",
@@ -28,7 +35,8 @@ public sealed class CreateItemServiceTests
             isRequired: false,
             isFilterable: true,
             sortOrder: 1,
-            createdUtc: DateTime.UtcNow);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
 
         var itemRepository = new FakeItemRepository();
         var service = new CreateItemService(
@@ -37,6 +45,7 @@ public sealed class CreateItemServiceTests
             new FakeLocationRepository(),
             itemRepository,
             new FakeTagRepository(),
+            new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
         var result = await service.ExecuteAsync(
@@ -62,7 +71,7 @@ public sealed class CreateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenRequiredAttributeIsMissing()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Comics", DateTime.UtcNow);
+        var collection = Collection.Create(Guid.NewGuid(), "Comics", DateTime.UtcNow, "system");
         var issueNumber = AttributeDefinition.Create(
             collection.Id,
             "Issue Number",
@@ -70,7 +79,8 @@ public sealed class CreateItemServiceTests
             isRequired: true,
             isFilterable: true,
             sortOrder: 0,
-            createdUtc: DateTime.UtcNow);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
 
         var service = new CreateItemService(
             new FakeCollectionRepository(collection),
@@ -78,6 +88,7 @@ public sealed class CreateItemServiceTests
             new FakeLocationRepository(),
             new FakeItemRepository(),
             new FakeTagRepository(),
+            new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
@@ -104,6 +115,7 @@ public sealed class CreateItemServiceTests
             new FakeLocationRepository(),
             new FakeItemRepository(),
             new FakeTagRepository(),
+            new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
@@ -192,14 +204,14 @@ public sealed class CreateItemServiceTests
             CancellationToken cancellationToken)
         {
             var item = Items.Single(existingItem => existingItem.Id == itemId);
-            item.ReplaceAttributeValues(attributeValues, DateTime.UtcNow);
+            item.ReplaceAttributeValues(attributeValues, DateTime.UtcNow, "system");
             return Task.CompletedTask;
         }
 
         public Task ReplaceTagsAsync(Guid itemId, IReadOnlyList<ItemTag> itemTags, CancellationToken cancellationToken)
         {
             var item = Items.Single(existingItem => existingItem.Id == itemId);
-            item.ReplaceTags(itemTags, DateTime.UtcNow);
+            item.ReplaceTags(itemTags, DateTime.UtcNow, "system");
             return Task.CompletedTask;
         }
 

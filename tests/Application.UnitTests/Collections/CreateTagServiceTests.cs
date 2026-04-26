@@ -1,3 +1,4 @@
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Collections.CreateTag;
 using CurateDS.Domain.Collections;
@@ -8,11 +9,16 @@ namespace CurateDS.Application.UnitTests.Collections;
 
 public sealed class CreateTagServiceTests
 {
+    private sealed class FakeCurrentUserService : ICurrentUserService
+    {
+        public string GetCurrentUser() => "system";
+    }
+
     [Fact]
     public async Task ExecuteAsync_ShouldCreateTag_WhenKeyIsAvailable()
     {
         var repository = new FakeTagRepository();
-        var service = new CreateTagService(repository, new CreateTagCommandValidator());
+        var service = new CreateTagService(repository, new FakeCurrentUserService(), new CreateTagCommandValidator());
 
         var result = await service.ExecuteAsync(
             new CreateTagCommand(Guid.NewGuid(), "Wishlist"),
@@ -28,8 +34,8 @@ public sealed class CreateTagServiceTests
     {
         var ownerId = Guid.NewGuid();
         var repository = new FakeTagRepository(
-            Tag.Create(ownerId, "Wishlist", DateTime.UtcNow));
-        var service = new CreateTagService(repository, new CreateTagCommandValidator());
+            Tag.Create(ownerId, "Wishlist", DateTime.UtcNow, "system"));
+        var service = new CreateTagService(repository, new FakeCurrentUserService(), new CreateTagCommandValidator());
 
         var act = () => service.ExecuteAsync(
             new CreateTagCommand(ownerId, " Wishlist "),

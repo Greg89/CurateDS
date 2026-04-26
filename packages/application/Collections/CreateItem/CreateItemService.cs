@@ -1,3 +1,4 @@
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Common;
 using CurateDS.Application.Collections.Shared;
@@ -14,6 +15,7 @@ public sealed class CreateItemService
     private readonly ILocationRepository _locationRepository;
     private readonly IItemRepository _itemRepository;
     private readonly ITagRepository _tagRepository;
+    private readonly ICurrentUserService _currentUser;
     private readonly IValidator<CreateItemCommand> _validator;
 
     public CreateItemService(
@@ -22,6 +24,7 @@ public sealed class CreateItemService
         ILocationRepository locationRepository,
         IItemRepository itemRepository,
         ITagRepository tagRepository,
+        ICurrentUserService currentUser,
         IValidator<CreateItemCommand> validator)
     {
         _collectionRepository = collectionRepository;
@@ -29,6 +32,7 @@ public sealed class CreateItemService
         _locationRepository = locationRepository;
         _itemRepository = itemRepository;
         _tagRepository = tagRepository;
+        _currentUser = currentUser;
         _validator = validator;
     }
 
@@ -64,22 +68,26 @@ public sealed class CreateItemService
 
         ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup);
 
+        var now = DateTime.UtcNow;
+        var actor = _currentUser.GetCurrentUser();
+
         var item = Item.Create(
             command.CollectionId,
             command.Name,
             command.Description,
             command.Quantity,
-            DateTime.UtcNow);
+            now,
+            actor);
 
         foreach (var attributeValueInput in command.AttributeValues)
         {
             var attributeDefinition = attributeDefinitionLookup[attributeValueInput.AttributeDefinitionId];
             var attributeValue = ItemAttributeValue.Create(item.Id, attributeDefinition, attributeValueInput.Value);
-            item.AddAttributeValue(attributeValue);
+            item.AddAttributeValue(attributeValue, now, actor);
         }
 
-        item.AssignLocation(organization.Location?.Id, item.UpdatedUtc);
-        item.ReplaceTags(ItemOrganizationValidator.BuildItemTags(item.Id, organization.Tags), item.UpdatedUtc);
+        item.AssignLocation(organization.Location?.Id, now, actor);
+        item.ReplaceTags(ItemOrganizationValidator.BuildItemTags(item.Id, organization.Tags), now, actor);
 
         await _itemRepository.AddAsync(item, cancellationToken);
 

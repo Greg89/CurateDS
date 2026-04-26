@@ -21,5 +21,21 @@ internal sealed class CollectionConfiguration : IEntityTypeConfiguration<Collect
 
         builder.Property(collection => collection.CreatedUtc)
             .IsRequired();
+
+        builder.Property(collection => collection.CreatedBy)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(collection => collection.UpdatedUtc)
+            .IsRequired();
+
+        builder.Property(collection => collection.UpdatedBy)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(collection => collection.DeletedUtc);
+
+        builder.Property(collection => collection.DeletedBy)
+            .HasMaxLength(200);
     }
 }

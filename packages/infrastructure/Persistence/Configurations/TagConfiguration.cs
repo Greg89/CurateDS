@@ -26,6 +26,22 @@ internal sealed class TagConfiguration : IEntityTypeConfiguration<Tag>
         builder.Property(tag => tag.CreatedUtc)
             .IsRequired();
 
+        builder.Property(tag => tag.CreatedBy)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(tag => tag.UpdatedUtc)
+            .IsRequired();
+
+        builder.Property(tag => tag.UpdatedBy)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(tag => tag.DeletedUtc);
+
+        builder.Property(tag => tag.DeletedBy)
+            .HasMaxLength(200);
+
         builder.HasIndex(tag => new { tag.OwnerId, tag.Key })
             .IsUnique();
     }

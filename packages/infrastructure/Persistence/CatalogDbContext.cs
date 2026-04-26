@@ -22,5 +22,12 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CatalogDbContext).Assembly);
+
+        // Global soft-delete filter: exclude rows where DeletedUtc has been set.
+        modelBuilder.Entity<Collection>().HasQueryFilter(c => c.DeletedUtc == null);
+        modelBuilder.Entity<Item>().HasQueryFilter(i => i.DeletedUtc == null);
+        modelBuilder.Entity<Tag>().HasQueryFilter(t => t.DeletedUtc == null);
+        modelBuilder.Entity<Location>().HasQueryFilter(l => l.DeletedUtc == null);
+        modelBuilder.Entity<AttributeDefinition>().HasQueryFilter(a => a.DeletedUtc == null);
     }
 }

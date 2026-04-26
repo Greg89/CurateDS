@@ -12,7 +12,8 @@ public sealed class LocationTests
             Guid.NewGuid(),
             "  Office Shelf  ",
             "  Top left corner  ",
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            "system");
 
         location.Name.Should().Be("Office Shelf");
         location.Description.Should().Be("Top left corner");
@@ -21,7 +22,7 @@ public sealed class LocationTests
     [Fact]
     public void Create_ShouldThrowArgumentNullException_WhenNameIsNull()
     {
-        var act = () => Location.Create(Guid.NewGuid(), null!, null, DateTime.UtcNow);
+        var act = () => Location.Create(Guid.NewGuid(), null!, null, DateTime.UtcNow, "system");
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("name");

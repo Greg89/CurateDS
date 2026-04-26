@@ -1,6 +1,6 @@
 namespace CurateDS.Domain.Collections;
 
-public sealed class AttributeDefinition
+public sealed class AttributeDefinition : AuditableEntity
 {
     private AttributeDefinition()
     {
@@ -17,7 +17,8 @@ public sealed class AttributeDefinition
         bool isRequired,
         bool isFilterable,
         int sortOrder,
-        DateTime createdUtc)
+        DateTime createdUtc,
+        string createdBy)
     {
         Id = id;
         CollectionId = collectionId;
@@ -27,7 +28,7 @@ public sealed class AttributeDefinition
         IsRequired = isRequired;
         IsFilterable = isFilterable;
         SortOrder = sortOrder;
-        CreatedUtc = createdUtc;
+        SetAuditOnCreate(createdUtc, createdBy);
     }
 
     public Guid Id { get; }
@@ -46,8 +47,6 @@ public sealed class AttributeDefinition
 
     public int SortOrder { get; private set; }
 
-    public DateTime CreatedUtc { get; private set; }
-
     public static AttributeDefinition Create(
         Guid collectionId,
         string name,
@@ -55,7 +54,8 @@ public sealed class AttributeDefinition
         bool isRequired,
         bool isFilterable,
         int sortOrder,
-        DateTime createdUtc)
+        DateTime createdUtc,
+        string createdBy)
     {
         if (collectionId == Guid.Empty)
         {
@@ -83,7 +83,8 @@ public sealed class AttributeDefinition
             isRequired,
             isFilterable,
             sortOrder,
-            createdUtc);
+            createdUtc,
+            createdBy);
     }
 
     private static string BuildKey(string name)

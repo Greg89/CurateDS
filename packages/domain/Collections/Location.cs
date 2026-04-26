@@ -1,19 +1,19 @@
 namespace CurateDS.Domain.Collections;
 
-public sealed class Location
+public sealed class Location : AuditableEntity
 {
     private Location()
     {
         Name = null!;
     }
 
-    private Location(Guid id, Guid ownerId, string name, string? description, DateTime createdUtc)
+    private Location(Guid id, Guid ownerId, string name, string? description, DateTime createdUtc, string createdBy)
     {
         Id = id;
         OwnerId = ownerId;
         Name = name;
         Description = description;
-        CreatedUtc = createdUtc;
+        SetAuditOnCreate(createdUtc, createdBy);
     }
 
     public Guid Id { get; }
@@ -24,9 +24,7 @@ public sealed class Location
 
     public string? Description { get; private set; }
 
-    public DateTime CreatedUtc { get; private set; }
-
-    public static Location Create(Guid ownerId, string name, string? description, DateTime createdUtc)
+    public static Location Create(Guid ownerId, string name, string? description, DateTime createdUtc, string createdBy)
     {
         if (ownerId == Guid.Empty)
         {
@@ -49,6 +47,6 @@ public sealed class Location
             throw new ArgumentException("Location description must be 240 characters or fewer.", nameof(description));
         }
 
-        return new Location(Guid.NewGuid(), ownerId, normalizedName, normalizedDescription, createdUtc);
+        return new Location(Guid.NewGuid(), ownerId, normalizedName, normalizedDescription, createdUtc, createdBy);
     }
 }

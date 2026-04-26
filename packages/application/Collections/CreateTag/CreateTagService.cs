@@ -1,3 +1,4 @@
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Domain.Collections;
 using FluentValidation;
@@ -8,11 +9,13 @@ namespace CurateDS.Application.Collections.CreateTag;
 public sealed class CreateTagService
 {
     private readonly ITagRepository _tagRepository;
+    private readonly ICurrentUserService _currentUser;
     private readonly IValidator<CreateTagCommand> _validator;
 
-    public CreateTagService(ITagRepository tagRepository, IValidator<CreateTagCommand> validator)
+    public CreateTagService(ITagRepository tagRepository, ICurrentUserService currentUser, IValidator<CreateTagCommand> validator)
     {
         _tagRepository = tagRepository;
+        _currentUser = currentUser;
         _validator = validator;
     }
 
@@ -20,7 +23,7 @@ public sealed class CreateTagService
     {
         await _validator.ValidateAndThrowAsync(command, cancellationToken);
 
-        var tag = Tag.Create(command.OwnerId, command.Name, DateTime.UtcNow);
+        var tag = Tag.Create(command.OwnerId, command.Name, DateTime.UtcNow, _currentUser.GetCurrentUser());
 
         if (await _tagRepository.ExistsByKeyAsync(command.OwnerId, tag.Key, cancellationToken))
         {
