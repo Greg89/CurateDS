@@ -59,6 +59,78 @@ describe("CatalogApp UI structure", () => {
     expect(expandBtn.textContent?.trim()).not.toBe(">");
   });
 
+  it("items workspace has a Filters toggle button and an Add Item button in the toolbar", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Toolbar only renders after selectedCollection loads from the API
+    expect(await screen.findByRole("button", { name: /Filters/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /\+ Add Item/i })).toBeInTheDocument();
+  });
+
+  it("item filters panel is hidden by default and shown after clicking the Filters button", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Wait for collection to load
+    const filtersButton = await screen.findByRole("button", { name: /Filters/i });
+
+    expect(screen.queryByRole("heading", { name: "Item Filters" })).not.toBeInTheDocument();
+
+    await user.click(filtersButton);
+
+    await screen.findByRole("heading", { name: "Item Filters" });
+  });
+
+  it("Filters button shows a count badge when search text is applied", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Wait for toolbar to load with collection
+    await screen.findByRole("button", { name: /Filters/i });
+
+    await user.type(screen.getByPlaceholderText("Search items"), "Jazz");
+
+    expect(screen.getByRole("button", { name: /Filters/i }).textContent).toContain("1");
+  });
+
+  it("clicking an item in the list opens the item detail drawer", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Wait for collection and items to load
+    const itemButton = await screen.findByRole("button", { name: /Kind of Blue/i });
+
+    expect(screen.queryByRole("dialog", { name: /item detail/i })).not.toBeInTheDocument();
+
+    await user.click(itemButton);
+
+    await screen.findByRole("dialog", { name: /item detail/i });
+  });
+
+  it("clicking Add Item opens the item form drawer", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Wait for toolbar to load with collection
+    await user.click(await screen.findByRole("button", { name: /\+ Add Item/i }));
+
+    await screen.findByRole("dialog", { name: /create item/i });
+  });
+
   it("shows tag usage in settings organization summary when items are tagged", async () => {
     server.use(
       http.get("http://localhost:8080/tags", () =>

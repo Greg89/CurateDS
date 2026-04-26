@@ -77,6 +77,7 @@ export function CatalogApp({
   const [savedViewsCollectionId, setSavedViewsCollectionId] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(readSidebarCollapsedState);
   const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
+  const [itemSaveCount, setItemSaveCount] = useState(0);
   const normalizedItemFilterTagIds = normalizeTagIds(itemFilterTagIds);
 
   const itemFilters: ItemFilters = {
@@ -162,6 +163,7 @@ export function CatalogApp({
     onSuccess: async (item) => {
       resetItemForm();
       setSelectedItemId(item.id);
+      setItemSaveCount((c) => c + 1);
       await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
       await queryClient.invalidateQueries({
         queryKey: ["item-detail", selectedCollectionId, item.id]
@@ -192,6 +194,7 @@ export function CatalogApp({
       populateItemForm(item);
       setSelectedItemId(item.id);
       setEditingItemId(item.id);
+      setItemSaveCount((c) => c + 1);
       await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
       await queryClient.invalidateQueries({
         queryKey: ["item-detail", selectedCollectionId, item.id]
@@ -661,6 +664,7 @@ export function CatalogApp({
               itemSortDirection={itemSortDirection}
               itemTagIds={itemTagIds}
               items={itemsQuery.data ?? []}
+              itemSaveCount={itemSaveCount}
               itemsError={itemsQuery.isError ? itemsQuery.error.message : null}
               isEditing={editingItemId !== null}
               isItemDetailLoading={itemDetailQuery.isLoading}

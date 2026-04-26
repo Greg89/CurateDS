@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   AttributeDefinition,
   Collection,
@@ -29,6 +29,7 @@ export function ItemsPage({
   itemLocationId,
   itemName,
   itemQuantity,
+  itemSaveCount,
   itemSearchText,
   itemSortBy,
   itemSortDirection,
@@ -80,6 +81,7 @@ export function ItemsPage({
   itemLocationId: string;
   itemName: string;
   itemQuantity: string;
+  itemSaveCount: number;
   itemSearchText: string;
   itemSortBy: ItemFilters["sortBy"];
   itemSortDirection: ItemFilters["sortDirection"];
@@ -118,16 +120,197 @@ export function ItemsPage({
   onToggleFilterTag: (tagId: string) => void;
   onToggleItemTag: (tagId: string) => void;
 }>) {
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
+  const [isFormDrawerOpen, setIsFormDrawerOpen] = useState(false);
+
+  const anyDrawerOpen = isDetailDrawerOpen || isFormDrawerOpen;
+
+  const activeFilterCount =
+    (itemSearchText.trim().length > 0 ? 1 : 0) +
+    (itemFilterLocationId.length > 0 ? 1 : 0) +
+    (itemFilterTagIds.length > 0 ? 1 : 0) +
+    Object.values(itemAttributeFilters).filter((v) => v.trim().length > 0).length +
+    (itemSortBy !== "updatedUtc" || itemSortDirection !== "desc" ? 1 : 0);
+
+  useEffect(() => {
+    if (itemSaveCount > 0) {
+      setIsFormDrawerOpen(false);
+    }
+  }, [itemSaveCount]);
+
+  useEffect(() => {
+    if (!anyDrawerOpen) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setIsDetailDrawerOpen(false);
+        setIsFormDrawerOpen(false);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [anyDrawerOpen]);
+
+  function handleSelectItem(itemId: string) {
+    onSelectItem(itemId);
+    setIsDetailDrawerOpen(true);
+  }
+
+  function handleEditFromDetail() {
+    onEditItem();
+    setIsDetailDrawerOpen(false);
+    setIsFormDrawerOpen(true);
+  }
+
+  function handleAddItem() {
+    onResetItemForm();
+    setIsFormDrawerOpen(true);
+  }
+
+  function handleCancelForm() {
+    onResetItemForm();
+    setIsFormDrawerOpen(false);
+  }
+
   return (
-    <section className="content-grid panel-wide">
+    <section className="items-workspace">
+      {/* Toolbar */}
+      <div className="panel items-toolbar">
+        <input
+          className="items-toolbar-search"
+          placeholder="Search items"
+          value={itemSearchText}
+          onChange={(e) => onItemSearchTextChange(e.target.value)}
+        />
+        <button
+          className={`secondary-button filters-toggle${isFiltersOpen ? " active" : ""}`}
+          onClick={() => setIsFiltersOpen((f) => !f)}
+          type="button"
+        >
+          Filters
+          {activeFilterCount > 0 && (
+            <span className="filter-badge">{activeFilterCount}</span>
+          )}
+        </button>
+        <button
+          className="primary-button"
+          onClick={handleAddItem}
+          type="button"
+        >
+          + Add Item
+        </button>
+      </div>
+
+      {/* Collapsible filters panel */}
+      {isFiltersOpen && (
+        <div className="filters-collapsible panel">
+          <ItemFiltersPanel
+            attributeDefinitions={attributeDefinitions.filter(
+              (attributeDefinition) => attributeDefinition.isFilterable
+            )}
+            attributeFilters={itemAttributeFilters}
+            disabled={false}
+            locationId={itemFilterLocationId}
+            locations={locations}
+            savedViewName={savedViewName}
+            savedViews={savedViews}
+            searchText={itemSearchText}
+            selectedTagIds={itemFilterTagIds}
+            sortBy={itemSortBy}
+            sortDirection={itemSortDirection}
+            tags={tags}
+            onApplySavedView={onApplySavedView}
+            onAttributeFilterChange={onAttributeFilterChange}
+            onClear={onClearItemFilters}
+            onDeleteSavedView={onDeleteSavedView}
+            onLocationChange={onItemFilterLocationChange}
+            onSavedViewNameChange={onSavedViewNameChange}
+            onSaveView={onSaveCurrentView}
+            onSearchTextChange={onItemSearchTextChange}
+            onSortByChange={onItemSortByChange}
+            onSortDirectionChange={onItemSortDirectionChange}
+            onToggleTag={onToggleFilterTag}
+          />
+        </div>
+      )}
+
+      {/* Item list */}
       <section className="panel">
         <div className="panel-header">
-          <h3>{isEditing ? "Edit Item" : "Create Item"}</h3>
-          <p>
-            {isEditing
-              ? `Update the selected entry for ${selectedCollection.name}.`
-              : `Create real catalog entries for ${selectedCollection.name}.`}
-          </p>
+          <h3>Item List</h3>
+          <p>Browse the filtered results for this collection.</p>
+        </div>
+
+        {isItemsLoading ? <p className="message">Loading items...</p> : null}
+        {itemsError ? <p className="message error">{itemsError}</p> : null}
+
+        <ItemList
+          items={items}
+          selectedCollectionName={selectedCollection.name}
+          selectedItemId={selectedItemId}
+          onSelect={handleSelectItem}
+        />
+      </section>
+
+      {/* Drawer backdrop */}
+      {anyDrawerOpen && (
+        <button
+          aria-label="Close panel"
+          className="drawer-backdrop"
+          onClick={() => {
+            setIsDetailDrawerOpen(false);
+            setIsFormDrawerOpen(false);
+          }}
+          type="button"
+        />
+      )}
+
+      {/* Detail drawer */}
+      <div
+        aria-hidden={!isDetailDrawerOpen}
+        aria-label="Item detail"
+        aria-modal={isDetailDrawerOpen}
+        className={`item-drawer detail-drawer${isDetailDrawerOpen ? " open" : ""}`}
+        role="dialog"
+      >
+        <div className="drawer-header">
+          <h2>Item Detail</h2>
+          <button
+            aria-label="Close item detail"
+            className="secondary-button"
+            onClick={() => setIsDetailDrawerOpen(false)}
+            type="button"
+          >
+            &#x2715;
+          </button>
+        </div>
+        {isItemDetailLoading && <p className="message">Loading item detail...</p>}
+        <ItemDetailCard
+          item={itemDetail}
+          isEditing={isEditing && itemDetail?.id === selectedItemId}
+          onEdit={handleEditFromDetail}
+          selectedCollectionName={selectedCollection.name}
+        />
+      </div>
+
+      {/* Form drawer */}
+      <div
+        aria-hidden={!isFormDrawerOpen}
+        aria-label={isEditing ? "Edit item" : "Create item"}
+        aria-modal={isFormDrawerOpen}
+        className={`item-drawer form-drawer${isFormDrawerOpen ? " open" : ""}`}
+        role="dialog"
+      >
+        <div className="drawer-header">
+          <h2>{isEditing ? "Edit Item" : "Create Item"}</h2>
+          <button
+            aria-label="Close item form"
+            className="secondary-button"
+            onClick={handleCancelForm}
+            type="button"
+          >
+            &#x2715;
+          </button>
         </div>
 
         <form className="collection-form" onSubmit={onItemSubmit}>
@@ -221,70 +404,7 @@ export function ItemsPage({
             <p className="message error">{createItemError ?? updateItemError}</p>
           ) : null}
         </form>
-      </section>
-
-      <section className="panel panel-wide">
-        <ItemFiltersPanel
-          attributeDefinitions={attributeDefinitions.filter(
-            (attributeDefinition) => attributeDefinition.isFilterable
-          )}
-          attributeFilters={itemAttributeFilters}
-          disabled={false}
-          locationId={itemFilterLocationId}
-          locations={locations}
-          savedViewName={savedViewName}
-          savedViews={savedViews}
-          searchText={itemSearchText}
-          selectedTagIds={itemFilterTagIds}
-          sortBy={itemSortBy}
-          sortDirection={itemSortDirection}
-          tags={tags}
-          onApplySavedView={onApplySavedView}
-          onAttributeFilterChange={onAttributeFilterChange}
-          onClear={onClearItemFilters}
-          onDeleteSavedView={onDeleteSavedView}
-          onLocationChange={onItemFilterLocationChange}
-          onSavedViewNameChange={onSavedViewNameChange}
-          onSaveView={onSaveCurrentView}
-          onSearchTextChange={onItemSearchTextChange}
-          onSortByChange={onItemSortByChange}
-          onSortDirectionChange={onItemSortDirectionChange}
-          onToggleTag={onToggleFilterTag}
-        />
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <h3>Item List</h3>
-          <p>Browse the filtered results for this collection.</p>
-        </div>
-
-        {isItemsLoading ? <p className="message">Loading items...</p> : null}
-        {itemsError ? <p className="message error">{itemsError}</p> : null}
-
-        <ItemList
-          items={items}
-          selectedCollectionName={selectedCollection.name}
-          selectedItemId={selectedItemId}
-          onSelect={onSelectItem}
-        />
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <h3>Item Detail</h3>
-          <p>Review what was actually saved and jump into edits when needed.</p>
-        </div>
-
-        {isItemDetailLoading ? <p className="message">Loading item detail...</p> : null}
-
-        <ItemDetailCard
-          item={itemDetail}
-          isEditing={isEditing && itemDetail?.id === selectedItemId}
-          onEdit={onEditItem}
-          selectedCollectionName={selectedCollection.name}
-        />
-      </section>
+      </div>
     </section>
   );
 }
