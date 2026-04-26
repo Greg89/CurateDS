@@ -2,15 +2,15 @@ using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Common;
 
-namespace CurateDS.Application.Collections.DeleteCollection;
+namespace CurateDS.Application.Collections.DeleteItem;
 
-public sealed class DeleteCollectionService
+public sealed class DeleteItemService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly IItemRepository _itemRepository;
     private readonly ICurrentUserService _currentUser;
 
-    public DeleteCollectionService(
+    public DeleteItemService(
         ICollectionRepository collectionRepository,
         IItemRepository itemRepository,
         ICurrentUserService currentUser)
@@ -20,25 +20,28 @@ public sealed class DeleteCollectionService
         _currentUser = currentUser;
     }
 
-    public async Task ExecuteAsync(DeleteCollectionCommand command, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(DeleteItemCommand command, CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
-        var actor = _currentUser.GetCurrentUser();
-
-        // Verify collection exists and belongs to owner before cascading.
-        var deleted = await _collectionRepository.SoftDeleteAsync(
+        var collection = await _collectionRepository.GetByIdAndOwnerAsync(
             command.CollectionId,
             command.OwnerId,
-            now,
-            actor,
             cancellationToken);
 
-        if (!deleted)
+        if (collection is null)
         {
             throw new NotFoundException("Collection was not found.");
         }
 
-        // Cascade: soft-delete all items in the collection.
-        await _itemRepository.SoftDeleteByCollectionAsync(command.CollectionId, now, actor, cancellationToken);
+        var deleted = await _itemRepository.SoftDeleteAsync(
+            command.ItemId,
+            command.CollectionId,
+            DateTime.UtcNow,
+            _currentUser.GetCurrentUser(),
+            cancellationToken);
+
+        if (!deleted)
+        {
+            throw new NotFoundException("Item was not found.");
+        }
     }
 }

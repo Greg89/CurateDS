@@ -407,6 +407,17 @@ export async function deleteCollection(collectionId: string): Promise<void> {
   }
 }
 
+export async function deleteItem(input: { collectionId: string; itemId: string }): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${input.collectionId}/items/${input.itemId}`,
+    { method: "DELETE", headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to delete item.");
+  }
+}
+
 async function readValidationMessage(response: Response): Promise<string | null> {
   const details = (await response.json().catch(() => null)) as
     | { errors?: Record<string, string[]> }

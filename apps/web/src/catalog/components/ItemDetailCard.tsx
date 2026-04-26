@@ -4,11 +4,13 @@ export function ItemDetailCard({
   item,
   isEditing,
   onEdit,
+  onDelete,
   selectedCollectionName
 }: Readonly<{
   item: ItemDetail | null;
   isEditing: boolean;
   onEdit: () => void;
+  onDelete: () => void;
   selectedCollectionName: string | null;
 }>) {
   if (!selectedCollectionName) {
@@ -35,6 +37,9 @@ export function ItemDetailCard({
           <span className="attribute-pill">Qty {item.quantity}</span>
           <button className="secondary-button" onClick={onEdit} type="button">
             {isEditing ? "Editing" : "Edit Item"}
+          </button>
+          <button className="danger-button" onClick={onDelete} type="button">
+            Delete
           </button>
         </div>
       </div>

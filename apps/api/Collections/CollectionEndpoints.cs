@@ -6,6 +6,7 @@ using CurateDS.Application.Collections.CreateItem;
 using CurateDS.Application.Collections.CreateLocation;
 using CurateDS.Application.Collections.CreateTag;
 using CurateDS.Application.Collections.DeleteCollection;
+using CurateDS.Application.Collections.DeleteItem;
 using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
@@ -364,6 +365,28 @@ public static class CollectionEndpoints
             catch (NotFoundException)
             {
                 return ApiResponses.NotFound("Item or collection was not found.");
+            }
+        });
+
+        group.MapDelete("/{collectionId:guid}/items/{itemId:guid}", async (
+            Guid collectionId,
+            Guid itemId,
+            DeleteItemService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                await service.ExecuteAsync(
+                    new DeleteItemCommand(ownerId, collectionId, itemId),
+                    cancellationToken);
+
+                return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
             }
         });
 

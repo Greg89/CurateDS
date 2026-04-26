@@ -232,6 +232,12 @@ public sealed class CreateItemServiceTests
         {
             return Task.CompletedTask;
         }
+
+        public Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
+        public Task SoftDeleteByCollectionAsync(Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.CompletedTask;
     }
 
     private sealed class FakeLocationRepository : ILocationRepository

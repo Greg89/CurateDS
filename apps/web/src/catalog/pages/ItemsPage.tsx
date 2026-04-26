@@ -9,6 +9,7 @@ import {
   Tag
 } from "../../api";
 import { SavedItemView } from "../types";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { DynamicAttributeFields } from "../components/DynamicAttributeFields";
 import { ItemDetailCard } from "../components/ItemDetailCard";
 import { ItemFiltersPanel } from "../components/ItemFiltersPanel";
@@ -66,7 +67,9 @@ export function ItemsPage({
   onSavedViewNameChange,
   onSelectItem,
   onToggleFilterTag,
-  onToggleItemTag
+  onToggleItemTag,
+  isDeleteItemPending,
+  onDeleteItem
 }: Readonly<{
   attributeDefinitions: AttributeDefinition[];
   createItemError: string | null;
@@ -119,10 +122,13 @@ export function ItemsPage({
   onSelectItem: (itemId: string) => void;
   onToggleFilterTag: (tagId: string) => void;
   onToggleItemTag: (tagId: string) => void;
+  isDeleteItemPending: boolean;
+  onDeleteItem: () => void;
 }>) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [isFormDrawerOpen, setIsFormDrawerOpen] = useState(false);
+  const [showDeleteItemConfirm, setShowDeleteItemConfirm] = useState(false);
 
   const anyDrawerOpen = isDetailDrawerOpen || isFormDrawerOpen;
 
@@ -170,6 +176,12 @@ export function ItemsPage({
   function handleCancelForm() {
     onResetItemForm();
     setIsFormDrawerOpen(false);
+  }
+
+  function handleDeleteConfirmed() {
+    onDeleteItem();
+    setShowDeleteItemConfirm(false);
+    setIsDetailDrawerOpen(false);
   }
 
   return (
@@ -289,6 +301,7 @@ export function ItemsPage({
           item={itemDetail}
           isEditing={isEditing && itemDetail?.id === selectedItemId}
           onEdit={handleEditFromDetail}
+          onDelete={() => setShowDeleteItemConfirm(true)}
           selectedCollectionName={selectedCollection.name}
         />
       </div>
@@ -405,6 +418,16 @@ export function ItemsPage({
           ) : null}
         </form>
       </div>
+
+      {showDeleteItemConfirm && itemDetail ? (
+        <ConfirmDialog
+          title={`Delete "${itemDetail.name}"?`}
+          message="This item will be permanently removed. This action cannot be undone."
+          isPending={isDeleteItemPending}
+          onConfirm={handleDeleteConfirmed}
+          onCancel={() => setShowDeleteItemConfirm(false)}
+        />
+      ) : null}
     </section>
   );
 }

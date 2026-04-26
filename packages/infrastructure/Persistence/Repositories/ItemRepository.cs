@@ -69,4 +69,38 @@ public sealed class ItemRepository : IItemRepository
     {
         return _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+    {
+        var item = await _dbContext.Items
+            .SingleOrDefaultAsync(
+                i => i.Id == itemId && i.CollectionId == collectionId,
+                cancellationToken);
+
+        if (item is null)
+        {
+            return false;
+        }
+
+        item.SoftDelete(deletedUtc, deletedBy);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task SoftDeleteByCollectionAsync(Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+    {
+        var items = await _dbContext.Items
+            .Where(i => i.CollectionId == collectionId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var item in items)
+        {
+            item.SoftDelete(deletedUtc, deletedBy);
+        }
+
+        if (items.Count > 0)
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+    }
 }

@@ -572,11 +572,45 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task DeleteItem_ShouldReturn204_AndHideFromList()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Item Delete"));
+        var item = await CreateItemAsync(collection.Id, "Item To Delete");
+
+        var deleteResponse = await _client.DeleteAsync($"/collections/{collection.Id}/items/{item.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync($"/collections/{collection.Id}/items");
+        var items = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+
+        items!.Should().NotContain(i => i.Id == item.Id);
+    }
+
+    [Fact]
+    public async Task DeleteItem_ShouldReturn404_WhenItemDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("No Item Delete"));
+
+        var response = await _client.DeleteAsync($"/collections/{collection.Id}/items/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     private async Task<CollectionResponse> CreateCollectionAsync(string name)
     {
         var response = await _client.PostAsJsonAsync("/collections", new { name });
         var collection = await response.Content.ReadFromJsonAsync<CollectionResponse>(JsonOptions);
         return collection!;
+    }
+
+    private async Task<ItemSummaryResponse> CreateItemAsync(Guid collectionId, string name)
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collectionId}/items",
+            new { name, quantity = 1 });
+        return (await response.Content.ReadFromJsonAsync<ItemSummaryResponse>(JsonOptions))!;
     }
 
     private async Task<AttributeDefinitionResponse> CreateAttributeDefinitionAsync(
@@ -637,7 +671,7 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         IReadOnlyList<string> Tags,
         int AttributeValueCount,
         DateTime CreatedUtc,
-        DateTime UpdatedUtc);
+        DateTime? UpdatedUtc);
 
     private sealed record ItemDetailResponse(
         Guid Id,
@@ -649,7 +683,7 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         string? LocationName,
         IReadOnlyList<TagResponse> Tags,
         DateTime CreatedUtc,
-        DateTime UpdatedUtc,
+        DateTime? UpdatedUtc,
         IReadOnlyList<ItemAttributeValueResponse> AttributeValues);
 
     private sealed record ItemAttributeValueResponse(
