@@ -381,6 +381,70 @@ h1 {
   cursor: default;
 }
 
+/* --- Danger button -------------------------------------------------------- */
+.danger-button {
+  border: 1px solid rgba(255, 100, 80, 0.4);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: #ffb4aa;
+  background: rgba(255, 80, 60, 0.08);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 120ms;
+}
+
+.danger-button:hover:not(:disabled) {
+  background: rgba(255, 80, 60, 0.18);
+}
+
+.danger-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* --- Danger zone panel ---------------------------------------------------- */
+.panel-danger {
+  border-color: rgba(255, 100, 80, 0.25);
+}
+
+/* --- Confirm dialog ------------------------------------------------------- */
+.confirm-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirm-dialog {
+  background: var(--c-surface, #1e1a16);
+  border: 1px solid rgba(234, 219, 199, 0.18);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 420px;
+  width: 90%;
+  display: grid;
+  gap: 1rem;
+}
+
+.confirm-dialog h3 {
+  font-size: 1.1rem;
+}
+
+.confirm-dialog p {
+  color: var(--c-text-muted);
+  line-height: 1.5;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
 .message {
   color: var(--c-text);
 }
@@ -414,6 +478,11 @@ h1 {
 
 .empty-state.compact {
   margin-top: 0;
+}
+
+.collection-form + .attribute-list,
+.collection-form + ul.attribute-list {
+  margin-top: 1.25rem;
 }
 
 /* --- Lists ---------------------------------------------------------------- */
@@ -491,6 +560,25 @@ h1 {
 .detail-value-card,
 .saved-view-card {
   padding: 1rem 1.1rem;
+}
+
+.attribute-card .danger-button {
+  margin-top: 0.75rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: var(--text-muted, #6b7280);
 }
 
 .filter-panel {

@@ -1,6 +1,8 @@
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
+using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.ListItems;
 using CurateDS.Application.Collections.UpdateItem;
 using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
@@ -223,6 +225,9 @@ public sealed class UpdateItemServiceTests
             return Task.FromResult<IReadOnlyList<Collection>>(
                 _collections.Where(collection => collection.OwnerId == ownerId).ToArray());
         }
+
+        public Task<bool> SoftDeleteAsync(Guid collectionId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 
     private sealed class FakeAttributeDefinitionRepository : IAttributeDefinitionRepository
@@ -250,6 +255,9 @@ public sealed class UpdateItemServiceTests
             return Task.FromResult<IReadOnlyList<AttributeDefinition>>(
                 _attributeDefinitions.Where(definition => definition.CollectionId == collectionId).ToArray());
         }
+
+        public Task<bool> SoftDeleteAsync(Guid attributeDefinitionId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 
     private sealed class FakeItemRepository : IItemRepository
@@ -301,6 +309,15 @@ public sealed class UpdateItemServiceTests
             SaveChangesCallCount++;
             return Task.CompletedTask;
         }
+
+        public Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
+        public Task SoftDeleteByCollectionAsync(Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.CompletedTask;
+
+        public Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
+            => Task.FromResult(new PagedResult<ItemSummaryDto>([], 0, 1, 50));
     }
 
     private sealed class FakeLocationRepository : ILocationRepository
@@ -312,6 +329,9 @@ public sealed class UpdateItemServiceTests
 
         public Task<IReadOnlyList<Location>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Location>>([]);
+
+        public Task<bool> SoftDeleteAsync(Guid locationId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 
     private sealed class FakeTagRepository : ITagRepository
@@ -326,5 +346,8 @@ public sealed class UpdateItemServiceTests
 
         public Task<IReadOnlyList<Tag>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Tag>>([]);
+
+        public Task<bool> SoftDeleteAsync(Guid tagId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 }

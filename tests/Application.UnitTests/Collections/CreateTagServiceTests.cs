@@ -82,5 +82,8 @@ public sealed class CreateTagServiceTests
             return Task.FromResult<IReadOnlyList<Tag>>(
                 _tags.Where(tag => tag.OwnerId == ownerId && tagIds.Contains(tag.Id)).ToArray());
         }
+
+        public Task<bool> SoftDeleteAsync(Guid tagId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 }

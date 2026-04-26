@@ -32,4 +32,25 @@ public sealed class LocationRepository : ILocationRepository
             .OrderBy(location => location.Name)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<bool> SoftDeleteAsync(Guid locationId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+    {
+        var location = await _dbContext.Locations
+            .SingleOrDefaultAsync(l => l.Id == locationId && l.OwnerId == ownerId, cancellationToken);
+
+        if (location is null)
+            return false;
+
+        await _dbContext.Items
+            .Where(i => i.LocationId == locationId)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(i => i.LocationId, (Guid?)null)
+                       .SetProperty(i => i.UpdatedUtc, deletedUtc)
+                       .SetProperty(i => i.UpdatedBy, deletedBy),
+                cancellationToken);
+
+        location.SoftDelete(deletedUtc, deletedBy);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }

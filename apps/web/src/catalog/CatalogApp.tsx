@@ -8,6 +8,11 @@ import {
   createItem,
   createLocation,
   createTag,
+  deleteAttributeDefinition,
+  deleteCollection,
+  deleteItem,
+  deleteLocation,
+  deleteTag,
   getItemDetail,
   ItemDetail,
   ItemFilters,
@@ -78,6 +83,8 @@ export function CatalogApp({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(readSidebarCollapsedState);
   const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
   const [itemSaveCount, setItemSaveCount] = useState(0);
+  const [itemPage, setItemPage] = useState(1);
+  const pageSize = 50;
   const normalizedItemFilterTagIds = normalizeTagIds(itemFilterTagIds);
 
   const itemFilters: ItemFilters = {
@@ -109,6 +116,7 @@ export function CatalogApp({
     queryKey: [
       "items",
       selectedCollectionId,
+      itemPage,
       itemSearchText,
       itemFilterLocationId,
       itemSortBy,
@@ -116,7 +124,7 @@ export function CatalogApp({
       JSON.stringify(itemAttributeFilters),
       ...normalizedItemFilterTagIds
     ],
-    queryFn: () => listItems(selectedCollectionId, itemFilters),
+    queryFn: () => listItems(selectedCollectionId, itemFilters, itemPage, pageSize),
     enabled: hasSelectedCollection
   });
 
@@ -199,6 +207,46 @@ export function CatalogApp({
       await queryClient.invalidateQueries({
         queryKey: ["item-detail", selectedCollectionId, item.id]
       });
+    }
+  });
+
+  const deleteCollectionMutation = useMutation({
+    mutationFn: deleteCollection,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["collections"] });
+      navigate("/");
+    }
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: deleteItem,
+    onSuccess: async () => {
+      setSelectedItemId("");
+      await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
+    }
+  });
+
+  const deleteTagMutation = useMutation({
+    mutationFn: deleteTag,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
+      await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
+    }
+  });
+
+  const deleteLocationMutation = useMutation({
+    mutationFn: deleteLocation,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["locations"] });
+      await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
+    }
+  });
+
+  const deleteAttributeDefinitionMutation = useMutation({
+    mutationFn: deleteAttributeDefinition,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["attributeDefinitions", selectedCollectionId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
     }
   });
 
@@ -344,9 +392,11 @@ export function CatalogApp({
     setItemAttributeFilters({});
     setItemSortBy(defaultSortBy);
     setItemSortDirection(defaultSortDirection);
+    setItemPage(1);
   }
 
   function toggleFilterTag(tagId: string) {
+    setItemPage(1);
     setItemFilterTagIds((currentTagIds) =>
       currentTagIds.includes(tagId)
         ? currentTagIds.filter((currentTagId) => currentTagId !== tagId)
@@ -355,6 +405,7 @@ export function CatalogApp({
   }
 
   function handleAttributeFilterChange(attributeKey: string, value: string) {
+    setItemPage(1);
     setItemAttributeFilters((currentFilters) => ({
       ...currentFilters,
       [attributeKey]: value
@@ -392,6 +443,7 @@ export function CatalogApp({
     setItemAttributeFilters(view.filters.attributeFilters ?? {});
     setItemSortBy(view.filters.sortBy ?? defaultSortBy);
     setItemSortDirection(view.filters.sortDirection ?? defaultSortDirection);
+    setItemPage(1);
   }
 
   function deleteSavedView(viewId: string) {
@@ -405,7 +457,9 @@ export function CatalogApp({
       return;
     }
 
-    if (itemsQuery.data.length === 0) {
+    const dataItems = itemsQuery.data.items;
+
+    if (dataItems.length === 0) {
       if (selectedItemId) {
         setSelectedItemId("");
       }
@@ -413,10 +467,10 @@ export function CatalogApp({
       return;
     }
 
-    const hasSelectedItem = itemsQuery.data.some((item) => item.id === selectedItemId);
+    const hasSelectedItem = dataItems.some((item) => item.id === selectedItemId);
 
     if (!hasSelectedItem) {
-      setSelectedItemId(itemsQuery.data[0].id);
+      setSelectedItemId(dataItems[0].id);
     }
   }, [itemsQuery.data, selectedItemId]);
 
@@ -632,7 +686,7 @@ export function CatalogApp({
           ) : section === "overview" ? (
             <OverviewPage
               attributeDefinitions={attributeDefinitionsQuery.data ?? []}
-              items={itemsQuery.data ?? []}
+              items={itemsQuery.data?.items ?? []}
               locations={locationsQuery.data ?? []}
               selectedCollection={selectedCollection}
               tags={tagsQuery.data ?? []}
@@ -656,12 +710,15 @@ export function CatalogApp({
               itemSortBy={itemSortBy}
               itemSortDirection={itemSortDirection}
               itemTagIds={itemTagIds}
-              items={itemsQuery.data ?? []}
+              items={itemsQuery.data?.items ?? []}
               itemSaveCount={itemSaveCount}
               itemsError={itemsQuery.isError ? itemsQuery.error.message : null}
               isEditing={editingItemId !== null}
               isItemDetailLoading={itemDetailQuery.isLoading}
               isItemsLoading={itemsQuery.isLoading}
+              itemPage={itemPage}
+              itemTotalPages={itemsQuery.data?.totalPages ?? 1}
+              itemTotalCount={itemsQuery.data?.totalCount ?? 0}
               locations={locationsQuery.data ?? []}
               savedViewName={savedViewName}
               savedViews={savedViews}
@@ -679,17 +736,25 @@ export function CatalogApp({
               onItemLocationChange={setItemLocationId}
               onItemNameChange={setItemName}
               onItemQuantityChange={setItemQuantity}
-              onItemSearchTextChange={setItemSearchText}
-              onItemSortByChange={setItemSortBy}
-              onItemSortDirectionChange={setItemSortDirection}
+              onItemSearchTextChange={(v) => { setItemPage(1); setItemSearchText(v); }}
+              onItemSortByChange={(v) => { setItemPage(1); setItemSortBy(v); }}
+              onItemSortDirectionChange={(v) => { setItemPage(1); setItemSortDirection(v); }}
               onItemSubmit={handleItemSubmit}
-              onItemFilterLocationChange={setItemFilterLocationId}
+              onItemFilterLocationChange={(v) => { setItemPage(1); setItemFilterLocationId(v); }}
               onResetItemForm={resetItemForm}
               onSaveCurrentView={saveCurrentView}
               onSavedViewNameChange={setSavedViewName}
               onSelectItem={setSelectedItemId}
               onToggleFilterTag={toggleFilterTag}
               onToggleItemTag={toggleItemTag}
+              isDeleteItemPending={deleteItemMutation.isPending}
+              onDeleteItem={() =>
+                deleteItemMutation.mutate({
+                  collectionId: selectedCollectionId,
+                  itemId: selectedItemId
+                })
+              }
+              onItemPageChange={setItemPage}
             />
           ) : (
             <SettingsPage
@@ -706,7 +771,7 @@ export function CatalogApp({
               isCreateAttributePending={createAttributeDefinitionMutation.isPending}
               isCreateLocationPending={createLocationMutation.isPending}
               isCreateTagPending={createTagMutation.isPending}
-              items={itemsQuery.data ?? []}
+              items={itemsQuery.data?.items ?? []}
               locationDescription={locationDescription}
               locationName={locationName}
               locations={locationsQuery.data ?? []}
@@ -723,6 +788,19 @@ export function CatalogApp({
               onLocationSubmit={handleLocationSubmit}
               onTagNameChange={setTagName}
               onTagSubmit={handleTagSubmit}
+              isDeleteCollectionPending={deleteCollectionMutation.isPending}
+              onDeleteCollection={() => deleteCollectionMutation.mutate(selectedCollectionId)}
+              isDeleteAttributeDefinitionPending={deleteAttributeDefinitionMutation.isPending}
+              onDeleteAttributeDefinition={(id) =>
+                deleteAttributeDefinitionMutation.mutate({
+                  collectionId: selectedCollectionId,
+                  attributeDefinitionId: id
+                })
+              }
+              isDeleteTagPending={deleteTagMutation.isPending}
+              onDeleteTag={(id) => deleteTagMutation.mutate(id)}
+              isDeleteLocationPending={deleteLocationMutation.isPending}
+              onDeleteLocation={(id) => deleteLocationMutation.mutate(id)}
             />
           )}
         </section>

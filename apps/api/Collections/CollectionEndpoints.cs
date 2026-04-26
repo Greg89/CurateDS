@@ -5,6 +5,11 @@ using CurateDS.Application.Collections.CreateCollection;
 using CurateDS.Application.Collections.CreateItem;
 using CurateDS.Application.Collections.CreateLocation;
 using CurateDS.Application.Collections.CreateTag;
+using CurateDS.Application.Collections.DeleteCollection;
+using CurateDS.Application.Collections.DeleteItem;
+using CurateDS.Application.Collections.DeleteTag;
+using CurateDS.Application.Collections.DeleteLocation;
+using CurateDS.Application.Collections.DeleteAttributeDefinition;
 using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
@@ -57,6 +62,27 @@ public static class CollectionEndpoints
             }
         });
 
+        group.MapDelete("/{collectionId:guid}", async (
+            Guid collectionId,
+            DeleteCollectionService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                await service.ExecuteAsync(
+                    new DeleteCollectionCommand(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
+            }
+        });
+
         app.MapGet("/tags", async (
             ListTagsService service,
             IConfiguration configuration,
@@ -89,6 +115,24 @@ public static class CollectionEndpoints
                     nameof(CreateTagRequest.Name),
                     "A tag with this name already exists.",
                     "duplicate_tag");
+            }
+        }).RequireAuthorization();
+
+        app.MapDelete("/tags/{tagId:guid}", async (
+            Guid tagId,
+            DeleteTagService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            var ownerId = GetDefaultOwnerId(configuration);
+            try
+            {
+                await service.ExecuteAsync(new DeleteTagCommand(ownerId, tagId), cancellationToken);
+                return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Tag was not found.");
             }
         }).RequireAuthorization();
 
@@ -126,6 +170,24 @@ public static class CollectionEndpoints
             catch (ValidationException exception)
             {
                 return ApiResponses.Validation(exception);
+            }
+        }).RequireAuthorization();
+
+        app.MapDelete("/locations/{locationId:guid}", async (
+            Guid locationId,
+            DeleteLocationService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            var ownerId = GetDefaultOwnerId(configuration);
+            try
+            {
+                await service.ExecuteAsync(new DeleteLocationCommand(ownerId, locationId), cancellationToken);
+                return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Location was not found.");
             }
         }).RequireAuthorization();
 
@@ -193,6 +255,27 @@ public static class CollectionEndpoints
             }
         });
 
+        group.MapDelete("/{collectionId:guid}/attribute-definitions/{attributeDefinitionId:guid}", async (
+            Guid collectionId,
+            Guid attributeDefinitionId,
+            DeleteAttributeDefinitionService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            var ownerId = GetDefaultOwnerId(configuration);
+            try
+            {
+                await service.ExecuteAsync(
+                    new DeleteAttributeDefinitionCommand(ownerId, collectionId, attributeDefinitionId),
+                    cancellationToken);
+                return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Attribute definition was not found.");
+            }
+        }).RequireAuthorization();
+
         group.MapGet("/{collectionId:guid}/items", async (
             Guid collectionId,
             [AsParameters] ListItemsRequest request,
@@ -203,7 +286,7 @@ public static class CollectionEndpoints
             try
             {
                 var ownerId = GetDefaultOwnerId(configuration);
-                var items = await service.ExecuteAsync(
+                var result = await service.ExecuteAsync(
                     new ListItemsQuery(
                         ownerId,
                         collectionId,
@@ -212,10 +295,17 @@ public static class CollectionEndpoints
                         request.TagIds ?? [],
                         ParseAttributeFilters(request.AttributeFilters),
                         request.SortBy,
-                        request.SortDirection),
+                        request.SortDirection,
+                        request.Page ?? 1,
+                        request.PageSize ?? 50),
                     cancellationToken);
 
-                return Results.Ok(items.Select(ToResponse));
+                return Results.Ok(new PagedItemsResponse(
+                    result.Items.Select(ToResponse).ToArray(),
+                    result.TotalCount,
+                    result.Page,
+                    result.PageSize,
+                    result.TotalPages));
             }
             catch (NotFoundException)
             {
@@ -342,6 +432,28 @@ public static class CollectionEndpoints
             catch (NotFoundException)
             {
                 return ApiResponses.NotFound("Item or collection was not found.");
+            }
+        });
+
+        group.MapDelete("/{collectionId:guid}/items/{itemId:guid}", async (
+            Guid collectionId,
+            Guid itemId,
+            DeleteItemService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                await service.ExecuteAsync(
+                    new DeleteItemCommand(ownerId, collectionId, itemId),
+                    cancellationToken);
+
+                return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
             }
         });
 

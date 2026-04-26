@@ -211,7 +211,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var items = paged?.Items;
 
         items.Should().NotBeNull();
         items!.Should().Contain(item => item.Name == "Root");
@@ -456,7 +457,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var items = paged?.Items;
 
         items.Should().ContainSingle();
         items![0].Name.Should().Be("Dune");
@@ -507,7 +509,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var items = paged?.Items;
 
         items.Should().ContainSingle();
         items![0].Name.Should().Be("Arrival");
@@ -543,10 +546,135 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var items = paged?.Items;
 
         items.Should().NotBeNull();
         items!.Select(item => item.Name).Should().ContainInOrder("Animal Crossing", "Zelda");
+    }
+
+    [Fact]
+    public async Task DeleteCollection_ShouldReturn204_AndHideFromList()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Delete Me"));
+
+        var deleteResponse = await _client.DeleteAsync($"/collections/{collection.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync("/collections");
+        var collections = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<CollectionResponse>>(JsonOptions);
+
+        collections!.Should().NotContain(c => c.Id == collection.Id);
+    }
+
+    [Fact]
+    public async Task DeleteCollection_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.DeleteAsync($"/collections/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteItem_ShouldReturn204_AndHideFromList()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Item Delete"));
+        var item = await CreateItemAsync(collection.Id, "Item To Delete");
+
+        var deleteResponse = await _client.DeleteAsync($"/collections/{collection.Id}/items/{item.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync($"/collections/{collection.Id}/items");
+        var paged = await listResponse.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var items = paged?.Items;
+
+        items!.Should().NotContain(i => i.Id == item.Id);
+    }
+
+    [Fact]
+    public async Task DeleteItem_ShouldReturn404_WhenItemDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("No Item Delete"));
+
+        var response = await _client.DeleteAsync($"/collections/{collection.Id}/items/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteTag_ShouldReturn204_AndHideFromList()
+    {
+        var tag = await CreateTagAsync(UniqueName("Tag To Delete"));
+
+        var deleteResponse = await _client.DeleteAsync($"/tags/{tag.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync("/tags");
+        var tags = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<TagResponse>>(JsonOptions);
+
+        tags!.Should().NotContain(t => t.Id == tag.Id);
+    }
+
+    [Fact]
+    public async Task DeleteTag_ShouldReturn404_WhenTagDoesNotExist()
+    {
+        var response = await _client.DeleteAsync($"/tags/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteLocation_ShouldReturn204_AndHideFromList()
+    {
+        var location = await CreateLocationAsync(UniqueName("Loc To Delete"), "");
+
+        var deleteResponse = await _client.DeleteAsync($"/locations/{location.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync("/locations");
+        var locations = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<LocationResponse>>(JsonOptions);
+
+        locations!.Should().NotContain(l => l.Id == location.Id);
+    }
+
+    [Fact]
+    public async Task DeleteLocation_ShouldReturn404_WhenLocationDoesNotExist()
+    {
+        var response = await _client.DeleteAsync($"/locations/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteAttributeDefinition_ShouldReturn204_AndHideFromList()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("AttrDef Delete"));
+        var attrDef = await CreateAttributeDefinitionAsync(collection.Id, "Year", AttributeDataType.Number, false);
+
+        var deleteResponse = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/attribute-definitions/{attrDef.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync($"/collections/{collection.Id}/attribute-definitions");
+        var defs = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<AttributeDefinitionResponse>>(JsonOptions);
+
+        defs!.Should().NotContain(d => d.Id == attrDef.Id);
+    }
+
+    [Fact]
+    public async Task DeleteAttributeDefinition_ShouldReturn404_WhenDefinitionDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("AttrDef No Delete"));
+
+        var response = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/attribute-definitions/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     private async Task<CollectionResponse> CreateCollectionAsync(string name)
@@ -554,6 +682,14 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         var response = await _client.PostAsJsonAsync("/collections", new { name });
         var collection = await response.Content.ReadFromJsonAsync<CollectionResponse>(JsonOptions);
         return collection!;
+    }
+
+    private async Task<ItemSummaryResponse> CreateItemAsync(Guid collectionId, string name)
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collectionId}/items",
+            new { name, quantity = 1 });
+        return (await response.Content.ReadFromJsonAsync<ItemSummaryResponse>(JsonOptions))!;
     }
 
     private async Task<AttributeDefinitionResponse> CreateAttributeDefinitionAsync(
@@ -614,7 +750,14 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         IReadOnlyList<string> Tags,
         int AttributeValueCount,
         DateTime CreatedUtc,
-        DateTime UpdatedUtc);
+        DateTime? UpdatedUtc);
+
+    private sealed record PagedItemsResponse(
+        IReadOnlyList<ItemSummaryResponse> Items,
+        int TotalCount,
+        int Page,
+        int PageSize,
+        int TotalPages);
 
     private sealed record ItemDetailResponse(
         Guid Id,
@@ -626,7 +769,7 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         string? LocationName,
         IReadOnlyList<TagResponse> Tags,
         DateTime CreatedUtc,
-        DateTime UpdatedUtc,
+        DateTime? UpdatedUtc,
         IReadOnlyList<ItemAttributeValueResponse> AttributeValues);
 
     private sealed record ItemAttributeValueResponse(

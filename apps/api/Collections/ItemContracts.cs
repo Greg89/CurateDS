@@ -52,3 +52,10 @@ public sealed record ItemAttributeValueResponse(
     string AttributeKey,
     AttributeDataType DataType,
     string Value);
+
+public sealed record PagedItemsResponse(
+    IReadOnlyList<ItemSummaryResponse> Items,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages);
