@@ -30,11 +30,9 @@ internal sealed class TagConfiguration : IEntityTypeConfiguration<Tag>
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(tag => tag.UpdatedUtc)
-            .IsRequired();
+        builder.Property(tag => tag.UpdatedUtc);
 
         builder.Property(tag => tag.UpdatedBy)
-            .IsRequired()
             .HasMaxLength(200);
 
         builder.Property(tag => tag.DeletedUtc);

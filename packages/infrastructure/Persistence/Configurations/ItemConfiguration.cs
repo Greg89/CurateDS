@@ -34,11 +34,9 @@ internal sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(item => item.UpdatedUtc)
-            .IsRequired();
+        builder.Property(item => item.UpdatedUtc);
 
         builder.Property(item => item.UpdatedBy)
-            .IsRequired()
             .HasMaxLength(200);
 
         builder.Property(item => item.DeletedUtc);

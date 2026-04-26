@@ -29,11 +29,9 @@ internal sealed class LocationConfiguration : IEntityTypeConfiguration<Location>
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(location => location.UpdatedUtc)
-            .IsRequired();
+        builder.Property(location => location.UpdatedUtc);
 
         builder.Property(location => location.UpdatedBy)
-            .IsRequired()
             .HasMaxLength(200);
 
         builder.Property(location => location.DeletedUtc);

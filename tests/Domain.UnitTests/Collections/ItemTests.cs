@@ -45,8 +45,7 @@ public sealed class ItemTests
             1,
             DateTime.UtcNow,
             "system");
-        var previousUpdatedUtc = item.UpdatedUtc;
-        var nextUpdatedUtc = previousUpdatedUtc.AddMinutes(5);
+        var nextUpdatedUtc = DateTime.UtcNow.AddMinutes(5);
 
         item.UpdateDetails(" Updated Name ", " Updated Description ", 3, nextUpdatedUtc, "system");
 

@@ -31,7 +31,7 @@ public sealed record ItemSummaryResponse(
     IReadOnlyList<string> Tags,
     int AttributeValueCount,
     DateTime CreatedUtc,
-    DateTime UpdatedUtc);
+    DateTime? UpdatedUtc);  // null until a PUT action is taken
 
 public sealed record ItemDetailResponse(
     Guid Id,
@@ -43,7 +43,7 @@ public sealed record ItemDetailResponse(
     string? LocationName,
     IReadOnlyList<TagResponse> Tags,
     DateTime CreatedUtc,
-    DateTime UpdatedUtc,
+    DateTime? UpdatedUtc,  // null until a PUT action is taken
     IReadOnlyList<ItemAttributeValueResponse> AttributeValues);
 
 public sealed record ItemAttributeValueResponse(

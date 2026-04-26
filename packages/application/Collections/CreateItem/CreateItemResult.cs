@@ -10,5 +10,5 @@ public sealed record CreateItemResult(
     string? LocationName,
     IReadOnlyList<TagDto> Tags,
     DateTime CreatedUtc,
-    DateTime UpdatedUtc,
+    DateTime? UpdatedUtc,
     IReadOnlyList<ItemAttributeValueDto> AttributeValues);

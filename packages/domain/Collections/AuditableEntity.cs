@@ -15,9 +15,15 @@ public abstract class AuditableEntity
 
     public string CreatedBy { get; private set; } = string.Empty;
 
-    public DateTime UpdatedUtc { get; private set; }
+    /// <summary>
+    /// Null until the first PUT action is applied to the entity.
+    /// </summary>
+    public DateTime? UpdatedUtc { get; private set; }
 
-    public string UpdatedBy { get; private set; } = string.Empty;
+    /// <summary>
+    /// Null until the first PUT action is applied to the entity.
+    /// </summary>
+    public string? UpdatedBy { get; private set; }
 
     public DateTime? DeletedUtc { get; private set; }
 
@@ -27,14 +33,12 @@ public abstract class AuditableEntity
 
     /// <summary>
     /// Call once from each derived entity's private parameterized constructor.
-    /// Sets CreatedUtc / CreatedBy and initialises UpdatedUtc / UpdatedBy to the same values.
+    /// Sets CreatedUtc / CreatedBy. UpdatedUtc / UpdatedBy are intentionally left null.
     /// </summary>
     protected void SetAuditOnCreate(DateTime createdUtc, string createdBy)
     {
         CreatedUtc = createdUtc;
         CreatedBy = createdBy;
-        UpdatedUtc = createdUtc;
-        UpdatedBy = createdBy;
     }
 
     /// <summary>

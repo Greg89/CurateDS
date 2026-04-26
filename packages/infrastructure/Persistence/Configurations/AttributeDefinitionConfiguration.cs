@@ -44,11 +44,9 @@ internal sealed class AttributeDefinitionConfiguration : IEntityTypeConfiguratio
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(attributeDefinition => attributeDefinition.UpdatedUtc)
-            .IsRequired();
+        builder.Property(attributeDefinition => attributeDefinition.UpdatedUtc);
 
         builder.Property(attributeDefinition => attributeDefinition.UpdatedBy)
-            .IsRequired()
             .HasMaxLength(200);
 
         builder.Property(attributeDefinition => attributeDefinition.DeletedUtc);
