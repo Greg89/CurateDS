@@ -4,13 +4,21 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { CatalogApp } from "./catalog/CatalogApp";
 
 export function App() {
-  const { isLoading, isAuthenticated, loginWithRedirect } = useAuth0();
+  const { isLoading, isAuthenticated, loginWithRedirect, error } = useAuth0();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !error) {
       void loginWithRedirect();
     }
-  }, [isLoading, isAuthenticated, loginWithRedirect]);
+  }, [isLoading, isAuthenticated, loginWithRedirect, error]);
+
+  if (error) {
+    return (
+      <div style={{ padding: "2rem", color: "#f0ebe3" }}>
+        <p>Authentication error: {error.message}</p>
+      </div>
+    );
+  }
 
   if (isLoading || !isAuthenticated) {
     return null;
