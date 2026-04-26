@@ -1,5 +1,23 @@
 import { appConfig } from "./config";
 
+// ---------------------------------------------------------------------------
+// Auth token provider
+// ---------------------------------------------------------------------------
+
+type TokenProvider = () => Promise<string>;
+let _tokenProvider: TokenProvider | null = null;
+
+/** Call this once (inside Auth0Provider context) to enable bearer tokens on all requests. */
+export function setTokenProvider(fn: TokenProvider): void {
+  _tokenProvider = fn;
+}
+
+async function authHeader(): Promise<Record<string, string>> {
+  if (!_tokenProvider) return {};
+  const token = await _tokenProvider();
+  return { Authorization: `Bearer ${token}` };
+}
+
 export interface Collection {
   id: string;
   name: string;
@@ -86,7 +104,9 @@ export interface ItemFilters {
 }
 
 export async function listCollections(): Promise<Collection[]> {
-  const response = await fetch(`${appConfig.apiBaseUrl}/collections`);
+  const response = await fetch(`${appConfig.apiBaseUrl}/collections`, {
+    headers: await authHeader()
+  });
 
   if (!response.ok) {
     throw new Error("Failed to load collections.");
@@ -99,6 +119,7 @@ export async function createCollection(name: string): Promise<Collection> {
   const response = await fetch(`${appConfig.apiBaseUrl}/collections`, {
     method: "POST",
     headers: {
+      ...await authHeader(),
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ name })
@@ -117,7 +138,8 @@ export async function listAttributeDefinitions(
   collectionId: string
 ): Promise<AttributeDefinition[]> {
   const response = await fetch(
-    `${appConfig.apiBaseUrl}/collections/${collectionId}/attribute-definitions`
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/attribute-definitions`,
+    { headers: await authHeader() }
   );
 
   if (!response.ok) {
@@ -139,6 +161,7 @@ export async function createAttributeDefinition(input: {
     {
       method: "POST",
       headers: {
+        ...await authHeader(),
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -161,7 +184,9 @@ export async function createAttributeDefinition(input: {
 }
 
 export async function listTags(): Promise<Tag[]> {
-  const response = await fetch(`${appConfig.apiBaseUrl}/tags`);
+  const response = await fetch(`${appConfig.apiBaseUrl}/tags`, {
+    headers: await authHeader()
+  });
 
   if (!response.ok) {
     throw new Error("Failed to load tags.");
@@ -174,6 +199,7 @@ export async function createTag(name: string): Promise<Tag> {
   const response = await fetch(`${appConfig.apiBaseUrl}/tags`, {
     method: "POST",
     headers: {
+      ...await authHeader(),
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ name })
@@ -187,7 +213,9 @@ export async function createTag(name: string): Promise<Tag> {
 }
 
 export async function listLocations(): Promise<Location[]> {
-  const response = await fetch(`${appConfig.apiBaseUrl}/locations`);
+  const response = await fetch(`${appConfig.apiBaseUrl}/locations`, {
+    headers: await authHeader()
+  });
 
   if (!response.ok) {
     throw new Error("Failed to load locations.");
@@ -203,6 +231,7 @@ export async function createLocation(input: {
   const response = await fetch(`${appConfig.apiBaseUrl}/locations`, {
     method: "POST",
     headers: {
+      ...await authHeader(),
       "Content-Type": "application/json"
     },
     body: JSON.stringify(input)
@@ -263,7 +292,8 @@ export async function listItems(
 
   const queryString = searchParams.toString();
   const response = await fetch(
-    `${appConfig.apiBaseUrl}/collections/${collectionId}/items${queryString ? `?${queryString}` : ""}`
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/items${queryString ? `?${queryString}` : ""}`,
+    { headers: await authHeader() }
   );
 
   if (!response.ok) {
@@ -278,7 +308,8 @@ export async function getItemDetail(
   itemId: string
 ): Promise<ItemDetail> {
   const response = await fetch(
-    `${appConfig.apiBaseUrl}/collections/${collectionId}/items/${itemId}`
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/items/${itemId}`,
+    { headers: await authHeader() }
   );
 
   if (!response.ok) {
@@ -305,6 +336,7 @@ export async function createItem(input: {
     {
       method: "POST",
       headers: {
+        ...await authHeader(),
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -343,6 +375,7 @@ export async function updateItem(input: {
     {
       method: "PUT",
       headers: {
+        ...await authHeader(),
         "Content-Type": "application/json"
       },
       body: JSON.stringify({

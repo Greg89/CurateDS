@@ -1,5 +1,6 @@
 using CurateDS.Api.Collections;
 using CurateDS.Application.Abstractions.Persistence;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
 using CurateDS.Application.Collections.CreateItem;
@@ -46,6 +47,19 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+
+var auth0Domain = builder.Configuration["Auth0:Domain"] ?? string.Empty;
+var auth0Audience = builder.Configuration["Auth0:Audience"] ?? string.Empty;
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = $"https://{auth0Domain}/";
+        options.Audience = auth0Audience;
+    });
+
+builder.Services.AddAuthorization();
 
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
@@ -135,6 +149,8 @@ else
 }
 
 app.UseCors("WebClient");
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/ready", () => Results.Ok(new
 {

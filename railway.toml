@@ -1,0 +1,47 @@
+# Railway configuration for the CurateDS API service.
+#
+# In Railway, create two separate services pointing to this repo:
+#
+#   Service: catalog-api
+#     Dockerfile:    apps/api/Dockerfile
+#     Build context: . (repo root)
+#     Branch:        develop  →  staging environment
+#                    main     →  production environment
+#
+#   Service: catalog-web
+#     Dockerfile:    apps/web/Dockerfile
+#     Build context: . (repo root)
+#     Branch:        develop  →  staging environment
+#                    main     →  production environment
+#
+# Required environment variables per service (set in Railway dashboard):
+#
+#  catalog-api:
+#    Auth0__Domain              your-tenant.us.auth0.com
+#    Auth0__Audience            https://api.curateds.com   (your API identifier)
+#    ConnectionStrings__CatalogDb
+#      Host=${{Postgres.PGHOST}};Port=${{Postgres.PGPORT}};Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}}
+#    Cors__AllowedOrigins__0    https://<your-web-service>.up.railway.app
+#
+#  catalog-web (build variables):
+#    VITE_API_BASE_URL          https://<your-api-service>.up.railway.app
+#    VITE_AUTH0_DOMAIN          your-tenant.us.auth0.com
+#    VITE_AUTH0_CLIENT_ID       <SPA application Client ID>
+#    VITE_AUTH0_AUDIENCE        https://api.curateds.com
+#
+# Auth0 application setup (do this once in the Auth0 dashboard):
+#   1. Create a "Single Page Application" — copy its Domain and Client ID
+#   2. Under that app's Settings → Allowed Callback URLs: add your Railway web URL
+#      (and http://localhost:3000 for local dev)
+#   3. Under Allowed Logout URLs + Allowed Web Origins: same URLs
+#   4. Create an "API" application — set the identifier (becomes your Audience)
+#      Enable "RBAC" and "Add Permissions in the Access Token" if needed later
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "apps/api/Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

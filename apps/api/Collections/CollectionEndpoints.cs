@@ -22,7 +22,7 @@ public static class CollectionEndpoints
 {
     public static IEndpointRouteBuilder MapCollectionEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/collections");
+        var group = app.MapGroup("/collections").RequireAuthorization();
 
         group.MapGet("/", async (
             ListCollectionsService service,
@@ -65,7 +65,7 @@ public static class CollectionEndpoints
             var ownerId = GetDefaultOwnerId(configuration);
             var tags = await service.ExecuteAsync(new ListTagsQuery(ownerId), cancellationToken);
             return Results.Ok(tags.Select(tag => new TagResponse(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)));
-        });
+        }).RequireAuthorization();
 
         app.MapPost("/tags", async (
             CreateTagRequest request,
@@ -90,7 +90,7 @@ public static class CollectionEndpoints
                     "A tag with this name already exists.",
                     "duplicate_tag");
             }
-        });
+        }).RequireAuthorization();
 
         app.MapGet("/locations", async (
             ListLocationsService service,
@@ -104,7 +104,7 @@ public static class CollectionEndpoints
                 location.Name,
                 location.Description,
                 location.CreatedUtc)));
-        });
+        }).RequireAuthorization();
 
         app.MapPost("/locations", async (
             CreateLocationRequest request,
@@ -127,7 +127,7 @@ public static class CollectionEndpoints
             {
                 return ApiResponses.Validation(exception);
             }
-        });
+        }).RequireAuthorization();
 
         group.MapGet("/{collectionId:guid}/attribute-definitions", async (
             Guid collectionId,
