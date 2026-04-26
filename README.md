@@ -85,8 +85,17 @@ The current vertical slice covers:
 12. sorting item lists by updated date, created date, name, or quantity
 13. saving collection-specific item views in the web app for reuse
 
-The next vertical slice should cover:
+The original MVP slice still has these notable gaps:
 
-1. adding grouping or denser list/table views for larger collections
-2. tightening the routed client into more reusable feature-level components
-3. starting item history or media metadata
+1. denser list or table browsing for larger collections
+2. media metadata or attachments
+3. item history or activity tracking
+4. dashboard and reporting views above the collection workspace
+
+The next roadmap changes are:
+
+1. refactor item listing so search, filter, and sort execute in the repository/EF query instead of in memory
+2. add a paged item-list contract and UI flow on top of that query refactor
+3. continue tightening API contracts with the same Problem Details strategy and paged DTO consistency
+4. keep decomposing the routed client into smaller reusable feature components and hooks
+5. return to the remaining MVP features once the browsing path is scalable enough to support larger collections

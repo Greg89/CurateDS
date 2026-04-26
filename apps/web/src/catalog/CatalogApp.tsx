@@ -2,9 +2,6 @@ import { FormEvent, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  appConfig
-} from "../config";
-import {
   AttributeDataType,
   AttributeDefinition,
   Collection,
@@ -43,6 +40,8 @@ interface SavedItemView {
   name: string;
   filters: ItemFilters;
 }
+
+const sidebarStateStorageKey = "curateds:sidebar-collapsed";
 
 export function CatalogApp({
   section
@@ -88,6 +87,8 @@ export function CatalogApp({
   const [savedViewName, setSavedViewName] = useState("");
   const [savedViews, setSavedViews] = useState<SavedItemView[]>([]);
   const [savedViewsCollectionId, setSavedViewsCollectionId] = useState("");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(readSidebarCollapsedState);
+  const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
   const normalizedItemFilterTagIds = normalizeTagIds(itemFilterTagIds);
 
   const itemFilters: ItemFilters = {
@@ -470,102 +471,144 @@ export function CatalogApp({
     }
   }, [collectionsQuery.data, collectionsQuery.isSuccess, navigate, selectedCollectionId]);
 
+  useEffect(() => {
+    window.localStorage.setItem(
+      sidebarStateStorageKey,
+      JSON.stringify(isSidebarCollapsed)
+    );
+  }, [isSidebarCollapsed]);
+
   const savedViewsSummary = savedViews.length > 0
     ? savedViews.map((view) => view.name).join(", ")
     : "No saved views yet.";
 
   return (
-    <main className="app-shell">
-      <aside className="sidebar panel">
-        <div className="sidebar-header">
-          <p className="eyebrow">CurateDS</p>
-          <h1>Catalog Workspace</h1>
-          <p className="copy">
-            A web-first, hobby-agnostic catalog workspace focused on maintainable,
-            stable growth.
-          </p>
-          <p className="meta">API base URL: {appConfig.apiBaseUrl}</p>
-        </div>
+    <main className={`app-shell${isSidebarCollapsed ? " sidebar-is-collapsed" : ""}${isSidebarMobileOpen ? " sidebar-mobile-open" : ""}`}>
+      <button
+        aria-hidden={!isSidebarMobileOpen}
+        className={`sidebar-backdrop${isSidebarMobileOpen ? " visible" : ""}`}
+        onClick={() => setIsSidebarMobileOpen(false)}
+        tabIndex={isSidebarMobileOpen ? 0 : -1}
+        type="button"
+      />
 
-        <form className="collection-form" onSubmit={handleCollectionSubmit}>
-          <label className="field">
-            <span>New Collection</span>
-            <input
-              value={collectionName}
-              onChange={(event) => setCollectionName(event.target.value)}
-              placeholder="Board Games"
-              maxLength={100}
-            />
-          </label>
-
-          <button
-            className="primary-button"
-            disabled={createCollectionMutation.isPending}
-            type="submit"
-          >
-            {createCollectionMutation.isPending ? "Creating..." : "Create Collection"}
-          </button>
-
-          {createCollectionMutation.error ? (
-            <p className="message error">{createCollectionMutation.error.message}</p>
-          ) : null}
-        </form>
-
-        {collectionsQuery.isLoading ? <p className="message">Loading collections...</p> : null}
-        {collectionsQuery.isError ? (
-          <p className="message error">{collectionsQuery.error.message}</p>
-        ) : null}
-
-        <CollectionList
-          collections={collectionsQuery.data ?? []}
-          selectedCollectionId={selectedCollectionId}
-          onSelect={(collectionId) => navigateToCollection(collectionId)}
-        />
-
-        {selectedCollection ? (
-          <nav className="sidebar-nav">
-            <NavLink
-              className={({ isActive }) =>
-                `tab-link sidebar-link${isActive ? " active" : ""}`
-              }
-              to={`/collections/${selectedCollection.id}/overview`}
+      <aside className={`sidebar panel${isSidebarCollapsed ? " sidebar-collapsed" : ""}`}>
+        {isSidebarCollapsed ? (
+          <div className="sidebar-collapsed-rail">
+            <button
+              aria-expanded={false}
+              aria-label="Expand collection sidebar"
+              className="secondary-button sidebar-toggle-icon sidebar-desktop-toggle"
+              onClick={() => setIsSidebarCollapsed(false)}
+              type="button"
             >
-              Overview
-            </NavLink>
-            <NavLink
-              className={({ isActive }) =>
-                `tab-link sidebar-link${isActive ? " active" : ""}`
-              }
-              to={`/collections/${selectedCollection.id}/items`}
-            >
-              Items
-            </NavLink>
-            <NavLink
-              className={({ isActive }) =>
-                `tab-link sidebar-link${isActive ? " active" : ""}`
-              }
-              to={`/collections/${selectedCollection.id}/settings`}
-            >
-              Settings
-            </NavLink>
-          </nav>
-        ) : null}
+              <span aria-hidden="true">&#8250;</span>
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="sidebar-top">
+              <div className="sidebar-header">
+                <p className="eyebrow">CurateDS</p>
+                <h1>Collections</h1>
+                <p className="copy">
+                  Shape collections, switch context quickly, and keep the main workspace focused.
+                </p>
+              </div>
+
+              <div className="sidebar-controls">
+                <button
+                  aria-expanded={true}
+                  aria-label="Collapse collection sidebar"
+                  className="secondary-button sidebar-toggle-icon sidebar-desktop-toggle"
+                  onClick={() => setIsSidebarCollapsed(true)}
+                  type="button"
+                >
+                  <span aria-hidden="true">&#8249;</span>
+                </button>
+                <button
+                  aria-label="Close collection sidebar"
+                  className="secondary-button sidebar-toggle sidebar-close-button"
+                  onClick={() => setIsSidebarMobileOpen(false)}
+                  type="button"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="sidebar-body">
+              <form className="collection-form" onSubmit={handleCollectionSubmit}>
+                <label className="field">
+                  <span>New Collection</span>
+                  <input
+                    value={collectionName}
+                    onChange={(event) => setCollectionName(event.target.value)}
+                    placeholder="Board Games"
+                    maxLength={100}
+                  />
+                </label>
+
+                <button
+                  className="primary-button"
+                  disabled={createCollectionMutation.isPending}
+                  type="submit"
+                >
+                  {createCollectionMutation.isPending ? "Creating..." : "Create Collection"}
+                </button>
+
+                {createCollectionMutation.error ? (
+                  <p className="message error">{createCollectionMutation.error.message}</p>
+                ) : null}
+              </form>
+
+              {collectionsQuery.isLoading ? <p className="message">Loading collections...</p> : null}
+              {collectionsQuery.isError ? (
+                <p className="message error">{collectionsQuery.error.message}</p>
+              ) : null}
+
+              <CollectionList
+                collections={collectionsQuery.data ?? []}
+                selectedCollectionId={selectedCollectionId}
+                onSelect={(collectionId) => {
+                  setIsSidebarMobileOpen(false);
+                  navigateToCollection(collectionId);
+                }}
+              />
+            </div>
+          </>
+        )}
       </aside>
 
-      <section className="content-shell">
-        <header className="panel content-header">
-          <div>
-            <p className="eyebrow subtle">
-              {selectedCollection ? selectedCollection.name : "No collection selected"}
-            </p>
-            <h2>
-              {section === "overview"
-                ? "Collection Overview"
-                : section === "items"
-                  ? "Items Workspace"
-                  : "Collection Settings"}
-            </h2>
-            <p className="panel-copy">
+      <section className="workspace-shell">
+        <header className="panel top-bar">
+          <div className="top-bar-main">
+            <div className="top-bar-title-row">
+              <button
+                aria-expanded={isSidebarMobileOpen}
+                aria-label="Open collection sidebar"
+                className="secondary-button mobile-sidebar-toggle"
+                onClick={() => setIsSidebarMobileOpen(true)}
+                type="button"
+              >
+                Collections
+              </button>
+
+              <div>
+                <p className="eyebrow subtle">
+                  {selectedCollection ? selectedCollection.name : "No collection selected"}
+                </p>
+                <h2>
+                  {section === "overview"
+                    ? "Collection Overview"
+                    : section === "items"
+                      ? "Items Workspace"
+                      : "Collection Settings"}
+                </h2>
+              </div>
+            </div>
+
+            <p className="panel-copy top-bar-copy">
               {selectedCollection
                 ? section === "overview"
                   ? "See the collection at a glance before drilling into items or settings."
@@ -591,110 +634,113 @@ export function CatalogApp({
           ) : null}
         </header>
 
-        {!selectedCollection ? (
-          <section className="panel">
-            <div className="empty-state">
-              <p>No collection selected.</p>
-              <p>Create a collection from the sidebar to start shaping the catalog.</p>
-            </div>
-          </section>
-        ) : section === "overview" ? (
-          <OverviewPage
-            attributeDefinitions={attributeDefinitionsQuery.data ?? []}
-            items={itemsQuery.data ?? []}
-            itemDetail={itemDetailQuery.data ?? null}
-            locations={locationsQuery.data ?? []}
-            savedViewsSummary={savedViewsSummary}
-            selectedCollection={selectedCollection}
-            tags={tagsQuery.data ?? []}
-            onEditItem={beginEditingSelectedItem}
-          />
-        ) : section === "items" ? (
-          <ItemsPage
-            attributeDefinitions={attributeDefinitionsQuery.data ?? []}
-            createItemError={createItemMutation.error?.message ?? null}
-            isCreatePending={createItemMutation.isPending}
-            isUpdatePending={updateItemMutation.isPending}
-            itemAttributeFilters={itemAttributeFilters}
-            itemAttributeValues={itemAttributeValues}
-            itemDescription={itemDescription}
-            itemDetail={itemDetailQuery.data ?? null}
-            itemFilterLocationId={itemFilterLocationId}
-            itemFilterTagIds={itemFilterTagIds}
-            itemLocationId={itemLocationId}
-            itemName={itemName}
-            itemQuantity={itemQuantity}
-            itemSearchText={itemSearchText}
-            itemSortBy={itemSortBy}
-            itemSortDirection={itemSortDirection}
-            itemTagIds={itemTagIds}
-            items={itemsQuery.data ?? []}
-            itemsError={itemsQuery.isError ? itemsQuery.error.message : null}
-            isEditing={editingItemId !== null}
-            isItemDetailLoading={itemDetailQuery.isLoading}
-            isItemsLoading={itemsQuery.isLoading}
-            locations={locationsQuery.data ?? []}
-            savedViewName={savedViewName}
-            savedViews={savedViews}
-            selectedCollection={selectedCollection}
-            selectedItemId={selectedItemId}
-            tags={tagsQuery.data ?? []}
-            updateItemError={updateItemMutation.error?.message ?? null}
-            onApplySavedView={applySavedView}
-            onAttributeFilterChange={handleAttributeFilterChange}
-            onAttributeValueChange={handleAttributeValueChange}
-            onClearItemFilters={clearItemFilters}
-            onDeleteSavedView={deleteSavedView}
-            onEditItem={beginEditingSelectedItem}
-            onItemDescriptionChange={setItemDescription}
-            onItemLocationChange={setItemLocationId}
-            onItemNameChange={setItemName}
-            onItemQuantityChange={setItemQuantity}
-            onItemSearchTextChange={setItemSearchText}
-            onItemSortByChange={setItemSortBy}
-            onItemSortDirectionChange={setItemSortDirection}
-            onItemSubmit={handleItemSubmit}
-            onItemFilterLocationChange={setItemFilterLocationId}
-            onResetItemForm={resetItemForm}
-            onSaveCurrentView={saveCurrentView}
-            onSavedViewNameChange={setSavedViewName}
-            onSelectItem={setSelectedItemId}
-            onToggleFilterTag={toggleFilterTag}
-            onToggleItemTag={toggleItemTag}
-          />
-        ) : (
-          <SettingsPage
-            attributeDataType={attributeDataType}
-            attributeDefinitions={attributeDefinitionsQuery.data ?? []}
-            attributeIsFilterable={attributeIsFilterable}
-            attributeIsRequired={attributeIsRequired}
-            attributeName={attributeName}
-            createAttributeDefinitionError={
-              createAttributeDefinitionMutation.error?.message ?? null
-            }
-            createLocationError={createLocationMutation.error?.message ?? null}
-            createTagError={createTagMutation.error?.message ?? null}
-            isCreateAttributePending={createAttributeDefinitionMutation.isPending}
-            isCreateLocationPending={createLocationMutation.isPending}
-            isCreateTagPending={createTagMutation.isPending}
-            locationDescription={locationDescription}
-            locationName={locationName}
-            locations={locationsQuery.data ?? []}
-            selectedCollection={selectedCollection}
-            tagName={tagName}
-            tags={tagsQuery.data ?? []}
-            onAttributeDataTypeChange={setAttributeDataType}
-            onAttributeIsFilterableChange={setAttributeIsFilterable}
-            onAttributeIsRequiredChange={setAttributeIsRequired}
-            onAttributeNameChange={setAttributeName}
-            onAttributeSubmit={handleAttributeSubmit}
-            onLocationDescriptionChange={setLocationDescription}
-            onLocationNameChange={setLocationName}
-            onLocationSubmit={handleLocationSubmit}
-            onTagNameChange={setTagName}
-            onTagSubmit={handleTagSubmit}
-          />
-        )}
+        <section className="content-shell">
+          {!selectedCollection ? (
+            <section className="panel">
+              <div className="empty-state">
+                <p>No collection selected.</p>
+                <p>Create a collection from the sidebar to start shaping the catalog.</p>
+              </div>
+            </section>
+          ) : section === "overview" ? (
+            <OverviewPage
+              attributeDefinitions={attributeDefinitionsQuery.data ?? []}
+              items={itemsQuery.data ?? []}
+              itemDetail={itemDetailQuery.data ?? null}
+              locations={locationsQuery.data ?? []}
+              savedViewsSummary={savedViewsSummary}
+              selectedCollection={selectedCollection}
+              tags={tagsQuery.data ?? []}
+              onEditItem={beginEditingSelectedItem}
+            />
+          ) : section === "items" ? (
+            <ItemsPage
+              attributeDefinitions={attributeDefinitionsQuery.data ?? []}
+              createItemError={createItemMutation.error?.message ?? null}
+              isCreatePending={createItemMutation.isPending}
+              isUpdatePending={updateItemMutation.isPending}
+              itemAttributeFilters={itemAttributeFilters}
+              itemAttributeValues={itemAttributeValues}
+              itemDescription={itemDescription}
+              itemDetail={itemDetailQuery.data ?? null}
+              itemFilterLocationId={itemFilterLocationId}
+              itemFilterTagIds={itemFilterTagIds}
+              itemLocationId={itemLocationId}
+              itemName={itemName}
+              itemQuantity={itemQuantity}
+              itemSearchText={itemSearchText}
+              itemSortBy={itemSortBy}
+              itemSortDirection={itemSortDirection}
+              itemTagIds={itemTagIds}
+              items={itemsQuery.data ?? []}
+              itemsError={itemsQuery.isError ? itemsQuery.error.message : null}
+              isEditing={editingItemId !== null}
+              isItemDetailLoading={itemDetailQuery.isLoading}
+              isItemsLoading={itemsQuery.isLoading}
+              locations={locationsQuery.data ?? []}
+              savedViewName={savedViewName}
+              savedViews={savedViews}
+              selectedCollection={selectedCollection}
+              selectedItemId={selectedItemId}
+              tags={tagsQuery.data ?? []}
+              updateItemError={updateItemMutation.error?.message ?? null}
+              onApplySavedView={applySavedView}
+              onAttributeFilterChange={handleAttributeFilterChange}
+              onAttributeValueChange={handleAttributeValueChange}
+              onClearItemFilters={clearItemFilters}
+              onDeleteSavedView={deleteSavedView}
+              onEditItem={beginEditingSelectedItem}
+              onItemDescriptionChange={setItemDescription}
+              onItemLocationChange={setItemLocationId}
+              onItemNameChange={setItemName}
+              onItemQuantityChange={setItemQuantity}
+              onItemSearchTextChange={setItemSearchText}
+              onItemSortByChange={setItemSortBy}
+              onItemSortDirectionChange={setItemSortDirection}
+              onItemSubmit={handleItemSubmit}
+              onItemFilterLocationChange={setItemFilterLocationId}
+              onResetItemForm={resetItemForm}
+              onSaveCurrentView={saveCurrentView}
+              onSavedViewNameChange={setSavedViewName}
+              onSelectItem={setSelectedItemId}
+              onToggleFilterTag={toggleFilterTag}
+              onToggleItemTag={toggleItemTag}
+            />
+          ) : (
+            <SettingsPage
+              attributeDataType={attributeDataType}
+              attributeDefinitions={attributeDefinitionsQuery.data ?? []}
+              attributeIsFilterable={attributeIsFilterable}
+              attributeIsRequired={attributeIsRequired}
+              attributeName={attributeName}
+              createAttributeDefinitionError={
+                createAttributeDefinitionMutation.error?.message ?? null
+              }
+              createLocationError={createLocationMutation.error?.message ?? null}
+              createTagError={createTagMutation.error?.message ?? null}
+              isCreateAttributePending={createAttributeDefinitionMutation.isPending}
+              isCreateLocationPending={createLocationMutation.isPending}
+              isCreateTagPending={createTagMutation.isPending}
+              items={itemsQuery.data ?? []}
+              locationDescription={locationDescription}
+              locationName={locationName}
+              locations={locationsQuery.data ?? []}
+              selectedCollection={selectedCollection}
+              tagName={tagName}
+              tags={tagsQuery.data ?? []}
+              onAttributeDataTypeChange={setAttributeDataType}
+              onAttributeIsFilterableChange={setAttributeIsFilterable}
+              onAttributeIsRequiredChange={setAttributeIsRequired}
+              onAttributeNameChange={setAttributeName}
+              onAttributeSubmit={handleAttributeSubmit}
+              onLocationDescriptionChange={setLocationDescription}
+              onLocationNameChange={setLocationName}
+              onLocationSubmit={handleLocationSubmit}
+              onTagNameChange={setTagName}
+              onTagSubmit={handleTagSubmit}
+            />
+          )}
+        </section>
       </section>
     </main>
   );
@@ -768,7 +814,7 @@ function OverviewPage({
           <p>Reusable labels and storage zones available to items in this collection.</p>
         </div>
 
-        <OrganizationSummary locations={locations} tags={tags} />
+        <OrganizationSummary items={items} locations={locations} tags={tags} />
       </section>
 
       <section className="panel panel-wide">
@@ -1074,6 +1120,7 @@ function SettingsPage({
   isCreateAttributePending,
   isCreateLocationPending,
   isCreateTagPending,
+  items,
   locationDescription,
   locationName,
   locations,
@@ -1102,6 +1149,7 @@ function SettingsPage({
   isCreateAttributePending: boolean;
   isCreateLocationPending: boolean;
   isCreateTagPending: boolean;
+  items: ItemSummary[];
   locationDescription: string;
   locationName: string;
   locations: Location[];
@@ -1239,7 +1287,7 @@ function SettingsPage({
           {createLocationError ? <p className="message error">{createLocationError}</p> : null}
         </form>
 
-        <OrganizationSummary locations={locations} tags={tags} />
+        <OrganizationSummary items={items} locations={locations} tags={tags} />
       </section>
     </section>
   );
@@ -1348,27 +1396,88 @@ function AttributeDefinitionList({
 }
 
 function OrganizationSummary({
+  items = [],
   locations,
   tags
 }: Readonly<{
+  items?: ItemSummary[];
   locations: Location[];
   tags: Tag[];
 }>) {
+  const topTags = getTopUsageEntries(
+    tags.map((tag) => tag.name),
+    items.flatMap((item) => item.tags)
+  );
+  const topLocations = getTopUsageEntries(
+    locations.map((location) => location.name),
+    items
+      .map((item) => item.locationName)
+      .filter((locationName): locationName is string => Boolean(locationName))
+  );
+
   return (
     <div className="organization-grid">
-      <div className="empty-state compact">
-        <p>{tags.length} tag{tags.length === 1 ? "" : "s"} ready.</p>
-        <p>{tags.length > 0 ? tags.map((tag) => tag.name).join(", ") : "Create your first reusable tag."}</p>
+      <div className="organization-summary-grid">
+        <MetricCard label="Tags Ready" value={tags.length.toString()} />
+        <MetricCard label="Locations Ready" value={locations.length.toString()} />
       </div>
-      <div className="empty-state compact">
-        <p>{locations.length} location{locations.length === 1 ? "" : "s"} ready.</p>
-        <p>
-          {locations.length > 0
-            ? locations.map((location) => location.name).join(", ")
-            : "Add a storage location for item organization."}
-        </p>
+
+      <div className="organization-usage-grid">
+        <UsageBreakdown
+          emptyCopy="Create tags and assign them to items to see usage patterns."
+          entries={topTags}
+          title="Top Tags"
+        />
+        <UsageBreakdown
+          emptyCopy="Assign item locations to see which storage zones are most used."
+          entries={topLocations}
+          title="Top Locations"
+        />
       </div>
     </div>
+  );
+}
+
+function UsageBreakdown({
+  emptyCopy,
+  entries,
+  title
+}: Readonly<{
+  emptyCopy: string;
+  entries: UsageEntry[];
+  title: string;
+}>) {
+  return (
+    <section className="usage-card">
+      <div className="panel-header">
+        <h3>{title}</h3>
+        <p>{entries.length > 0 ? "Based on current item usage." : emptyCopy}</p>
+      </div>
+
+      {entries.length === 0 ? (
+        <div className="empty-state compact">
+          <p>No usage yet.</p>
+          <p>{emptyCopy}</p>
+        </div>
+      ) : (
+        <ul className="usage-list">
+          {entries.map((entry) => (
+            <li className="usage-row" key={entry.name}>
+              <div className="usage-row-header">
+                <span className="usage-label">{entry.name}</span>
+                <span className="usage-count">{entry.count}</span>
+              </div>
+              <div className="usage-bar-track">
+                <div
+                  className="usage-bar-fill"
+                  style={{ width: `${Math.max(entry.percentage, 8)}%` }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -1395,19 +1504,88 @@ function TagSelector({
   return (
     <div className="field">
       <span>Tags</span>
-      <div className="tag-picker">
-        {tags.map((tag) => (
-          <label className="tag-option" key={tag.id}>
-            <input
-              checked={selectedTagIds.includes(tag.id)}
-              disabled={disabled}
-              onChange={() => onToggle(tag.id)}
-              type="checkbox"
-            />
-            <span>{tag.name}</span>
-          </label>
-        ))}
-      </div>
+      <TagMultiSelect
+        disabled={disabled}
+        emptyLabel="Select tags"
+        selectedTagIds={selectedTagIds}
+        tags={tags}
+        onToggle={onToggle}
+      />
+    </div>
+  );
+}
+
+function TagMultiSelect({
+  disabled,
+  emptyLabel,
+  selectedTagIds,
+  tags,
+  onToggle
+}: Readonly<{
+  disabled: boolean;
+  emptyLabel: string;
+  selectedTagIds: string[];
+  tags: Tag[];
+  onToggle: (tagId: string) => void;
+}>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedTags = tags.filter((tag) => selectedTagIds.includes(tag.id));
+  const triggerLabel = selectedTags.length === 0
+    ? emptyLabel
+    : selectedTags.length <= 2
+      ? selectedTags.map((tag) => tag.name).join(", ")
+      : `${selectedTags.length} tags selected`;
+
+  return (
+    <div className={`multi-select${isOpen ? " open" : ""}`}>
+      <button
+        aria-expanded={isOpen}
+        className="multi-select-trigger"
+        disabled={disabled}
+        onClick={() => setIsOpen((currentValue) => !currentValue)}
+        type="button"
+      >
+        <span className="multi-select-value">{triggerLabel}</span>
+        <span aria-hidden="true" className="multi-select-chevron">
+          {isOpen ? "\u2303" : "\u2304"}
+        </span>
+      </button>
+
+      {isOpen ? (
+        <div className="multi-select-menu">
+          {selectedTags.length > 0 ? (
+            <div className="multi-select-actions">
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  for (const tagId of selectedTagIds) {
+                    onToggle(tagId);
+                  }
+                }}
+                type="button"
+              >
+                Clear {selectedTags.length} selected
+              </button>
+            </div>
+          ) : null}
+
+          <ul className="multi-select-list">
+            {tags.map((tag) => (
+              <li key={tag.id}>
+                <label className="multi-select-option">
+                  <input
+                    checked={selectedTagIds.includes(tag.id)}
+                    disabled={disabled}
+                    onChange={() => onToggle(tag.id)}
+                    type="checkbox"
+                  />
+                  <span>{tag.name}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1601,19 +1779,13 @@ function ItemFiltersPanel({
       ) : (
         <div className="field">
           <span>Tags</span>
-          <div className="tag-picker">
-            {tags.map((tag) => (
-              <label className="tag-option" key={tag.id}>
-                <input
-                  checked={selectedTagIds.includes(tag.id)}
-                  disabled={disabled}
-                  onChange={() => onToggleTag(tag.id)}
-                  type="checkbox"
-                />
-                <span>{tag.name}</span>
-              </label>
-            ))}
-          </div>
+          <TagMultiSelect
+            disabled={disabled}
+            emptyLabel="All tags"
+            selectedTagIds={selectedTagIds}
+            tags={tags}
+            onToggle={onToggleTag}
+          />
         </div>
       )}
 
@@ -1968,4 +2140,48 @@ function describeSort(
 function normalizeTagIds(tagIds: readonly string[]) {
   return [...new Set(tagIds.map((tagId) => tagId.trim()).filter((tagId) => tagId.length > 0))]
     .sort((left, right) => left.localeCompare(right));
+}
+
+interface UsageEntry {
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+function getTopUsageEntries(availableNames: readonly string[], usedNames: readonly string[]) {
+  const usageCounts = new Map<string, number>();
+
+  for (const name of availableNames) {
+    usageCounts.set(name, 0);
+  }
+
+  for (const name of usedNames) {
+    usageCounts.set(name, (usageCounts.get(name) ?? 0) + 1);
+  }
+
+  const maxCount = Math.max(0, ...usageCounts.values());
+
+  return [...usageCounts.entries()]
+    .filter(([, count]) => count > 0)
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, 10)
+    .map(([name, count]) => ({
+      name,
+      count,
+      percentage: maxCount > 0 ? Math.round((count / maxCount) * 100) : 0
+    }));
+}
+
+function readSidebarCollapsedState() {
+  const storedValue = window.localStorage.getItem(sidebarStateStorageKey);
+
+  if (!storedValue) {
+    return false;
+  }
+
+  try {
+    return JSON.parse(storedValue) === true;
+  } catch {
+    return false;
+  }
 }

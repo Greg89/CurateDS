@@ -1,3 +1,4 @@
+using CurateDS.Api.ApiContracts;
 using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
@@ -21,7 +22,7 @@ public static class CollectionEndpoints
 {
     public static IEndpointRouteBuilder MapCollectionEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/collections");
+        var group = app.MapGroup("/collections").RequireAuthorization();
 
         group.MapGet("/", async (
             ListCollectionsService service,
@@ -52,11 +53,7 @@ public static class CollectionEndpoints
             }
             catch (ValidationException exception)
             {
-                return Results.ValidationProblem(exception.Errors
-                    .GroupBy(error => error.PropertyName)
-                    .ToDictionary(
-                        group => group.Key,
-                        group => group.Select(error => error.ErrorMessage).ToArray()));
+                return ApiResponses.Validation(exception);
             }
         });
 
@@ -68,7 +65,7 @@ public static class CollectionEndpoints
             var ownerId = GetDefaultOwnerId(configuration);
             var tags = await service.ExecuteAsync(new ListTagsQuery(ownerId), cancellationToken);
             return Results.Ok(tags.Select(tag => new TagResponse(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)));
-        });
+        }).RequireAuthorization();
 
         app.MapPost("/tags", async (
             CreateTagRequest request,
@@ -84,20 +81,16 @@ public static class CollectionEndpoints
             }
             catch (ValidationException exception)
             {
-                return Results.ValidationProblem(exception.Errors
-                    .GroupBy(error => error.PropertyName)
-                    .ToDictionary(group => group.Key, group => group.Select(error => error.ErrorMessage).ToArray()));
+                return ApiResponses.Validation(exception);
             }
             catch (DbUpdateException)
             {
-                return Results.ValidationProblem(
-                    new Dictionary<string, string[]>
-                    {
-                        [nameof(CreateTagRequest.Name)] = ["A tag with this name already exists."]
-                    },
-                    statusCode: StatusCodes.Status409Conflict);
+                return ApiResponses.Conflict(
+                    nameof(CreateTagRequest.Name),
+                    "A tag with this name already exists.",
+                    "duplicate_tag");
             }
-        });
+        }).RequireAuthorization();
 
         app.MapGet("/locations", async (
             ListLocationsService service,
@@ -111,7 +104,7 @@ public static class CollectionEndpoints
                 location.Name,
                 location.Description,
                 location.CreatedUtc)));
-        });
+        }).RequireAuthorization();
 
         app.MapPost("/locations", async (
             CreateLocationRequest request,
@@ -132,11 +125,9 @@ public static class CollectionEndpoints
             }
             catch (ValidationException exception)
             {
-                return Results.ValidationProblem(exception.Errors
-                    .GroupBy(error => error.PropertyName)
-                    .ToDictionary(group => group.Key, group => group.Select(error => error.ErrorMessage).ToArray()));
+                return ApiResponses.Validation(exception);
             }
-        });
+        }).RequireAuthorization();
 
         group.MapGet("/{collectionId:guid}/attribute-definitions", async (
             Guid collectionId,
@@ -155,7 +146,7 @@ public static class CollectionEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Collection was not found.");
             }
         });
 
@@ -194,15 +185,11 @@ public static class CollectionEndpoints
             }
             catch (ValidationException exception)
             {
-                return Results.ValidationProblem(exception.Errors
-                    .GroupBy(error => error.PropertyName)
-                    .ToDictionary(
-                        group => group.Key,
-                        group => group.Select(error => error.ErrorMessage).ToArray()));
+                return ApiResponses.Validation(exception);
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Collection was not found.");
             }
         });
 
@@ -232,7 +219,7 @@ public static class CollectionEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Collection was not found.");
             }
         });
 
@@ -278,15 +265,11 @@ public static class CollectionEndpoints
             }
             catch (ValidationException exception)
             {
-                return Results.ValidationProblem(exception.Errors
-                    .GroupBy(error => error.PropertyName)
-                    .ToDictionary(
-                        group => group.Key,
-                        group => group.Select(error => error.ErrorMessage).ToArray()));
+                return ApiResponses.Validation(exception);
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Collection was not found.");
             }
         });
 
@@ -308,7 +291,7 @@ public static class CollectionEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Item was not found.");
             }
         });
 
@@ -354,15 +337,11 @@ public static class CollectionEndpoints
             }
             catch (ValidationException exception)
             {
-                return Results.ValidationProblem(exception.Errors
-                    .GroupBy(error => error.PropertyName)
-                    .ToDictionary(
-                        group => group.Key,
-                        group => group.Select(error => error.ErrorMessage).ToArray()));
+                return ApiResponses.Validation(exception);
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Item or collection was not found.");
             }
         });
 

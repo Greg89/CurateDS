@@ -54,10 +54,24 @@ describe("App routing", () => {
     await user.click(screen.getByRole("button", { name: "Create Collection" }));
 
     expect(await screen.findByRole("heading", { name: "Collection Overview" })).toBeInTheDocument();
-    expect(await screen.findByText("Books")).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getAllByText("Books").length).toBeGreaterThan(0);
     });
+  });
+
+  it("collapses the collection sidebar to prioritize workspace space", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    expect(await screen.findByLabelText("New Collection")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Collapse collection sidebar" }));
+
+    expect(screen.queryByLabelText("New Collection")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Expand collection sidebar" })).toBeInTheDocument();
   });
 });

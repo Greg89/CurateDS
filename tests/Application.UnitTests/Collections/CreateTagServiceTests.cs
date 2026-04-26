@@ -32,7 +32,7 @@ public sealed class CreateTagServiceTests
         var service = new CreateTagService(repository, new CreateTagCommandValidator());
 
         var act = () => service.ExecuteAsync(
-            new CreateTagCommand(ownerId, " wish list "),
+            new CreateTagCommand(ownerId, " Wishlist "),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>()

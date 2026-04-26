@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
 using CurateDS.Domain.Collections;
 using FluentAssertions;
 
@@ -345,11 +346,36 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         firstResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         duplicateResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var problem = await duplicateResponse.Content.ReadFromJsonAsync<ValidationProblemResponse>(JsonOptions);
+        var problem = await duplicateResponse.Content.ReadFromJsonAsync<ValidationProblemDetails>(JsonOptions);
 
         problem.Should().NotBeNull();
-        problem!.Errors.Should().ContainKey("Name");
+        problem!.Type.Should().Be("urn:curateds:problem:validation");
+        problem.Title.Should().Be("Validation failed");
+        problem.Status.Should().Be((int)HttpStatusCode.BadRequest);
+        problem.Errors.Should().ContainKey("Name");
         problem.Errors["Name"].Should().Contain("A tag with this name already exists.");
+        problem.Extensions.Should().ContainKey("code");
+        problem.Extensions["code"]?.ToString().Should().Be("validation_error");
+    }
+
+    [Fact]
+    public async Task GetItemDetail_ShouldReturnStructuredProblemDetails_WhenItemDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync("Magazines");
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/items/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
+
+        problem.Should().NotBeNull();
+        problem!.Type.Should().Be("urn:curateds:problem:not-found");
+        problem.Title.Should().Be("Resource not found");
+        problem.Status.Should().Be((int)HttpStatusCode.NotFound);
+        problem.Detail.Should().Be("Item was not found.");
+        problem.Extensions.Should().ContainKey("code");
+        problem.Extensions["code"]?.ToString().Should().Be("resource_not_found");
     }
 
     [Fact]
@@ -614,5 +640,4 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
     private sealed record LocationResponse(Guid Id, string Name, string? Description, DateTime CreatedUtc);
 
-    private sealed record ValidationProblemResponse(Dictionary<string, string[]> Errors);
 }
