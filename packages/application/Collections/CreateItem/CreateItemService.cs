@@ -71,23 +71,32 @@ public sealed class CreateItemService
         var now = DateTime.UtcNow;
         var actor = _currentUser.GetCurrentUser();
 
+        // Pre-generate the item ID so attribute values and tags can reference it
+        // before the item is constructed. This lets Item.Create set them directly
+        // in the constructor without triggering SetUpdated, keeping UpdatedUtc null.
+        var itemId = Guid.NewGuid();
+
+        var attributeValues = command.AttributeValues
+            .Select(input =>
+            {
+                var definition = attributeDefinitionLookup[input.AttributeDefinitionId];
+                return ItemAttributeValue.Create(itemId, definition, input.Value);
+            })
+            .ToList();
+
+        var tags = ItemOrganizationValidator.BuildItemTags(itemId, organization.Tags);
+
         var item = Item.Create(
+            itemId,
             command.CollectionId,
             command.Name,
             command.Description,
             command.Quantity,
+            organization.Location?.Id,
+            tags,
+            attributeValues,
             now,
             actor);
-
-        foreach (var attributeValueInput in command.AttributeValues)
-        {
-            var attributeDefinition = attributeDefinitionLookup[attributeValueInput.AttributeDefinitionId];
-            var attributeValue = ItemAttributeValue.Create(item.Id, attributeDefinition, attributeValueInput.Value);
-            item.AddAttributeValue(attributeValue, now, actor);
-        }
-
-        item.AssignLocation(organization.Location?.Id, now, actor);
-        item.ReplaceTags(ItemOrganizationValidator.BuildItemTags(item.Id, organization.Tags), now, actor);
 
         await _itemRepository.AddAsync(item, cancellationToken);
 

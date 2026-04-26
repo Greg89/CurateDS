@@ -28,6 +28,29 @@ public sealed class Item : AuditableEntity
         SetAuditOnCreate(createdUtc, createdBy);
     }
 
+    private Item(
+        Guid id,
+        Guid collectionId,
+        string name,
+        string? description,
+        int quantity,
+        Guid? locationId,
+        IReadOnlyList<ItemTag> tags,
+        IReadOnlyList<ItemAttributeValue> attributeValues,
+        DateTime createdUtc,
+        string createdBy)
+    {
+        Id = id;
+        CollectionId = collectionId;
+        Name = name;
+        Description = description;
+        Quantity = quantity;
+        LocationId = locationId;
+        AttributeValues = [..attributeValues];
+        ItemTags = [..tags];
+        SetAuditOnCreate(createdUtc, createdBy);
+    }
+
     public Guid Id { get; }
 
     public Guid CollectionId { get; private set; }
@@ -79,6 +102,61 @@ public sealed class Item : AuditableEntity
             normalizedName,
             normalizedDescription,
             quantity,
+            createdUtc,
+            createdBy);
+    }
+
+    /// <summary>
+    /// Full-initialization factory used by the create application service.
+    /// Sets location, tags, and attribute values directly without stamping UpdatedUtc/UpdatedBy.
+    /// </summary>
+    public static Item Create(
+        Guid id,
+        Guid collectionId,
+        string name,
+        string? description,
+        int quantity,
+        Guid? locationId,
+        IReadOnlyList<ItemTag> tags,
+        IReadOnlyList<ItemAttributeValue> attributeValues,
+        DateTime createdUtc,
+        string createdBy)
+    {
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Item ID is required.", nameof(id));
+        }
+
+        if (collectionId == Guid.Empty)
+        {
+            throw new ArgumentException("Collection ID is required.", nameof(collectionId));
+        }
+
+        ArgumentNullException.ThrowIfNull(name);
+
+        var normalizedName = name.Trim();
+
+        if (normalizedName.Length is < 3 or > 120)
+        {
+            throw new ArgumentException("Item name must be between 3 and 120 characters.", nameof(name));
+        }
+
+        var normalizedDescription = NormalizeDescription(description);
+
+        if (quantity is < 1 or > 9999)
+        {
+            throw new ArgumentException("Quantity must be between 1 and 9999.", nameof(quantity));
+        }
+
+        return new Item(
+            id,
+            collectionId,
+            normalizedName,
+            normalizedDescription,
+            quantity,
+            locationId,
+            tags,
+            attributeValues,
             createdUtc,
             createdBy);
     }
