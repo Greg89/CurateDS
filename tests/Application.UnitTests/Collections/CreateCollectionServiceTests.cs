@@ -1,3 +1,4 @@
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Collections.CreateCollection;
 using CurateDS.Domain.Collections;
@@ -7,11 +8,16 @@ namespace CurateDS.Application.UnitTests.Collections;
 
 public sealed class CreateCollectionServiceTests
 {
+    private sealed class FakeCurrentUserService : ICurrentUserService
+    {
+        public string GetCurrentUser() => "system";
+    }
+
     [Fact]
     public async Task ExecuteAsync_ShouldPersistTrimmedCollection()
     {
         var repository = new FakeCollectionRepository();
-        var service = new CreateCollectionService(repository, new CreateCollectionCommandValidator());
+        var service = new CreateCollectionService(repository, new FakeCurrentUserService(), new CreateCollectionCommandValidator());
         var command = new CreateCollectionCommand(Guid.NewGuid(), "  Vinyl Records  ");
 
         var result = await service.ExecuteAsync(command, CancellationToken.None);

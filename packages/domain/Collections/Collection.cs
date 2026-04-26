@@ -1,18 +1,18 @@
 namespace CurateDS.Domain.Collections;
 
-public sealed class Collection
+public sealed class Collection : AuditableEntity
 {
     private Collection()
     {
         Name = null!;
     }
 
-    private Collection(Guid id, Guid ownerId, string name, DateTime createdUtc)
+    private Collection(Guid id, Guid ownerId, string name, DateTime createdUtc, string createdBy)
     {
         Id = id;
         OwnerId = ownerId;
         Name = name;
-        CreatedUtc = createdUtc;
+        SetAuditOnCreate(createdUtc, createdBy);
     }
 
     public Guid Id { get; }
@@ -21,9 +21,7 @@ public sealed class Collection
 
     public string Name { get; private set; }
 
-    public DateTime CreatedUtc { get; private set; }
-
-    public static Collection Create(Guid ownerId, string name, DateTime createdUtc)
+    public static Collection Create(Guid ownerId, string name, DateTime createdUtc, string createdBy)
     {
         if (ownerId == Guid.Empty)
         {
@@ -37,6 +35,6 @@ public sealed class Collection
             throw new ArgumentException("Collection name must be between 3 and 100 characters.", nameof(name));
         }
 
-        return new Collection(Guid.NewGuid(), ownerId, normalizedName, createdUtc);
+        return new Collection(Guid.NewGuid(), ownerId, normalizedName, createdUtc, createdBy);
     }
 }

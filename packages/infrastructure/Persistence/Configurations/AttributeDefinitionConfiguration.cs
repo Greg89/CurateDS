@@ -40,6 +40,20 @@ internal sealed class AttributeDefinitionConfiguration : IEntityTypeConfiguratio
         builder.Property(attributeDefinition => attributeDefinition.CreatedUtc)
             .IsRequired();
 
+        builder.Property(attributeDefinition => attributeDefinition.CreatedBy)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(attributeDefinition => attributeDefinition.UpdatedUtc);
+
+        builder.Property(attributeDefinition => attributeDefinition.UpdatedBy)
+            .HasMaxLength(200);
+
+        builder.Property(attributeDefinition => attributeDefinition.DeletedUtc);
+
+        builder.Property(attributeDefinition => attributeDefinition.DeletedBy)
+            .HasMaxLength(200);
+
         builder.HasIndex(attributeDefinition => new
         {
             attributeDefinition.CollectionId,

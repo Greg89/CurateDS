@@ -13,7 +13,8 @@ public sealed class ItemTests
             "  Blue-Eyes White Dragon  ",
             "  First edition  ",
             2,
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            "system");
 
         item.Name.Should().Be("Blue-Eyes White Dragon");
         item.Description.Should().Be("First edition");
@@ -28,7 +29,8 @@ public sealed class ItemTests
             "Rare Figure",
             null,
             0,
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            "system");
 
         act.Should().Throw<ArgumentException>();
     }
@@ -41,11 +43,11 @@ public sealed class ItemTests
             "Original Name",
             "Original Description",
             1,
-            DateTime.UtcNow);
-        var previousUpdatedUtc = item.UpdatedUtc;
-        var nextUpdatedUtc = previousUpdatedUtc.AddMinutes(5);
+            DateTime.UtcNow,
+            "system");
+        var nextUpdatedUtc = DateTime.UtcNow.AddMinutes(5);
 
-        item.UpdateDetails(" Updated Name ", " Updated Description ", 3, nextUpdatedUtc);
+        item.UpdateDetails(" Updated Name ", " Updated Description ", 3, nextUpdatedUtc, "system");
 
         item.Name.Should().Be("Updated Name");
         item.Description.Should().Be("Updated Description");
@@ -61,7 +63,8 @@ public sealed class ItemTests
             null!,
             null,
             1,
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            "system");
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("name");
@@ -75,9 +78,10 @@ public sealed class ItemTests
             "Original Name",
             null,
             1,
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            "system");
 
-        var act = () => item.UpdateDetails(null!, null, 1, DateTime.UtcNow);
+        var act = () => item.UpdateDetails(null!, null, 1, DateTime.UtcNow, "system");
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("name");

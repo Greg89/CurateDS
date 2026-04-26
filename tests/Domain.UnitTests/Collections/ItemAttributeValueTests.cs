@@ -15,7 +15,8 @@ public sealed class ItemAttributeValueTests
             isRequired: true,
             isFilterable: true,
             sortOrder: 0,
-            createdUtc: DateTime.UtcNow);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
 
         var value = ItemAttributeValue.Create(Guid.NewGuid(), definition, "42");
 
@@ -33,7 +34,8 @@ public sealed class ItemAttributeValueTests
             isRequired: false,
             isFilterable: true,
             sortOrder: 0,
-            createdUtc: DateTime.UtcNow);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
 
         var act = () => ItemAttributeValue.Create(Guid.NewGuid(), definition, "maybe");
 
@@ -50,7 +52,8 @@ public sealed class ItemAttributeValueTests
             isRequired: false,
             isFilterable: true,
             sortOrder: 0,
-            createdUtc: DateTime.UtcNow);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
 
         var act = () => ItemAttributeValue.Create(Guid.NewGuid(), definition, null!);
 

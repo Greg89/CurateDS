@@ -1,3 +1,4 @@
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Collections.CreateItem;
 using CurateDS.Application.Collections.UpdateItem;
@@ -10,10 +11,15 @@ namespace CurateDS.Application.UnitTests.Collections;
 
 public sealed class UpdateItemServiceTests
 {
+    private sealed class FakeCurrentUserService : ICurrentUserService
+    {
+        public string GetCurrentUser() => "system";
+    }
+
     [Fact]
     public async Task ExecuteAsync_ShouldUpdateItemAndReplaceAttributeValues()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow);
+        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
         var issueNumber = AttributeDefinition.Create(
             collection.Id,
             "Issue Number",
@@ -21,7 +27,8 @@ public sealed class UpdateItemServiceTests
             isRequired: true,
             isFilterable: true,
             sortOrder: 0,
-            createdUtc: DateTime.UtcNow);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
         var condition = AttributeDefinition.Create(
             collection.Id,
             "Condition",
@@ -29,12 +36,14 @@ public sealed class UpdateItemServiceTests
             isRequired: false,
             isFilterable: true,
             sortOrder: 1,
-            createdUtc: DateTime.UtcNow);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
 
-        var item = Item.Create(collection.Id, "Original Card", "Original", 1, DateTime.UtcNow);
+        var item = Item.Create(collection.Id, "Original Card", "Original", 1, DateTime.UtcNow, "system");
         item.ReplaceAttributeValues(
             [ItemAttributeValue.Create(item.Id, issueNumber, "1")],
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            "system");
 
         var itemRepository = new FakeItemRepository(item);
         var service = new UpdateItemService(
@@ -43,6 +52,7 @@ public sealed class UpdateItemServiceTests
             new FakeLocationRepository(),
             itemRepository,
             new FakeTagRepository(),
+            new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
         var result = await service.ExecuteAsync(
@@ -70,7 +80,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenRequiredAttributeIsMissing()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Comics", DateTime.UtcNow);
+        var collection = Collection.Create(Guid.NewGuid(), "Comics", DateTime.UtcNow, "system");
         var issueNumber = AttributeDefinition.Create(
             collection.Id,
             "Issue Number",
@@ -78,8 +88,9 @@ public sealed class UpdateItemServiceTests
             isRequired: true,
             isFilterable: true,
             sortOrder: 0,
-            createdUtc: DateTime.UtcNow);
-        var item = Item.Create(collection.Id, "Amazing Fantasy #15", null, 1, DateTime.UtcNow);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
+        var item = Item.Create(collection.Id, "Amazing Fantasy #15", null, 1, DateTime.UtcNow, "system");
 
         var service = new UpdateItemService(
             new FakeCollectionRepository(collection),
@@ -87,6 +98,7 @@ public sealed class UpdateItemServiceTests
             new FakeLocationRepository(),
             new FakeItemRepository(item),
             new FakeTagRepository(),
+            new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
@@ -108,7 +120,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenItemDoesNotExist()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Books", DateTime.UtcNow);
+        var collection = Collection.Create(Guid.NewGuid(), "Books", DateTime.UtcNow, "system");
 
         var service = new UpdateItemService(
             new FakeCollectionRepository(collection),
@@ -116,6 +128,7 @@ public sealed class UpdateItemServiceTests
             new FakeLocationRepository(),
             new FakeItemRepository(),
             new FakeTagRepository(),
+            new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
@@ -138,7 +151,7 @@ public sealed class UpdateItemServiceTests
     public async Task ExecuteAsync_ShouldNotPersistCoreChanges_WhenAttributeParsingFails()
     {
         var createdUtc = DateTime.UtcNow;
-        var collection = Collection.Create(Guid.NewGuid(), "Records", createdUtc);
+        var collection = Collection.Create(Guid.NewGuid(), "Records", createdUtc, "system");
         var releaseYear = AttributeDefinition.Create(
             collection.Id,
             "Release Year",
@@ -146,11 +159,13 @@ public sealed class UpdateItemServiceTests
             isRequired: true,
             isFilterable: true,
             sortOrder: 0,
-            createdUtc: DateTime.UtcNow);
-        var item = Item.Create(collection.Id, "Original Name", "Original Description", 1, createdUtc);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
+        var item = Item.Create(collection.Id, "Original Name", "Original Description", 1, createdUtc, "system");
         item.ReplaceAttributeValues(
             [ItemAttributeValue.Create(item.Id, releaseYear, "1959")],
-            createdUtc);
+            createdUtc,
+            "system");
 
         var itemRepository = new FakeItemRepository(item);
         var service = new UpdateItemService(
@@ -159,6 +174,7 @@ public sealed class UpdateItemServiceTests
             new FakeLocationRepository(),
             itemRepository,
             new FakeTagRepository(),
+            new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
         var act = () => service.ExecuteAsync(
@@ -259,14 +275,14 @@ public sealed class UpdateItemServiceTests
             CancellationToken cancellationToken)
         {
             var item = _items.Single(existingItem => existingItem.Id == itemId);
-            item.ReplaceAttributeValues(attributeValues, DateTime.UtcNow);
+            item.ReplaceAttributeValues(attributeValues, DateTime.UtcNow, "system");
             return Task.CompletedTask;
         }
 
         public Task ReplaceTagsAsync(Guid itemId, IReadOnlyList<ItemTag> itemTags, CancellationToken cancellationToken)
         {
             var item = _items.Single(existingItem => existingItem.Id == itemId);
-            item.ReplaceTags(itemTags, DateTime.UtcNow);
+            item.ReplaceTags(itemTags, DateTime.UtcNow, "system");
             return Task.CompletedTask;
         }
 

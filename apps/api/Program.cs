@@ -1,4 +1,5 @@
 using CurateDS.Api.Collections;
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
@@ -13,6 +14,7 @@ using CurateDS.Application.Collections.ListItems;
 using CurateDS.Application.Collections.ListLocations;
 using CurateDS.Application.Collections.ListTags;
 using CurateDS.Application.Collections.UpdateItem;
+using CurateDS.Infrastructure;
 using CurateDS.Infrastructure.Persistence;
 using CurateDS.Infrastructure.Persistence.Repositories;
 using FluentValidation;
@@ -99,6 +101,8 @@ builder.Services.AddScoped<IAttributeDefinitionRepository, AttributeDefinitionRe
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IValidator<CreateAttributeDefinitionCommand>, CreateAttributeDefinitionCommandValidator>();
 builder.Services.AddScoped<IValidator<CreateCollectionCommand>, CreateCollectionCommandValidator>();
 builder.Services.AddScoped<IValidator<CreateItemCommand>, CreateItemCommandValidator>();

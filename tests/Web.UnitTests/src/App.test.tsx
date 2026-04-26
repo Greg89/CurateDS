@@ -30,7 +30,7 @@ describe("App routing", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Items Workspace" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Item Filters" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Filters/i })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: defaultItemSummary.name })).toBeInTheDocument();
   });
 

@@ -25,6 +25,20 @@ internal sealed class LocationConfiguration : IEntityTypeConfiguration<Location>
         builder.Property(location => location.CreatedUtc)
             .IsRequired();
 
+        builder.Property(location => location.CreatedBy)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(location => location.UpdatedUtc);
+
+        builder.Property(location => location.UpdatedBy)
+            .HasMaxLength(200);
+
+        builder.Property(location => location.DeletedUtc);
+
+        builder.Property(location => location.DeletedBy)
+            .HasMaxLength(200);
+
         builder.HasIndex(location => new { location.OwnerId, location.Name })
             .IsUnique();
     }

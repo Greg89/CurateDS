@@ -59,6 +59,78 @@ describe("CatalogApp UI structure", () => {
     expect(expandBtn.textContent?.trim()).not.toBe(">");
   });
 
+  it("items workspace has a Filters toggle button and an Add Item button in the toolbar", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Toolbar only renders after selectedCollection loads from the API
+    expect(await screen.findByRole("button", { name: /Filters/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /\+ Add Item/i })).toBeInTheDocument();
+  });
+
+  it("item filters panel is hidden by default and shown after clicking the Filters button", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Wait for collection to load
+    const filtersButton = await screen.findByRole("button", { name: /Filters/i });
+
+    expect(screen.queryByRole("heading", { name: "Item Filters" })).not.toBeInTheDocument();
+
+    await user.click(filtersButton);
+
+    await screen.findByRole("heading", { name: "Item Filters" });
+  });
+
+  it("Filters button shows a count badge when search text is applied", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Wait for toolbar to load with collection
+    await screen.findByRole("button", { name: /Filters/i });
+
+    await user.type(screen.getByPlaceholderText("Search items"), "Jazz");
+
+    expect(screen.getByRole("button", { name: /Filters/i }).textContent).toContain("1");
+  });
+
+  it("clicking an item in the list opens the item detail drawer", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Wait for collection and items to load
+    const itemButton = await screen.findByRole("button", { name: /Kind of Blue/i });
+
+    expect(screen.queryByRole("dialog", { name: /item detail/i })).not.toBeInTheDocument();
+
+    await user.click(itemButton);
+
+    await screen.findByRole("dialog", { name: /item detail/i });
+  });
+
+  it("clicking Add Item opens the item form drawer", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    // Wait for toolbar to load with collection
+    await user.click(await screen.findByRole("button", { name: /\+ Add Item/i }));
+
+    await screen.findByRole("dialog", { name: /create item/i });
+  });
+
   it("shows tag usage in settings organization summary when items are tagged", async () => {
     server.use(
       http.get("http://localhost:8080/tags", () =>
@@ -89,5 +161,64 @@ describe("CatalogApp UI structure", () => {
     const topTagsHeading = screen.getByRole("heading", { name: "Top Tags" });
     const topTagsCard = topTagsHeading.closest(".usage-card");
     expect(topTagsCard).not.toHaveTextContent("No usage yet.");
+  });
+
+  it("overview shows 4 metric cards and no Collection Shape or Selected Item panels", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/overview`]
+    });
+
+    // Wait for the overview quick-action links — these only render once selectedCollection loads
+    await screen.findByRole("link", { name: /Browse Items/i });
+
+    // 4 metric cards are rendered
+    expect(document.querySelectorAll(".metric-card").length).toBe(4);
+
+    // Removed panels must not be present
+    expect(screen.queryByRole("heading", { name: "Collection Shape" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Selected Item" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Saved Views" })).not.toBeInTheDocument();
+  });
+
+  it("overview has a Browse Items link and a Manage Settings link", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/overview`]
+    });
+
+    // Quick-action links load once collection resolves
+    expect(await screen.findByRole("link", { name: /Browse Items/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Manage Settings/i })).toBeInTheDocument();
+  });
+
+  it("settings page shows the Organization Snapshot section", async () => {
+    server.use(
+      http.get("http://localhost:8080/tags", () =>
+        HttpResponse.json([
+          { id: "tag-jazz", name: "Jazz", key: "jazz", createdUtc: "2026-04-20T00:00:00Z" }
+        ])
+      )
+    );
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/settings`]
+    });
+
+    await screen.findByRole("heading", { name: "Collection Settings" });
+
+    // OrganizationSummary renders a "Top Tags" heading
+    await screen.findByRole("heading", { name: "Top Tags" });
+  });
+
+  it("overview does not show the Organization Snapshot heading", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/overview`]
+    });
+
+    // Wait for overview to fully render before checking absent headings
+    await screen.findByRole("link", { name: /Browse Items/i });
+
+    expect(
+      screen.queryByRole("heading", { name: "Organization Snapshot" })
+    ).not.toBeInTheDocument();
   });
 });

@@ -104,8 +104,8 @@ public sealed class ListItemsService
                 ? Comparer<Domain.Collections.Item>.Create((left, right) => CompareDates(right.CreatedUtc, left.CreatedUtc))
                 : Comparer<Domain.Collections.Item>.Create((left, right) => CompareDates(left.CreatedUtc, right.CreatedUtc)),
             _ => descending
-                ? Comparer<Domain.Collections.Item>.Create((left, right) => CompareDates(right.UpdatedUtc, left.UpdatedUtc))
-                : Comparer<Domain.Collections.Item>.Create((left, right) => CompareDates(left.UpdatedUtc, right.UpdatedUtc))
+                ? Comparer<Domain.Collections.Item>.Create((left, right) => CompareDates(right.UpdatedUtc ?? right.CreatedUtc, left.UpdatedUtc ?? left.CreatedUtc))
+                : Comparer<Domain.Collections.Item>.Create((left, right) => CompareDates(left.UpdatedUtc ?? left.CreatedUtc, right.UpdatedUtc ?? right.CreatedUtc))
         };
     }
 

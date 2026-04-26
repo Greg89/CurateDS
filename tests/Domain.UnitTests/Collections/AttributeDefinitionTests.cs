@@ -15,7 +15,8 @@ public sealed class AttributeDefinitionTests
             isRequired: false,
             isFilterable: true,
             sortOrder: 0,
-            createdUtc: DateTime.UtcNow);
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
 
         definition.Key.Should().Be("release-year");
     }

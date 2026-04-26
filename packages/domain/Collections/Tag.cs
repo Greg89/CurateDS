@@ -1,6 +1,6 @@
 namespace CurateDS.Domain.Collections;
 
-public sealed class Tag
+public sealed class Tag : AuditableEntity
 {
     private Tag()
     {
@@ -8,13 +8,13 @@ public sealed class Tag
         Key = null!;
     }
 
-    private Tag(Guid id, Guid ownerId, string name, string key, DateTime createdUtc)
+    private Tag(Guid id, Guid ownerId, string name, string key, DateTime createdUtc, string createdBy)
     {
         Id = id;
         OwnerId = ownerId;
         Name = name;
         Key = key;
-        CreatedUtc = createdUtc;
+        SetAuditOnCreate(createdUtc, createdBy);
     }
 
     public Guid Id { get; }
@@ -25,9 +25,7 @@ public sealed class Tag
 
     public string Key { get; private set; }
 
-    public DateTime CreatedUtc { get; private set; }
-
-    public static Tag Create(Guid ownerId, string name, DateTime createdUtc)
+    public static Tag Create(Guid ownerId, string name, DateTime createdUtc, string createdBy)
     {
         if (ownerId == Guid.Empty)
         {
@@ -43,7 +41,7 @@ public sealed class Tag
             throw new ArgumentException("Tag name must be between 2 and 50 characters.", nameof(name));
         }
 
-        return new Tag(Guid.NewGuid(), ownerId, normalizedName, BuildKey(normalizedName), createdUtc);
+        return new Tag(Guid.NewGuid(), ownerId, normalizedName, BuildKey(normalizedName), createdUtc, createdBy);
     }
 
     private static string BuildKey(string name)

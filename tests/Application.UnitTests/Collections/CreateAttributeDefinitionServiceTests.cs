@@ -1,3 +1,4 @@
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Common;
@@ -8,15 +9,21 @@ namespace CurateDS.Application.UnitTests.Collections;
 
 public sealed class CreateAttributeDefinitionServiceTests
 {
+    private sealed class FakeCurrentUserService : ICurrentUserService
+    {
+        public string GetCurrentUser() => "system";
+    }
+
     [Fact]
     public async Task ExecuteAsync_ShouldPersistAttributeDefinition()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Board Games", DateTime.UtcNow);
+        var collection = Collection.Create(Guid.NewGuid(), "Board Games", DateTime.UtcNow, "system");
         var collectionRepository = new FakeCollectionRepository(collection);
         var attributeDefinitionRepository = new FakeAttributeDefinitionRepository();
         var service = new CreateAttributeDefinitionService(
             collectionRepository,
             attributeDefinitionRepository,
+            new FakeCurrentUserService(),
             new CreateAttributeDefinitionCommandValidator());
 
         var result = await service.ExecuteAsync(
@@ -41,6 +48,7 @@ public sealed class CreateAttributeDefinitionServiceTests
         var service = new CreateAttributeDefinitionService(
             new FakeCollectionRepository(),
             new FakeAttributeDefinitionRepository(),
+            new FakeCurrentUserService(),
             new CreateAttributeDefinitionCommandValidator());
 
         var act = () => service.ExecuteAsync(
