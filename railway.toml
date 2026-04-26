@@ -37,10 +37,6 @@
 #   4. Create an "API" application — set the identifier (becomes your Audience)
 #      Enable "RBAC" and "Add Permissions in the Access Token" if needed later
 
-[build]
-builder = "DOCKERFILE"
-dockerfilePath = "apps/api/Dockerfile"
-
 [deploy]
 healthcheckPath = "/health"
 restartPolicyType = "ON_FAILURE"
