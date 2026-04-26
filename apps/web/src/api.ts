@@ -418,6 +418,42 @@ export async function deleteItem(input: { collectionId: string; itemId: string }
   }
 }
 
+export async function deleteTag(tagId: string): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/tags/${tagId}`,
+    { method: "DELETE", headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to delete tag.");
+  }
+}
+
+export async function deleteLocation(locationId: string): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/locations/${locationId}`,
+    { method: "DELETE", headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to delete location.");
+  }
+}
+
+export async function deleteAttributeDefinition(input: {
+  collectionId: string;
+  attributeDefinitionId: string;
+}): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${input.collectionId}/attribute-definitions/${input.attributeDefinitionId}`,
+    { method: "DELETE", headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to delete attribute definition.");
+  }
+}
+
 async function readValidationMessage(response: Response): Promise<string | null> {
   const details = (await response.json().catch(() => null)) as
     | { errors?: Record<string, string[]> }

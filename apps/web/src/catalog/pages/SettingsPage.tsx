@@ -50,7 +50,13 @@ export function SettingsPage({
   onTagNameChange,
   onTagSubmit,
   isDeleteCollectionPending,
-  onDeleteCollection
+  onDeleteCollection,
+  isDeleteAttributeDefinitionPending,
+  onDeleteAttributeDefinition,
+  isDeleteTagPending,
+  onDeleteTag,
+  isDeleteLocationPending,
+  onDeleteLocation
 }: Readonly<{
   attributeDataType: AttributeDataType;
   attributeDefinitions: AttributeDefinition[];
@@ -82,6 +88,12 @@ export function SettingsPage({
   onTagSubmit: (event: FormEvent<HTMLFormElement>) => void;
   isDeleteCollectionPending: boolean;
   onDeleteCollection: () => void;
+  isDeleteAttributeDefinitionPending: boolean;
+  onDeleteAttributeDefinition: (id: string) => void;
+  isDeleteTagPending: boolean;
+  onDeleteTag: (id: string) => void;
+  isDeleteLocationPending: boolean;
+  onDeleteLocation: (id: string) => void;
 }>) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   return (
@@ -149,6 +161,8 @@ export function SettingsPage({
         <AttributeDefinitionList
           attributeDefinitions={attributeDefinitions}
           selectedCollectionName={selectedCollection.name}
+          isDeletePending={isDeleteAttributeDefinitionPending}
+          onDelete={onDeleteAttributeDefinition}
         />
       </section>
 
@@ -204,7 +218,15 @@ export function SettingsPage({
           {createLocationError ? <p className="message error">{createLocationError}</p> : null}
         </form>
 
-        <OrganizationSummary items={items} locations={locations} tags={tags} />
+        <OrganizationSummary
+          items={items}
+          locations={locations}
+          tags={tags}
+          isDeleteTagPending={isDeleteTagPending}
+          isDeleteLocationPending={isDeleteLocationPending}
+          onDeleteTag={onDeleteTag}
+          onDeleteLocation={onDeleteLocation}
+        />
       </section>
 
       <section className="panel panel-danger">

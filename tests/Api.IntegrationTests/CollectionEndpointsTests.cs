@@ -598,6 +598,80 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task DeleteTag_ShouldReturn204_AndHideFromList()
+    {
+        var tag = await CreateTagAsync(UniqueName("Tag To Delete"));
+
+        var deleteResponse = await _client.DeleteAsync($"/tags/{tag.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync("/tags");
+        var tags = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<TagResponse>>(JsonOptions);
+
+        tags!.Should().NotContain(t => t.Id == tag.Id);
+    }
+
+    [Fact]
+    public async Task DeleteTag_ShouldReturn404_WhenTagDoesNotExist()
+    {
+        var response = await _client.DeleteAsync($"/tags/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteLocation_ShouldReturn204_AndHideFromList()
+    {
+        var location = await CreateLocationAsync(UniqueName("Loc To Delete"), "");
+
+        var deleteResponse = await _client.DeleteAsync($"/locations/{location.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync("/locations");
+        var locations = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<LocationResponse>>(JsonOptions);
+
+        locations!.Should().NotContain(l => l.Id == location.Id);
+    }
+
+    [Fact]
+    public async Task DeleteLocation_ShouldReturn404_WhenLocationDoesNotExist()
+    {
+        var response = await _client.DeleteAsync($"/locations/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteAttributeDefinition_ShouldReturn204_AndHideFromList()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("AttrDef Delete"));
+        var attrDef = await CreateAttributeDefinitionAsync(collection.Id, "Year", AttributeDataType.Number, false);
+
+        var deleteResponse = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/attribute-definitions/{attrDef.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync($"/collections/{collection.Id}/attribute-definitions");
+        var defs = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<AttributeDefinitionResponse>>(JsonOptions);
+
+        defs!.Should().NotContain(d => d.Id == attrDef.Id);
+    }
+
+    [Fact]
+    public async Task DeleteAttributeDefinition_ShouldReturn404_WhenDefinitionDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("AttrDef No Delete"));
+
+        var response = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/attribute-definitions/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     private async Task<CollectionResponse> CreateCollectionAsync(string name)
     {
         var response = await _client.PostAsJsonAsync("/collections", new { name });

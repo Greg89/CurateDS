@@ -115,5 +115,8 @@ public sealed class CreateAttributeDefinitionServiceTests
             return Task.FromResult<IReadOnlyList<AttributeDefinition>>(
                 AttributeDefinitions.Where(definition => definition.CollectionId == collectionId).ToArray());
         }
+
+        public Task<bool> SoftDeleteAsync(Guid attributeDefinitionId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 }

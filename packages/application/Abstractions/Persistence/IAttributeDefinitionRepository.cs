@@ -9,4 +9,6 @@ public interface IAttributeDefinitionRepository
     Task<int> GetNextSortOrderAsync(Guid collectionId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<AttributeDefinition>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken);
+
+    Task<bool> SoftDeleteAsync(Guid attributeDefinitionId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken);
 }

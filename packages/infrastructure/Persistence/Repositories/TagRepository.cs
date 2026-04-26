@@ -41,4 +41,21 @@ public sealed class TagRepository : ITagRepository
             .OrderBy(tag => tag.Name)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<bool> SoftDeleteAsync(Guid tagId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+    {
+        var tag = await _dbContext.Tags
+            .SingleOrDefaultAsync(t => t.Id == tagId && t.OwnerId == ownerId, cancellationToken);
+
+        if (tag is null)
+            return false;
+
+        await _dbContext.ItemTags
+            .Where(it => it.TagId == tagId)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        tag.SoftDelete(deletedUtc, deletedBy);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }

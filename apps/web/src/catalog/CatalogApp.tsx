@@ -8,8 +8,11 @@ import {
   createItem,
   createLocation,
   createTag,
+  deleteAttributeDefinition,
   deleteCollection,
   deleteItem,
+  deleteLocation,
+  deleteTag,
   getItemDetail,
   ItemDetail,
   ItemFilters,
@@ -216,6 +219,30 @@ export function CatalogApp({
     mutationFn: deleteItem,
     onSuccess: async () => {
       setSelectedItemId("");
+      await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
+    }
+  });
+
+  const deleteTagMutation = useMutation({
+    mutationFn: deleteTag,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
+      await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
+    }
+  });
+
+  const deleteLocationMutation = useMutation({
+    mutationFn: deleteLocation,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["locations"] });
+      await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
+    }
+  });
+
+  const deleteAttributeDefinitionMutation = useMutation({
+    mutationFn: deleteAttributeDefinition,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["attributeDefinitions", selectedCollectionId] });
       await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
     }
   });
@@ -750,6 +777,17 @@ export function CatalogApp({
               onTagSubmit={handleTagSubmit}
               isDeleteCollectionPending={deleteCollectionMutation.isPending}
               onDeleteCollection={() => deleteCollectionMutation.mutate(selectedCollectionId)}
+              isDeleteAttributeDefinitionPending={deleteAttributeDefinitionMutation.isPending}
+              onDeleteAttributeDefinition={(id) =>
+                deleteAttributeDefinitionMutation.mutate({
+                  collectionId: selectedCollectionId,
+                  attributeDefinitionId: id
+                })
+              }
+              isDeleteTagPending={deleteTagMutation.isPending}
+              onDeleteTag={(id) => deleteTagMutation.mutate(id)}
+              isDeleteLocationPending={deleteLocationMutation.isPending}
+              onDeleteLocation={(id) => deleteLocationMutation.mutate(id)}
             />
           )}
         </section>

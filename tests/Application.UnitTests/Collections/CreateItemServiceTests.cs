@@ -189,6 +189,9 @@ public sealed class CreateItemServiceTests
             return Task.FromResult<IReadOnlyList<AttributeDefinition>>(
                 _attributeDefinitions.Where(definition => definition.CollectionId == collectionId).ToArray());
         }
+
+        public Task<bool> SoftDeleteAsync(Guid attributeDefinitionId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 
     private sealed class FakeItemRepository : IItemRepository
@@ -249,6 +252,9 @@ public sealed class CreateItemServiceTests
 
         public Task<IReadOnlyList<Location>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Location>>([]);
+
+        public Task<bool> SoftDeleteAsync(Guid locationId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 
     private sealed class FakeTagRepository : ITagRepository
@@ -263,5 +269,8 @@ public sealed class CreateItemServiceTests
 
         public Task<IReadOnlyList<Tag>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Tag>>([]);
+
+        public Task<bool> SoftDeleteAsync(Guid tagId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
     }
 }

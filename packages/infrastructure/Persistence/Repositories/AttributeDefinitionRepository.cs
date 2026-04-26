@@ -37,4 +37,21 @@ public sealed class AttributeDefinitionRepository : IAttributeDefinitionReposito
             .ThenBy(attributeDefinition => attributeDefinition.Name)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<bool> SoftDeleteAsync(Guid attributeDefinitionId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+    {
+        var attributeDefinition = await _dbContext.AttributeDefinitions
+            .SingleOrDefaultAsync(a => a.Id == attributeDefinitionId && a.CollectionId == collectionId, cancellationToken);
+
+        if (attributeDefinition is null)
+            return false;
+
+        await _dbContext.ItemAttributeValues
+            .Where(iav => iav.AttributeDefinitionId == attributeDefinitionId)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        attributeDefinition.SoftDelete(deletedUtc, deletedBy);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }

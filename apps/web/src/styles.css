@@ -480,6 +480,11 @@ h1 {
   margin-top: 0;
 }
 
+.collection-form + .attribute-list,
+.collection-form + ul.attribute-list {
+  margin-top: 1.25rem;
+}
+
 /* --- Lists ---------------------------------------------------------------- */
 .collection-list,
 .attribute-list,
@@ -555,6 +560,10 @@ h1 {
 .detail-value-card,
 .saved-view-card {
   padding: 1rem 1.1rem;
+}
+
+.attribute-card .danger-button {
+  margin-top: 0.75rem;
 }
 
 .filter-panel {
