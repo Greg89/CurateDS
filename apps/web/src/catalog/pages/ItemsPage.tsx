@@ -69,7 +69,11 @@ export function ItemsPage({
   onToggleFilterTag,
   onToggleItemTag,
   isDeleteItemPending,
-  onDeleteItem
+  onDeleteItem,
+  itemPage,
+  itemTotalPages,
+  itemTotalCount,
+  onItemPageChange
 }: Readonly<{
   attributeDefinitions: AttributeDefinition[];
   createItemError: string | null;
@@ -124,6 +128,10 @@ export function ItemsPage({
   onToggleItemTag: (tagId: string) => void;
   isDeleteItemPending: boolean;
   onDeleteItem: () => void;
+  itemPage: number;
+  itemTotalPages: number;
+  itemTotalCount: number;
+  onItemPageChange: (page: number) => void;
 }>) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
@@ -262,6 +270,30 @@ export function ItemsPage({
           selectedItemId={selectedItemId}
           onSelect={handleSelectItem}
         />
+
+        {itemTotalPages > 1 && (
+          <div className="pagination">
+            <button
+              className="secondary-button"
+              disabled={itemPage <= 1}
+              onClick={() => onItemPageChange(itemPage - 1)}
+              type="button"
+            >
+              &lsaquo; Previous
+            </button>
+            <span className="pagination-info">
+              Page {itemPage} of {itemTotalPages} &mdash; {itemTotalCount} items
+            </span>
+            <button
+              className="secondary-button"
+              disabled={itemPage >= itemTotalPages}
+              onClick={() => onItemPageChange(itemPage + 1)}
+              type="button"
+            >
+              Next &rsaquo;
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Drawer backdrop */}

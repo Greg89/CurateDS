@@ -8,6 +8,8 @@ public sealed record ListItemsQuery(
     IReadOnlyList<Guid> TagIds,
     IReadOnlyList<ListItemsAttributeFilter> AttributeFilters,
     string? SortBy,
-    string? SortDirection);
+    string? SortDirection,
+    int Page,
+    int PageSize);
 
 public sealed record ListItemsAttributeFilter(string AttributeKey, string Value);

@@ -1,3 +1,6 @@
+using CurateDS.Application.Collections;
+using CurateDS.Application.Collections.ListItems;
+using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
 
 namespace CurateDS.Application.Abstractions.Persistence;
@@ -19,6 +22,8 @@ public interface IItemRepository
     Task<Item?> GetByIdAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Item>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken);
+
+    Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken);
 
     Task SaveChangesAsync(CancellationToken cancellationToken);
 

@@ -566,6 +566,21 @@ h1 {
   margin-top: 0.75rem;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: var(--text-muted, #6b7280);
+}
+
 .filter-panel {
   display: grid;
   gap: 1rem;

@@ -1,6 +1,8 @@
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
+using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.ListItems;
 using CurateDS.Application.Collections.UpdateItem;
 using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
@@ -313,6 +315,9 @@ public sealed class UpdateItemServiceTests
 
         public Task SoftDeleteByCollectionAsync(Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.CompletedTask;
+
+        public Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
+            => Task.FromResult(new PagedResult<ItemSummaryDto>([], 0, 1, 50));
     }
 
     private sealed class FakeLocationRepository : ILocationRepository

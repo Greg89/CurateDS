@@ -211,7 +211,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var items = paged?.Items;
 
         items.Should().NotBeNull();
         items!.Should().Contain(item => item.Name == "Root");
@@ -456,7 +457,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var items = paged?.Items;
 
         items.Should().ContainSingle();
         items![0].Name.Should().Be("Dune");
@@ -507,7 +509,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var items = paged?.Items;
 
         items.Should().ContainSingle();
         items![0].Name.Should().Be("Arrival");
@@ -543,7 +546,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var items = paged?.Items;
 
         items.Should().NotBeNull();
         items!.Select(item => item.Name).Should().ContainInOrder("Animal Crossing", "Zelda");
@@ -583,7 +587,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var listResponse = await _client.GetAsync($"/collections/{collection.Id}/items");
-        var items = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<ItemSummaryResponse>>(JsonOptions);
+        var paged = await listResponse.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var items = paged?.Items;
 
         items!.Should().NotContain(i => i.Id == item.Id);
     }
@@ -746,6 +751,13 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         int AttributeValueCount,
         DateTime CreatedUtc,
         DateTime? UpdatedUtc);
+
+    private sealed record PagedItemsResponse(
+        IReadOnlyList<ItemSummaryResponse> Items,
+        int TotalCount,
+        int Page,
+        int PageSize,
+        int TotalPages);
 
     private sealed record ItemDetailResponse(
         Guid Id,

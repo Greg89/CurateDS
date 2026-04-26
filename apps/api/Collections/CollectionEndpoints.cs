@@ -286,7 +286,7 @@ public static class CollectionEndpoints
             try
             {
                 var ownerId = GetDefaultOwnerId(configuration);
-                var items = await service.ExecuteAsync(
+                var result = await service.ExecuteAsync(
                     new ListItemsQuery(
                         ownerId,
                         collectionId,
@@ -295,10 +295,17 @@ public static class CollectionEndpoints
                         request.TagIds ?? [],
                         ParseAttributeFilters(request.AttributeFilters),
                         request.SortBy,
-                        request.SortDirection),
+                        request.SortDirection,
+                        request.Page ?? 1,
+                        request.PageSize ?? 50),
                     cancellationToken);
 
-                return Results.Ok(items.Select(ToResponse));
+                return Results.Ok(new PagedItemsResponse(
+                    result.Items.Select(ToResponse).ToArray(),
+                    result.TotalCount,
+                    result.Page,
+                    result.PageSize,
+                    result.TotalPages));
             }
             catch (NotFoundException)
             {

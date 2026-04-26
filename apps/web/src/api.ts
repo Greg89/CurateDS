@@ -80,6 +80,14 @@ export interface ItemSummary {
   updatedUtc: string;
 }
 
+export interface PagedItems {
+  items: ItemSummary[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface ItemDetail {
   id: string;
   collectionId: string;
@@ -248,8 +256,10 @@ export async function createLocation(input: {
 
 export async function listItems(
   collectionId: string,
-  filters?: Readonly<ItemFilters>
-): Promise<ItemSummary[]> {
+  filters?: Readonly<ItemFilters>,
+  page: number = 1,
+  pageSize: number = 50
+): Promise<PagedItems> {
   const searchParams = new URLSearchParams();
 
   const searchText = filters?.searchText?.trim();
@@ -290,6 +300,9 @@ export async function listItems(
     searchParams.set("sortDirection", filters.sortDirection);
   }
 
+  searchParams.set("page", String(page));
+  searchParams.set("pageSize", String(pageSize));
+
   const queryString = searchParams.toString();
   const response = await fetch(
     `${appConfig.apiBaseUrl}/collections/${collectionId}/items${queryString ? `?${queryString}` : ""}`,
@@ -300,7 +313,7 @@ export async function listItems(
     throw new Error("Failed to load items.");
   }
 
-  return (await response.json()) as ItemSummary[];
+  return (await response.json()) as PagedItems;
 }
 
 export async function getItemDetail(
