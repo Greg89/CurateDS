@@ -778,6 +778,43 @@ h1 {
   align-items: end;
 }
 
+/* --- Overview ------------------------------------------------------------- */
+.overview-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.overview-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.overview-action-card {
+  display: block;
+  padding: 1.5rem;
+  text-decoration: none;
+  color: var(--c-text);
+  transition: background 150ms, border-color 150ms;
+}
+
+.overview-action-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(232, 184, 122, 0.3);
+}
+
+.overview-action-card h3 {
+  font-size: 1.05rem;
+  color: var(--c-accent);
+}
+
+.overview-action-card p {
+  margin-top: 0.5rem;
+  color: var(--c-text-muted);
+  font-size: 0.92rem;
+}
+
 /* --- Items workspace ------------------------------------------------------ */
 .items-workspace {
   display: flex;

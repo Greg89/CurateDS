@@ -469,10 +469,6 @@ export function CatalogApp({
     );
   }, [isSidebarCollapsed]);
 
-  const savedViewsSummary = savedViews.length > 0
-    ? savedViews.map((view) => view.name).join(", ")
-    : "No saved views yet.";
-
   return (
     <main className={`app-shell${isSidebarCollapsed ? " sidebar-is-collapsed" : ""}${isSidebarMobileOpen ? " sidebar-mobile-open" : ""}`}>
       <button
@@ -637,12 +633,9 @@ export function CatalogApp({
             <OverviewPage
               attributeDefinitions={attributeDefinitionsQuery.data ?? []}
               items={itemsQuery.data ?? []}
-              itemDetail={itemDetailQuery.data ?? null}
               locations={locationsQuery.data ?? []}
-              savedViewsSummary={savedViewsSummary}
               selectedCollection={selectedCollection}
               tags={tagsQuery.data ?? []}
-              onEditItem={beginEditingSelectedItem}
             />
           ) : section === "items" ? (
             <ItemsPage

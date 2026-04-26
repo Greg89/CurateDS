@@ -162,4 +162,63 @@ describe("CatalogApp UI structure", () => {
     const topTagsCard = topTagsHeading.closest(".usage-card");
     expect(topTagsCard).not.toHaveTextContent("No usage yet.");
   });
+
+  it("overview shows 4 metric cards and no Collection Shape or Selected Item panels", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/overview`]
+    });
+
+    // Wait for the overview quick-action links — these only render once selectedCollection loads
+    await screen.findByRole("link", { name: /Browse Items/i });
+
+    // 4 metric cards are rendered
+    expect(document.querySelectorAll(".metric-card").length).toBe(4);
+
+    // Removed panels must not be present
+    expect(screen.queryByRole("heading", { name: "Collection Shape" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Selected Item" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Saved Views" })).not.toBeInTheDocument();
+  });
+
+  it("overview has a Browse Items link and a Manage Settings link", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/overview`]
+    });
+
+    // Quick-action links load once collection resolves
+    expect(await screen.findByRole("link", { name: /Browse Items/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Manage Settings/i })).toBeInTheDocument();
+  });
+
+  it("settings page shows the Organization Snapshot section", async () => {
+    server.use(
+      http.get("http://localhost:8080/tags", () =>
+        HttpResponse.json([
+          { id: "tag-jazz", name: "Jazz", key: "jazz", createdUtc: "2026-04-20T00:00:00Z" }
+        ])
+      )
+    );
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/settings`]
+    });
+
+    await screen.findByRole("heading", { name: "Collection Settings" });
+
+    // OrganizationSummary renders a "Top Tags" heading
+    await screen.findByRole("heading", { name: "Top Tags" });
+  });
+
+  it("overview does not show the Organization Snapshot heading", async () => {
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/overview`]
+    });
+
+    // Wait for overview to fully render before checking absent headings
+    await screen.findByRole("link", { name: /Browse Items/i });
+
+    expect(
+      screen.queryByRole("heading", { name: "Organization Snapshot" })
+    ).not.toBeInTheDocument();
+  });
 });
