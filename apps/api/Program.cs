@@ -173,7 +173,22 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler();
+    app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
+    {
+        var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        if (feature?.Error is not null)
+        {
+            var logger = context.RequestServices
+                .GetRequiredService<ILogger<Program>>();
+            logger.LogError(feature.Error,
+                "Unhandled exception on {Method} {Path}",
+                context.Request.Method,
+                context.Request.Path);
+        }
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync("{\"error\":\"An unexpected error occurred.\"}");
+    }));
 }
 
 app.UseCors("WebClient");
