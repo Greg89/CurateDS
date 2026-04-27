@@ -531,7 +531,8 @@ public static class CollectionEndpoints
             item.Tags,
             item.AttributeValueCount,
             item.CreatedUtc,
-            item.UpdatedUtc);
+            item.UpdatedUtc,
+            item.PrimaryImageUrl);
 
     private static ItemDetailResponse ToResponse(ItemDetailDto item) =>
         new(
@@ -550,7 +551,15 @@ public static class CollectionEndpoints
                 attributeValue.AttributeName,
                 attributeValue.AttributeKey,
                 attributeValue.DataType,
-                attributeValue.Value)).ToArray());
+                attributeValue.Value)).ToArray(),
+            item.MediaAssets.Select(a => new MediaAssetResponse(
+                a.Id,
+                a.Url,
+                a.ContentType,
+                a.FileName,
+                a.SizeBytes,
+                a.IsPrimary,
+                a.UploadedUtc)).ToArray());
 
     private static IReadOnlyList<ListItemsAttributeFilter> ParseAttributeFilters(string[]? attributeFilters)
     {

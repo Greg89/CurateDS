@@ -31,7 +31,8 @@ public sealed record ItemSummaryResponse(
     IReadOnlyList<string> Tags,
     int AttributeValueCount,
     DateTime CreatedUtc,
-    DateTime? UpdatedUtc);  // null until a PUT action is taken
+    DateTime? UpdatedUtc,  // null until a PUT action is taken
+    string? PrimaryImageUrl);
 
 public sealed record ItemDetailResponse(
     Guid Id,
@@ -44,7 +45,17 @@ public sealed record ItemDetailResponse(
     IReadOnlyList<TagResponse> Tags,
     DateTime CreatedUtc,
     DateTime? UpdatedUtc,  // null until a PUT action is taken
-    IReadOnlyList<ItemAttributeValueResponse> AttributeValues);
+    IReadOnlyList<ItemAttributeValueResponse> AttributeValues,
+    IReadOnlyList<MediaAssetResponse> MediaAssets);
+
+public sealed record MediaAssetResponse(
+    Guid Id,
+    string Url,
+    string ContentType,
+    string FileName,
+    long SizeBytes,
+    bool IsPrimary,
+    DateTime UploadedUtc);
 
 public sealed record ItemAttributeValueResponse(
     Guid AttributeDefinitionId,
