@@ -379,6 +379,10 @@ export function CatalogApp({
   }
 
   useEffect(() => {
+    setSelectedItemId("");
+  }, [selectedCollectionId]);
+
+  useEffect(() => {
     if (!itemsQuery.data) {
       return;
     }
