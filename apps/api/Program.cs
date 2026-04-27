@@ -92,18 +92,17 @@ builder.Services.AddCors(options =>
     });
 });
 
-var useInMemoryDatabase = builder.Configuration.GetValue<bool>("Testing:UseInMemoryDatabase");
-
-builder.Services.AddDbContext<CatalogDbContext>(options =>
+builder.Services.AddDbContext<CatalogDbContext>((serviceProvider, options) =>
 {
-    if (useInMemoryDatabase)
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    if (configuration.GetValue<bool>("Testing:UseInMemoryDatabase"))
     {
-        var databaseName = builder.Configuration["Testing:DatabaseName"] ?? "curateds-tests";
+        var databaseName = configuration["Testing:DatabaseName"] ?? "curateds-tests";
         options.UseInMemoryDatabase(databaseName);
         return;
     }
 
-    options.UseNpgsql(builder.Configuration.GetConnectionString("CatalogDb"));
+    options.UseNpgsql(configuration.GetConnectionString("CatalogDb"));
 });
 
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
