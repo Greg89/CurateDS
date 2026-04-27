@@ -41,13 +41,13 @@ public sealed class LocationRepository : ILocationRepository
         if (location is null)
             return false;
 
-        await _dbContext.Items
+        var affectedItems = await _dbContext.Items
             .Where(i => i.LocationId == locationId)
-            .ExecuteUpdateAsync(
-                s => s.SetProperty(i => i.LocationId, (Guid?)null)
-                       .SetProperty(i => i.UpdatedUtc, deletedUtc)
-                       .SetProperty(i => i.UpdatedBy, deletedBy),
-                cancellationToken);
+            .ToListAsync(cancellationToken);
+        foreach (var item in affectedItems)
+        {
+            item.AssignLocation(null, deletedUtc, deletedBy);
+        }
 
         location.SoftDelete(deletedUtc, deletedBy);
         await _dbContext.SaveChangesAsync(cancellationToken);
