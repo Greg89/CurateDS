@@ -30,6 +30,9 @@ public sealed class MinioMediaStorageService : IMediaStorageService
         var key = $"{_environment}/collections/{collectionId}/items/{itemId}/{Guid.NewGuid()}.{fileExtension.TrimStart('.')}";
 
         using var client = CreateClient();
+
+        await EnsureBucketPublicAsync(client, ct);
+
         var request = new PutObjectRequest
         {
             BucketName = _options.BucketName,
@@ -40,6 +43,40 @@ public sealed class MinioMediaStorageService : IMediaStorageService
 
         await client.PutObjectAsync(request, ct);
         return key;
+    }
+
+    private async Task EnsureBucketPublicAsync(AmazonS3Client client, CancellationToken ct)
+    {
+        // Create the bucket if it doesn't exist
+        try
+        {
+            await client.PutBucketAsync(_options.BucketName, ct);
+        }
+        catch (AmazonS3Exception ex) when (ex.ErrorCode is "BucketAlreadyExists" or "BucketAlreadyOwnedByYou")
+        {
+            // Already exists — that's fine
+        }
+
+        // Set bucket policy to allow anonymous reads so PublicBaseUrl links work
+        var policy = $$"""
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": { "AWS": ["*"] },
+                  "Action": ["s3:GetObject"],
+                  "Resource": ["arn:aws:s3:::{{_options.BucketName}}/*"]
+                }
+              ]
+            }
+            """;
+
+        await client.PutBucketPolicyAsync(new PutBucketPolicyRequest
+        {
+            BucketName = _options.BucketName,
+            Policy = policy
+        }, ct);
     }
 
     public async Task DeleteAsync(string storageKey, CancellationToken ct)
