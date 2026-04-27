@@ -32,7 +32,8 @@ export const defaultItemSummary = {
   tags: [],
   attributeValueCount: 1,
   createdUtc: "2026-04-20T00:10:00Z",
-  updatedUtc: "2026-04-20T00:10:00Z"
+  updatedUtc: "2026-04-20T00:10:00Z",
+  primaryImageUrl: null
 };
 
 export const defaultItemDetail = {
@@ -54,7 +55,8 @@ export const defaultItemDetail = {
       dataType: "Number",
       value: "1959"
     }
-  ]
+  ],
+  mediaAssets: []
 };
 
 export const server = setupServer(

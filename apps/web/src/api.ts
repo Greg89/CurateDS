@@ -66,6 +66,16 @@ export interface ItemAttributeValue {
   value: string;
 }
 
+export interface MediaAsset {
+  id: string;
+  url: string;
+  contentType: string;
+  fileName: string;
+  sizeBytes: number;
+  isPrimary: boolean;
+  uploadedUtc: string;
+}
+
 export interface ItemSummary {
   id: string;
   collectionId: string;
@@ -78,6 +88,7 @@ export interface ItemSummary {
   attributeValueCount: number;
   createdUtc: string;
   updatedUtc: string;
+  primaryImageUrl: string | null;
 }
 
 export interface PagedItems {
@@ -100,6 +111,7 @@ export interface ItemDetail {
   createdUtc: string;
   updatedUtc: string;
   attributeValues: ItemAttributeValue[];
+  mediaAssets: MediaAsset[];
 }
 
 export interface ItemFilters {
@@ -454,6 +466,53 @@ export async function deleteItem(input: { collectionId: string; itemId: string }
 
   if (!response.ok) {
     throw new Error("Failed to delete item.");
+  }
+}
+
+export async function uploadItemMedia(input: {
+  collectionId: string;
+  itemId: string;
+  file: File;
+}): Promise<MediaAsset> {
+  const formData = new FormData();
+  formData.append("file", input.file);
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${input.collectionId}/items/${input.itemId}/media`,
+    { method: "POST", headers: await authHeader(), body: formData }
+  );
+  if (!response.ok) {
+    throw new Error(
+      (await readValidationMessage(response)) ?? "Failed to upload image."
+    );
+  }
+  return (await response.json()) as MediaAsset;
+}
+
+export async function deleteItemMedia(input: {
+  collectionId: string;
+  itemId: string;
+  mediaAssetId: string;
+}): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${input.collectionId}/items/${input.itemId}/media/${input.mediaAssetId}`,
+    { method: "DELETE", headers: await authHeader() }
+  );
+  if (!response.ok) {
+    throw new Error("Failed to delete image.");
+  }
+}
+
+export async function setPrimaryItemMedia(input: {
+  collectionId: string;
+  itemId: string;
+  mediaAssetId: string;
+}): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${input.collectionId}/items/${input.itemId}/media/${input.mediaAssetId}/primary`,
+    { method: "PUT", headers: await authHeader() }
+  );
+  if (!response.ok) {
+    throw new Error("Failed to set primary image.");
   }
 }
 

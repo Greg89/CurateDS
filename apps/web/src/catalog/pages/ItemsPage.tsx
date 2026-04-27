@@ -73,7 +73,11 @@ export function ItemsPage({
   itemPage,
   itemTotalPages,
   itemTotalCount,
-  onItemPageChange
+  onItemPageChange,
+  onUploadItemMedia,
+  onDeleteItemMedia,
+  onSetPrimaryItemMedia,
+  isUploadMediaPending
 }: Readonly<{
   attributeDefinitions: AttributeDefinition[];
   createItemError: string | null;
@@ -132,6 +136,10 @@ export function ItemsPage({
   itemTotalPages: number;
   itemTotalCount: number;
   onItemPageChange: (page: number) => void;
+  onUploadItemMedia: (file: File) => void;
+  onDeleteItemMedia: (mediaAssetId: string) => void;
+  onSetPrimaryItemMedia: (mediaAssetId: string) => void;
+  isUploadMediaPending: boolean;
 }>) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
@@ -359,6 +367,10 @@ export function ItemsPage({
           onEdit={handleEditFromDetail}
           onDelete={() => setShowDeleteItemConfirm(true)}
           selectedCollectionName={selectedCollection.name}
+          onUploadMedia={onUploadItemMedia}
+          onDeleteMedia={onDeleteItemMedia}
+          onSetPrimaryMedia={onSetPrimaryItemMedia}
+          isUploadPending={isUploadMediaPending}
         />
       </div>
 

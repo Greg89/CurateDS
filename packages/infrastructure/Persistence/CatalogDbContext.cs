@@ -19,6 +19,8 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
 
     public DbSet<Location> Locations => Set<Location>();
 
+    public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
+
     public DbSet<Tag> Tags => Set<Tag>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

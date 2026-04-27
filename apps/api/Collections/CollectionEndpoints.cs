@@ -352,7 +352,8 @@ public static class CollectionEndpoints
                         result.Tags,
                         result.CreatedUtc,
                         result.UpdatedUtc,
-                        result.AttributeValues)));
+                        result.AttributeValues,
+                        [])));
             }
             catch (ValidationException exception)
             {
@@ -453,7 +454,8 @@ public static class CollectionEndpoints
                     result.Tags,
                     result.CreatedUtc,
                     result.UpdatedUtc,
-                    result.AttributeValues)));
+                    result.AttributeValues,
+                    [])));
             }
             catch (ValidationException exception)
             {

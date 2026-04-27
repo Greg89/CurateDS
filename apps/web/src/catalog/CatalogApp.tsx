@@ -19,7 +19,10 @@ import {
   listItems,
   listLocations,
   listTags,
-  updateItem
+  updateItem,
+  uploadItemMedia,
+  deleteItemMedia,
+  setPrimaryItemMedia
 } from "../api";
 import { CatalogSection } from "./types";
 import { readSidebarCollapsedState, sidebarStateStorageKey } from "./utils";
@@ -257,6 +260,30 @@ export function CatalogApp({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["attributeDefinitions", selectedCollectionId] });
       await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
+    }
+  });
+
+  const uploadItemMediaMutation = useMutation({
+    mutationFn: uploadItemMedia,
+    onSuccess: async (_asset, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
+    }
+  });
+
+  const deleteItemMediaMutation = useMutation({
+    mutationFn: deleteItemMedia,
+    onSuccess: async (_result, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
+    }
+  });
+
+  const setPrimaryItemMediaMutation = useMutation({
+    mutationFn: setPrimaryItemMedia,
+    onSuccess: async (_result, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
     }
   });
 
@@ -622,6 +649,28 @@ export function CatalogApp({
                 })
               }
               onItemPageChange={setItemPage}
+              onUploadItemMedia={(file) =>
+                uploadItemMediaMutation.mutate({
+                  collectionId: selectedCollectionId,
+                  itemId: selectedItemId,
+                  file
+                })
+              }
+              onDeleteItemMedia={(mediaAssetId) =>
+                deleteItemMediaMutation.mutate({
+                  collectionId: selectedCollectionId,
+                  itemId: selectedItemId,
+                  mediaAssetId
+                })
+              }
+              onSetPrimaryItemMedia={(mediaAssetId) =>
+                setPrimaryItemMediaMutation.mutate({
+                  collectionId: selectedCollectionId,
+                  itemId: selectedItemId,
+                  mediaAssetId
+                })
+              }
+              isUploadMediaPending={uploadItemMediaMutation.isPending}
             />
           ) : (
             <SettingsPage

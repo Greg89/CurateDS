@@ -36,6 +36,7 @@ export function ItemList({
       <table className="item-table">
         <thead>
           <tr>
+            <th aria-label="Thumbnail" />
             <th>Name</th>
             <th>Qty</th>
             <th>Location</th>
@@ -50,6 +51,11 @@ export function ItemList({
               key={item.id}
               onClick={() => onSelect(item.id)}
             >
+              <td className="table-thumb-cell">
+                {item.primaryImageUrl
+                  ? <img alt={item.name} className="table-thumb" src={item.primaryImageUrl} />
+                  : <span className="table-thumb-placeholder" />}
+              </td>
               <td>{item.name}</td>
               <td>{item.quantity}</td>
               <td>{item.locationName ?? <span className="text-muted">—</span>}</td>
@@ -73,6 +79,13 @@ export function ItemList({
           className={`item-card${item.id === selectedItemId ? " selected" : ""}`}
           key={item.id}
         >
+          {item.primaryImageUrl && (
+            <img
+              alt={item.name}
+              className="item-card-thumb"
+              src={item.primaryImageUrl}
+            />
+          )}
           <button className="item-select" onClick={() => onSelect(item.id)} type="button">
             <div className="item-card-header">
               <h3>{item.name}</h3>

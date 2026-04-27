@@ -53,6 +53,7 @@ public sealed class ItemRepository : IItemRepository
         return await _dbContext.Items
             .Include(item => item.AttributeValues)
             .Include(item => item.ItemTags)
+            .Include(item => item.MediaAssets)
             .SingleOrDefaultAsync(
                 item => item.Id == itemId && item.CollectionId == collectionId,
                 cancellationToken);
@@ -179,7 +180,11 @@ public sealed class ItemRepository : IItemRepository
                     .OrderBy(name => name)
                     .ToList(),
                 AttributeValueCount = _dbContext.ItemAttributeValues
-                    .Count(iav => iav.ItemId == i.Id)
+                    .Count(iav => iav.ItemId == i.Id),
+                PrimaryImageStorageKey = _dbContext.MediaAssets
+                    .Where(ma => ma.ItemId == i.Id && ma.IsPrimary)
+                    .Select(ma => ma.StorageKey)
+                    .FirstOrDefault()
             })
             .ToListAsync(cancellationToken);
 
@@ -194,7 +199,8 @@ public sealed class ItemRepository : IItemRepository
             i.TagNames,
             i.AttributeValueCount,
             i.CreatedUtc,
-            i.UpdatedUtc))
+            i.UpdatedUtc,
+            PrimaryImageUrl: i.PrimaryImageStorageKey))
             .ToArray();
 
         return new PagedResult<ItemSummaryDto>(dtos, totalCount, page, pageSize);

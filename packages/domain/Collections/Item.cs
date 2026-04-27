@@ -7,6 +7,7 @@ public sealed class Item : AuditableEntity
         Name = null!;
         AttributeValues = [];
         ItemTags = [];
+        MediaAssets = [];
     }
 
     private Item(
@@ -25,6 +26,7 @@ public sealed class Item : AuditableEntity
         Quantity = quantity;
         AttributeValues = [];
         ItemTags = [];
+        MediaAssets = [];
         SetAuditOnCreate(createdUtc, createdBy);
     }
 
@@ -48,6 +50,7 @@ public sealed class Item : AuditableEntity
         LocationId = locationId;
         AttributeValues = [..attributeValues];
         ItemTags = [..tags];
+        MediaAssets = [];
         SetAuditOnCreate(createdUtc, createdBy);
     }
 
@@ -66,6 +69,8 @@ public sealed class Item : AuditableEntity
     public List<ItemAttributeValue> AttributeValues { get; private set; }
 
     public List<ItemTag> ItemTags { get; private set; }
+
+    public List<MediaAsset> MediaAssets { get; private set; }
 
     public static Item Create(
         Guid collectionId,
@@ -240,6 +245,56 @@ public sealed class Item : AuditableEntity
 
         AttributeValues.Remove(existingAttributeValue);
         SetUpdated(updatedUtc, updatedBy);
+    }
+
+    /// <summary>
+    /// Adds a media asset to this item. The first asset added is automatically set as primary.
+    /// </summary>
+    public void AddMedia(MediaAsset asset)
+    {
+        if (MediaAssets.Count == 0)
+        {
+            asset.SetPrimary(true);
+        }
+
+        MediaAssets.Add(asset);
+    }
+
+    /// <summary>
+    /// Transfers the primary flag to the specified asset, clearing it from all others.
+    /// </summary>
+    public void SetPrimaryMedia(Guid mediaAssetId)
+    {
+        var target = MediaAssets.SingleOrDefault(a => a.Id == mediaAssetId)
+            ?? throw new ArgumentException(
+                $"Media asset '{mediaAssetId}' was not found on this item.",
+                nameof(mediaAssetId));
+
+        foreach (var asset in MediaAssets)
+        {
+            asset.SetPrimary(false);
+        }
+
+        target.SetPrimary(true);
+    }
+
+    /// <summary>
+    /// Removes a media asset. If the removed asset was primary, the oldest remaining asset is promoted.
+    /// </summary>
+    public void RemoveMedia(Guid mediaAssetId)
+    {
+        var target = MediaAssets.SingleOrDefault(a => a.Id == mediaAssetId)
+            ?? throw new ArgumentException(
+                $"Media asset '{mediaAssetId}' was not found on this item.",
+                nameof(mediaAssetId));
+
+        var wasPrimary = target.IsPrimary;
+        MediaAssets.Remove(target);
+
+        if (wasPrimary && MediaAssets.Count > 0)
+        {
+            MediaAssets.OrderBy(a => a.UploadedUtc).First().SetPrimary(true);
+        }
     }
 
     private static string? NormalizeDescription(string? description)
