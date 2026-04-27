@@ -46,9 +46,10 @@ public sealed class AttributeDefinitionRepository : IAttributeDefinitionReposito
         if (attributeDefinition is null)
             return false;
 
-        await _dbContext.ItemAttributeValues
+        var attributeValues = await _dbContext.ItemAttributeValues
             .Where(iav => iav.AttributeDefinitionId == attributeDefinitionId)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
+        _dbContext.ItemAttributeValues.RemoveRange(attributeValues);
 
         attributeDefinition.SoftDelete(deletedUtc, deletedBy);
         await _dbContext.SaveChangesAsync(cancellationToken);
