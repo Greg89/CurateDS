@@ -122,7 +122,7 @@ export function ItemDetailCard({
       <div className="item-event-timeline">
         <h4 className="timeline-heading">Media</h4>
         <div className="media-gallery">
-          {item.mediaAssets.map((asset) => (
+          {(item.mediaAssets ?? []).map((asset) => (
             <div
               className={`media-thumb${asset.isPrimary ? " primary" : ""}`}
               key={asset.id}
