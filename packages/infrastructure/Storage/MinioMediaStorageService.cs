@@ -35,8 +35,7 @@ public sealed class MinioMediaStorageService : IMediaStorageService
             BucketName = _options.BucketName,
             Key = key,
             InputStream = content,
-            ContentType = contentType,
-            DisablePayloadSigning = true
+            ContentType = contentType
         };
 
         await client.PutObjectAsync(request, ct);
