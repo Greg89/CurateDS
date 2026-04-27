@@ -176,18 +176,30 @@ else
     app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
     {
         var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-        if (feature?.Error is not null)
+        var ex = feature?.Error;
+
+        if (ex is not null)
         {
-            var logger = context.RequestServices
-                .GetRequiredService<ILogger<Program>>();
-            logger.LogError(feature.Error,
-                "Unhandled exception on {Method} {Path}",
-                context.Request.Method,
-                context.Request.Path);
+            // Write directly to stderr — guaranteed to appear in Railway log stream
+            await Console.Error.WriteLineAsync(
+                $"[UNHANDLED] {ex.GetType().FullName}: {ex.Message}\n{ex.StackTrace}");
+
+            var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "Unhandled exception on {Method} {Path}",
+                context.Request.Method, context.Request.Path);
         }
+
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
-        await context.Response.WriteAsync("{\"error\":\"An unexpected error occurred.\"}");
+
+        // Return full error detail in response — visible in browser network tab
+        // Safe for a private/internal app; remove if this ever becomes public
+        var detail = ex is not null
+            ? $"{ex.GetType().Name}: {ex.Message}"
+            : "An unexpected error occurred.";
+
+        await context.Response.WriteAsync(
+            System.Text.Json.JsonSerializer.Serialize(new { error = detail }));
     }));
 }
 
