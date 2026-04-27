@@ -422,6 +422,8 @@ public sealed class UpdateItemServiceTests
         public Task SoftDeleteByCollectionAsync(Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.CompletedTask;
 
+        public void AddMediaAsset(MediaAsset asset) { }
+
         public Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
             => Task.FromResult(new PagedResult<ItemSummaryDto>([], 0, 1, 50));
     }

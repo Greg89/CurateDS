@@ -83,6 +83,7 @@ public sealed class UploadItemMediaService
             uploadedUtc);
 
         item.AddMedia(asset);
+        _itemRepository.AddMediaAsset(asset); // explicitly register as Added — EF can't infer this for new entities with non-default Guid keys
 
         await _itemRepository.SaveChangesAsync(cancellationToken);
 
