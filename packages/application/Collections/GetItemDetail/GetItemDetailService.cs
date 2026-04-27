@@ -1,3 +1,4 @@
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Common;
 
@@ -10,19 +11,22 @@ public sealed class GetItemDetailService
     private readonly ILocationRepository _locationRepository;
     private readonly IItemRepository _itemRepository;
     private readonly ITagRepository _tagRepository;
+    private readonly IMediaStorageService _mediaStorageService;
 
     public GetItemDetailService(
         ICollectionRepository collectionRepository,
         IAttributeDefinitionRepository attributeDefinitionRepository,
         ILocationRepository locationRepository,
         IItemRepository itemRepository,
-        ITagRepository tagRepository)
+        ITagRepository tagRepository,
+        IMediaStorageService mediaStorageService)
     {
         _collectionRepository = collectionRepository;
         _attributeDefinitionRepository = attributeDefinitionRepository;
         _locationRepository = locationRepository;
         _itemRepository = itemRepository;
         _tagRepository = tagRepository;
+        _mediaStorageService = mediaStorageService;
     }
 
     public async Task<ItemDetailDto> ExecuteAsync(
@@ -93,6 +97,18 @@ public sealed class GetItemDetailService
                 .ToArray(),
             item.CreatedUtc,
             item.UpdatedUtc,
-            attributeValues);
+            attributeValues,
+            item.MediaAssets
+                .OrderByDescending(a => a.IsPrimary)
+                .ThenBy(a => a.UploadedUtc)
+                .Select(a => new MediaAssetDto(
+                    a.Id,
+                    _mediaStorageService.GetPublicUrl(a.StorageKey),
+                    a.ContentType,
+                    a.FileName,
+                    a.SizeBytes,
+                    a.IsPrimary,
+                    a.UploadedUtc))
+                .ToArray());
     }
 }

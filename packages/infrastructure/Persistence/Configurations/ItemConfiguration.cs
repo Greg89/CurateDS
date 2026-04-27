@@ -54,6 +54,11 @@ internal sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
             .HasForeignKey(itemTag => itemTag.ItemId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasMany(item => item.MediaAssets)
+            .WithOne()
+            .HasForeignKey(asset => asset.ItemId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasOne<Location>()
             .WithMany()
             .HasForeignKey(item => item.LocationId)

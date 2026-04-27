@@ -217,6 +217,44 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                     b.ToTable("item_attribute_values", (string)null);
                 });
 
+            modelBuilder.Entity("CurateDS.Domain.Collections.ItemEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("OccurredBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("OccurredUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectionId");
+
+                    b.HasIndex("ItemId", "OccurredUtc");
+
+                    b.ToTable("item_events", (string)null);
+                });
+
             modelBuilder.Entity("CurateDS.Domain.Collections.ItemTag", b =>
                 {
                     b.Property<Guid>("ItemId")
@@ -276,6 +314,49 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("locations", (string)null);
+                });
+
+            modelBuilder.Entity("CurateDS.Domain.Collections.MediaAsset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UploadedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId", "IsPrimary");
+
+                    b.ToTable("media_assets", (string)null);
                 });
 
             modelBuilder.Entity("CurateDS.Domain.Collections.Tag", b =>
@@ -353,11 +434,22 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("CurateDS.Domain.Collections.MediaAsset", b =>
+                {
+                    b.HasOne("CurateDS.Domain.Collections.Item", null)
+                        .WithMany("MediaAssets")
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CurateDS.Domain.Collections.Item", b =>
                 {
                     b.Navigation("AttributeValues");
 
                     b.Navigation("ItemTags");
+
+                    b.Navigation("MediaAssets");
                 });
 #pragma warning restore 612, 618
         }

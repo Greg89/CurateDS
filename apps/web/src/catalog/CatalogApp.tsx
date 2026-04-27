@@ -14,23 +14,21 @@ import {
   deleteLocation,
   deleteTag,
   getItemDetail,
-  ItemDetail,
-  ItemFilters,
   listAttributeDefinitions,
   listCollections,
   listItems,
   listLocations,
   listTags,
-  updateItem
+  updateItem,
+  uploadItemMedia,
+  deleteItemMedia,
+  setPrimaryItemMedia
 } from "../api";
-import { CatalogSection, SavedItemView } from "./types";
-import {
-  getSavedViewsStorageKey,
-  normalizeTagIds,
-  readSavedViews,
-  readSidebarCollapsedState,
-  sidebarStateStorageKey
-} from "./utils";
+import { CatalogSection } from "./types";
+import { readSidebarCollapsedState, sidebarStateStorageKey } from "./utils";
+import { useItemFilters } from "./hooks/useItemFilters";
+import { useItemForm } from "./hooks/useItemForm";
+import { useSavedViews } from "./hooks/useSavedViews";
 import { CollectionList } from "./components/CollectionList";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ItemsPage } from "./pages/ItemsPage";
@@ -41,8 +39,6 @@ export function CatalogApp({
 }: Readonly<{
   section: CatalogSection;
 }>) {
-  const defaultSortBy: ItemFilters["sortBy"] = "updatedUtc";
-  const defaultSortDirection: ItemFilters["sortDirection"] = "desc";
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { collectionId: routeCollectionId } = useParams<{ collectionId: string }>();
@@ -57,44 +53,61 @@ export function CatalogApp({
   const [tagName, setTagName] = useState("");
   const [locationName, setLocationName] = useState("");
   const [locationDescription, setLocationDescription] = useState("");
-  const [itemName, setItemName] = useState("");
-  const [itemDescription, setItemDescription] = useState("");
-  const [itemQuantity, setItemQuantity] = useState("1");
-  const [itemLocationId, setItemLocationId] = useState("");
-  const [itemTagIds, setItemTagIds] = useState<string[]>([]);
-  const [itemAttributeValues, setItemAttributeValues] = useState<
-    Record<string, string>
-  >({});
-  const [selectedItemId, setSelectedItemId] = useState("");
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [itemSearchText, setItemSearchText] = useState("");
-  const [itemFilterLocationId, setItemFilterLocationId] = useState("");
-  const [itemFilterTagIds, setItemFilterTagIds] = useState<string[]>([]);
-  const [itemAttributeFilters, setItemAttributeFilters] = useState<
-    Record<string, string>
-  >({});
-  const [itemSortBy, setItemSortBy] =
-    useState<ItemFilters["sortBy"]>(defaultSortBy);
-  const [itemSortDirection, setItemSortDirection] =
-    useState<ItemFilters["sortDirection"]>(defaultSortDirection);
-  const [savedViewName, setSavedViewName] = useState("");
-  const [savedViews, setSavedViews] = useState<SavedItemView[]>([]);
-  const [savedViewsCollectionId, setSavedViewsCollectionId] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(readSidebarCollapsedState);
   const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-  const [itemSaveCount, setItemSaveCount] = useState(0);
-  const [itemPage, setItemPage] = useState(1);
-  const pageSize = 50;
-  const normalizedItemFilterTagIds = normalizeTagIds(itemFilterTagIds);
 
-  const itemFilters: ItemFilters = {
-    searchText: itemSearchText,
-    locationId: itemFilterLocationId,
-    tagIds: normalizedItemFilterTagIds,
-    attributeFilters: itemAttributeFilters,
-    sortBy: itemSortBy,
-    sortDirection: itemSortDirection
-  };
+  const {
+    itemFilters,
+    itemSearchText,
+    setItemSearchText,
+    itemFilterLocationId,
+    setItemFilterLocationId,
+    itemFilterTagIds,
+    itemAttributeFilters,
+    itemSortBy,
+    setItemSortBy,
+    itemSortDirection,
+    setItemSortDirection,
+    itemPage,
+    setItemPage,
+    pageSize,
+    normalizedItemFilterTagIds,
+    clearItemFilters,
+    toggleFilterTag,
+    handleAttributeFilterChange,
+    applySavedView
+  } = useItemFilters(selectedCollectionId);
+
+  const {
+    itemName,
+    setItemName,
+    itemDescription,
+    setItemDescription,
+    itemQuantity,
+    setItemQuantity,
+    itemLocationId,
+    setItemLocationId,
+    itemTagIds,
+    itemAttributeValues,
+    selectedItemId,
+    setSelectedItemId,
+    editingItemId,
+    setEditingItemId,
+    itemSaveCount,
+    setItemSaveCount,
+    populateItemForm,
+    resetItemForm,
+    toggleItemTag,
+    handleAttributeValueChange
+  } = useItemForm(selectedCollectionId);
+
+  const {
+    savedViewName,
+    setSavedViewName,
+    savedViews,
+    saveCurrentView,
+    deleteSavedView
+  } = useSavedViews(selectedCollectionId);
 
   const collectionsQuery = useQuery({
     queryKey: ["collections"],
@@ -250,6 +263,30 @@ export function CatalogApp({
     }
   });
 
+  const uploadItemMediaMutation = useMutation({
+    mutationFn: uploadItemMedia,
+    onSuccess: async (_asset, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
+    }
+  });
+
+  const deleteItemMediaMutation = useMutation({
+    mutationFn: deleteItemMedia,
+    onSuccess: async (_result, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
+    }
+  });
+
+  const setPrimaryItemMediaMutation = useMutation({
+    mutationFn: setPrimaryItemMedia,
+    onSuccess: async (_result, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
+    }
+  });
+
   function navigateToCollection(
     collectionId: string,
     nextSection: CatalogSection = section
@@ -331,50 +368,6 @@ export function CatalogApp({
     });
   }
 
-  function handleAttributeValueChange(attributeDefinitionId: string, value: string) {
-    setItemAttributeValues((currentValues) => ({
-      ...currentValues,
-      [attributeDefinitionId]: value
-    }));
-  }
-
-  function populateItemForm(item: ItemDetail) {
-    setItemName(item.name);
-    setItemDescription(item.description ?? "");
-    setItemQuantity(item.quantity.toString());
-    setItemLocationId(item.locationId ?? "");
-    setItemTagIds(item.tags.map((tag) => tag.id));
-    setItemAttributeValues(
-      Object.fromEntries(
-        item.attributeValues.map((attributeValue) => [
-          attributeValue.attributeDefinitionId,
-          attributeValue.value.toLowerCase() === "true" ||
-          attributeValue.value.toLowerCase() === "false"
-            ? attributeValue.value.toLowerCase()
-            : attributeValue.value
-        ])
-      )
-    );
-  }
-
-  function resetItemForm() {
-    setItemName("");
-    setItemDescription("");
-    setItemQuantity("1");
-    setItemLocationId("");
-    setItemTagIds([]);
-    setItemAttributeValues({});
-    setEditingItemId(null);
-  }
-
-  function toggleItemTag(tagId: string) {
-    setItemTagIds((currentTagIds) =>
-      currentTagIds.includes(tagId)
-        ? currentTagIds.filter((currentTagId) => currentTagId !== tagId)
-        : [...currentTagIds, tagId]
-    );
-  }
-
   function beginEditingSelectedItem() {
     if (!itemDetailQuery.data) {
       return;
@@ -383,73 +376,6 @@ export function CatalogApp({
     populateItemForm(itemDetailQuery.data);
     setEditingItemId(itemDetailQuery.data.id);
     navigateToCollection(selectedCollectionId, "items");
-  }
-
-  function clearItemFilters() {
-    setItemSearchText("");
-    setItemFilterLocationId("");
-    setItemFilterTagIds([]);
-    setItemAttributeFilters({});
-    setItemSortBy(defaultSortBy);
-    setItemSortDirection(defaultSortDirection);
-    setItemPage(1);
-  }
-
-  function toggleFilterTag(tagId: string) {
-    setItemPage(1);
-    setItemFilterTagIds((currentTagIds) =>
-      currentTagIds.includes(tagId)
-        ? currentTagIds.filter((currentTagId) => currentTagId !== tagId)
-        : [...currentTagIds, tagId]
-    );
-  }
-
-  function handleAttributeFilterChange(attributeKey: string, value: string) {
-    setItemPage(1);
-    setItemAttributeFilters((currentFilters) => ({
-      ...currentFilters,
-      [attributeKey]: value
-    }));
-  }
-
-  function saveCurrentView() {
-    const normalizedName = savedViewName.trim();
-
-    if (!selectedCollectionId || normalizedName.length === 0) {
-      return;
-    }
-
-    const nextView: SavedItemView = {
-      id: crypto.randomUUID(),
-      name: normalizedName,
-      filters: {
-        searchText: itemSearchText,
-        locationId: itemFilterLocationId,
-        tagIds: itemFilterTagIds,
-        attributeFilters: itemAttributeFilters,
-        sortBy: itemSortBy,
-        sortDirection: itemSortDirection
-      }
-    };
-
-    setSavedViews((currentViews) => [...currentViews, nextView]);
-    setSavedViewName("");
-  }
-
-  function applySavedView(view: SavedItemView) {
-    setItemSearchText(view.filters.searchText ?? "");
-    setItemFilterLocationId(view.filters.locationId ?? "");
-    setItemFilterTagIds(view.filters.tagIds ?? []);
-    setItemAttributeFilters(view.filters.attributeFilters ?? {});
-    setItemSortBy(view.filters.sortBy ?? defaultSortBy);
-    setItemSortDirection(view.filters.sortDirection ?? defaultSortDirection);
-    setItemPage(1);
-  }
-
-  function deleteSavedView(viewId: string) {
-    setSavedViews((currentViews) =>
-      currentViews.filter((view) => view.id !== viewId)
-    );
   }
 
   useEffect(() => {
@@ -473,38 +399,6 @@ export function CatalogApp({
       setSelectedItemId(dataItems[0].id);
     }
   }, [itemsQuery.data, selectedItemId]);
-
-  useEffect(() => {
-    resetItemForm();
-  }, [selectedCollectionId]);
-
-  useEffect(() => {
-    clearItemFilters();
-  }, [selectedCollectionId]);
-
-  useEffect(() => {
-    if (!selectedCollectionId) {
-      setSavedViews([]);
-      setSavedViewName("");
-      setSavedViewsCollectionId("");
-      return;
-    }
-
-    setSavedViews(readSavedViews(selectedCollectionId));
-    setSavedViewName("");
-    setSavedViewsCollectionId(selectedCollectionId);
-  }, [selectedCollectionId]);
-
-  useEffect(() => {
-    if (!selectedCollectionId || savedViewsCollectionId !== selectedCollectionId) {
-      return;
-    }
-
-    window.localStorage.setItem(
-      getSavedViewsStorageKey(selectedCollectionId),
-      JSON.stringify(savedViews)
-    );
-  }, [savedViews, savedViewsCollectionId, selectedCollectionId]);
 
   useEffect(() => {
     if (
@@ -742,7 +636,7 @@ export function CatalogApp({
               onItemSubmit={handleItemSubmit}
               onItemFilterLocationChange={(v) => { setItemPage(1); setItemFilterLocationId(v); }}
               onResetItemForm={resetItemForm}
-              onSaveCurrentView={saveCurrentView}
+              onSaveCurrentView={() => saveCurrentView(itemFilters)}
               onSavedViewNameChange={setSavedViewName}
               onSelectItem={setSelectedItemId}
               onToggleFilterTag={toggleFilterTag}
@@ -755,6 +649,28 @@ export function CatalogApp({
                 })
               }
               onItemPageChange={setItemPage}
+              onUploadItemMedia={(file) =>
+                uploadItemMediaMutation.mutate({
+                  collectionId: selectedCollectionId,
+                  itemId: selectedItemId,
+                  file
+                })
+              }
+              onDeleteItemMedia={(mediaAssetId) =>
+                deleteItemMediaMutation.mutate({
+                  collectionId: selectedCollectionId,
+                  itemId: selectedItemId,
+                  mediaAssetId
+                })
+              }
+              onSetPrimaryItemMedia={(mediaAssetId) =>
+                setPrimaryItemMediaMutation.mutate({
+                  collectionId: selectedCollectionId,
+                  itemId: selectedItemId,
+                  mediaAssetId
+                })
+              }
+              isUploadMediaPending={uploadItemMediaMutation.isPending}
             />
           ) : (
             <SettingsPage

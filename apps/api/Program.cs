@@ -12,16 +12,21 @@ using CurateDS.Application.Collections.DeleteItem;
 using CurateDS.Application.Collections.DeleteTag;
 using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteAttributeDefinition;
+using CurateDS.Application.Collections.DeleteItemMedia;
 using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
+using CurateDS.Application.Collections.ListItemEvents;
 using CurateDS.Application.Collections.ListItems;
 using CurateDS.Application.Collections.ListLocations;
 using CurateDS.Application.Collections.ListTags;
+using CurateDS.Application.Collections.SetPrimaryItemMedia;
 using CurateDS.Application.Collections.UpdateItem;
+using CurateDS.Application.Collections.UploadItemMedia;
 using CurateDS.Infrastructure;
 using CurateDS.Infrastructure.Persistence;
 using CurateDS.Infrastructure.Persistence.Repositories;
+using CurateDS.Infrastructure.Storage;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
@@ -104,6 +109,7 @@ builder.Services.AddDbContext<CatalogDbContext>(options =>
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<IAttributeDefinitionRepository, AttributeDefinitionRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<IItemEventRepository, ItemEventRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddHttpContextAccessor();
@@ -128,9 +134,17 @@ builder.Services.AddScoped<GetItemDetailService>();
 builder.Services.AddScoped<ListAttributeDefinitionsService>();
 builder.Services.AddScoped<ListCollectionsService>();
 builder.Services.AddScoped<ListItemsService>();
+builder.Services.AddScoped<ListItemEventsService>();
 builder.Services.AddScoped<ListLocationsService>();
 builder.Services.AddScoped<ListTagsService>();
 builder.Services.AddScoped<UpdateItemService>();
+
+builder.Services.Configure<MediaStorageOptions>(
+    builder.Configuration.GetSection(MediaStorageOptions.SectionName));
+builder.Services.AddScoped<IMediaStorageService, MinioMediaStorageService>();
+builder.Services.AddScoped<UploadItemMediaService>();
+builder.Services.AddScoped<DeleteItemMediaService>();
+builder.Services.AddScoped<SetPrimaryItemMediaService>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<CatalogDbContext>("catalog-db");
@@ -185,6 +199,7 @@ app.MapGet("/", () => Results.Ok(new
 }));
 
 app.MapCollectionEndpoints();
+app.MapMediaEndpoints();
 app.MapHealthChecks("/health");
 
 app.Run();

@@ -54,6 +54,7 @@ public sealed class UpdateItemServiceTests
             new FakeLocationRepository(),
             itemRepository,
             new FakeTagRepository(),
+            new FakeItemEventRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -100,6 +101,7 @@ public sealed class UpdateItemServiceTests
             new FakeLocationRepository(),
             new FakeItemRepository(item),
             new FakeTagRepository(),
+            new FakeItemEventRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -130,6 +132,7 @@ public sealed class UpdateItemServiceTests
             new FakeLocationRepository(),
             new FakeItemRepository(),
             new FakeTagRepository(),
+            new FakeItemEventRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -176,6 +179,7 @@ public sealed class UpdateItemServiceTests
             new FakeLocationRepository(),
             itemRepository,
             new FakeTagRepository(),
+            new FakeItemEventRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -197,6 +201,108 @@ public sealed class UpdateItemServiceTests
         item.Description.Should().Be("Original Description");
         item.Quantity.Should().Be(1);
         itemRepository.SaveChangesCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRecordEventWithNameChange_WhenNameDiffers()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Books", DateTime.UtcNow, "system");
+        var item = Item.Create(collection.Id, "Old Name", null, 1, DateTime.UtcNow, "system");
+        var eventRepository = new FakeItemEventRepository();
+
+        var service = new UpdateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(),
+            new FakeLocationRepository(),
+            new FakeItemRepository(item),
+            new FakeTagRepository(),
+            eventRepository,
+            new FakeCurrentUserService(),
+            new UpdateItemCommandValidator());
+
+        await service.ExecuteAsync(
+            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "New Name", null, 1, null, [], []),
+            CancellationToken.None);
+
+        eventRepository.Recorded.Should().ContainSingle();
+        eventRepository.Recorded[0].Notes.Should().Contain("Old Name").And.Contain("New Name");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRecordEventWithQuantityChange_WhenQuantityDiffers()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Records", DateTime.UtcNow, "system");
+        var item = Item.Create(collection.Id, "Abbey Road", null, 1, DateTime.UtcNow, "system");
+        var eventRepository = new FakeItemEventRepository();
+
+        var service = new UpdateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(),
+            new FakeLocationRepository(),
+            new FakeItemRepository(item),
+            new FakeTagRepository(),
+            eventRepository,
+            new FakeCurrentUserService(),
+            new UpdateItemCommandValidator());
+
+        await service.ExecuteAsync(
+            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Abbey Road", null, 5, null, [], []),
+            CancellationToken.None);
+
+        eventRepository.Recorded.Should().ContainSingle();
+        eventRepository.Recorded[0].Notes.Should().Contain("Quantity").And.Contain("1").And.Contain("5");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRecordEventWithNullNotes_WhenNothingChanged()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Stamps", DateTime.UtcNow, "system");
+        var item = Item.Create(collection.Id, "Same Name", "Same desc", 2, DateTime.UtcNow, "system");
+        var eventRepository = new FakeItemEventRepository();
+
+        var service = new UpdateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(),
+            new FakeLocationRepository(),
+            new FakeItemRepository(item),
+            new FakeTagRepository(),
+            eventRepository,
+            new FakeCurrentUserService(),
+            new UpdateItemCommandValidator());
+
+        await service.ExecuteAsync(
+            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Same Name", "Same desc", 2, null, [], []),
+            CancellationToken.None);
+
+        eventRepository.Recorded.Should().ContainSingle();
+        eventRepository.Recorded[0].Notes.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRecordMultipleChanges_WhenSeveralFieldsDiffer()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Coins", DateTime.UtcNow, "system");
+        var item = Item.Create(collection.Id, "Original", "Old desc", 1, DateTime.UtcNow, "system");
+        var eventRepository = new FakeItemEventRepository();
+
+        var service = new UpdateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(),
+            new FakeLocationRepository(),
+            new FakeItemRepository(item),
+            new FakeTagRepository(),
+            eventRepository,
+            new FakeCurrentUserService(),
+            new UpdateItemCommandValidator());
+
+        await service.ExecuteAsync(
+            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Updated", null, 3, null, [], []),
+            CancellationToken.None);
+
+        var notes = eventRepository.Recorded[0].Notes;
+        notes.Should().Contain("Original").And.Contain("Updated");  // name change
+        notes.Should().Contain("Quantity").And.Contain("1").And.Contain("3");  // quantity change
+        notes.Should().Contain("Description removed");
     }
 
     private sealed class FakeCollectionRepository : ICollectionRepository
@@ -318,6 +424,22 @@ public sealed class UpdateItemServiceTests
 
         public Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
             => Task.FromResult(new PagedResult<ItemSummaryDto>([], 0, 1, 50));
+    }
+
+    private sealed class FakeItemEventRepository : IItemEventRepository
+    {
+        public List<ItemEvent> Recorded { get; } = [];
+
+        public Task RecordAsync(ItemEvent itemEvent, CancellationToken cancellationToken)
+        {
+            Recorded.Add(itemEvent);
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<ItemEvent>> ListByItemAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<ItemEvent>>([]);
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakeLocationRepository : ILocationRepository

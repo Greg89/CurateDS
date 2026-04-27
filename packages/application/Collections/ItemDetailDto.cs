@@ -11,4 +11,5 @@ public sealed record ItemDetailDto(
     IReadOnlyList<TagDto> Tags,
     DateTime CreatedUtc,
     DateTime? UpdatedUtc,
-    IReadOnlyList<ItemAttributeValueDto> AttributeValues);
+    IReadOnlyList<ItemAttributeValueDto> AttributeValues,
+    IReadOnlyList<MediaAssetDto> MediaAssets);

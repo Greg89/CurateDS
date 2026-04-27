@@ -59,3 +59,12 @@ public sealed record PagedItemsResponse(
     int Page,
     int PageSize,
     int TotalPages);
+
+public sealed record ItemEventResponse(
+    Guid Id,
+    Guid ItemId,
+    Guid CollectionId,
+    string EventType,
+    DateTime OccurredUtc,
+    string OccurredBy,
+    string? Notes);

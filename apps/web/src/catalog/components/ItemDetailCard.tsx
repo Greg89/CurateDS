@@ -1,18 +1,48 @@
-import { ItemDetail } from "../../api";
+import { useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ItemDetail, listItemEvents } from "../../api";
+
+const EVENT_LABELS: Record<string, string> = {
+  Created: "Item created",
+  Updated: "Item updated",
+  TagsChanged: "Tags changed",
+  LocationChanged: "Location changed",
+  AttributesChanged: "Attributes changed",
+  Deleted: "Item deleted"
+};
+
+const dateFormat = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeStyle: "short"
+});
 
 export function ItemDetailCard({
   item,
   isEditing,
   onEdit,
   onDelete,
-  selectedCollectionName
+  selectedCollectionName,
+  onUploadMedia,
+  onDeleteMedia,
+  onSetPrimaryMedia,
+  isUploadPending
 }: Readonly<{
   item: ItemDetail | null;
   isEditing: boolean;
   onEdit: () => void;
   onDelete: () => void;
   selectedCollectionName: string | null;
+  onUploadMedia: (file: File) => void;
+  onDeleteMedia: (mediaAssetId: string) => void;
+  onSetPrimaryMedia: (mediaAssetId: string) => void;
+  isUploadPending: boolean;
 }>) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const eventsQuery = useQuery({
+    queryKey: ["item-events", item?.collectionId, item?.id],
+    queryFn: () => listItemEvents(item!.collectionId, item!.id),
+    enabled: !!item
+  });
   if (!selectedCollectionName) {
     return null;
   }
@@ -88,6 +118,85 @@ export function ItemDetailCard({
           ))}
         </ul>
       )}
+
+      <div className="item-event-timeline">
+        <h4 className="timeline-heading">Media</h4>
+        <div className="media-gallery">
+          {item.mediaAssets.map((asset) => (
+            <div
+              className={`media-thumb${asset.isPrimary ? " primary" : ""}`}
+              key={asset.id}
+            >
+              <img alt={asset.fileName} src={asset.url} />
+              {asset.isPrimary && <span className="media-primary-badge">Primary</span>}
+              <div className="media-thumb-actions">
+                {!asset.isPrimary && (
+                  <button
+                    className="secondary-button small"
+                    onClick={() => onSetPrimaryMedia(asset.id)}
+                    type="button"
+                  >
+                    Set primary
+                  </button>
+                )}
+                <button
+                  className="danger-button small"
+                  onClick={() => onDeleteMedia(asset.id)}
+                  type="button"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="media-upload-row">
+          <input
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            type="file"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                onUploadMedia(file);
+                e.target.value = "";
+              }
+            }}
+          />
+          <button
+            className="secondary-button"
+            disabled={isUploadPending}
+            onClick={() => fileInputRef.current?.click()}
+            type="button"
+          >
+            {isUploadPending ? "Uploading..." : "Add Image"}
+          </button>
+        </div>
+      </div>
+
+      <div className="item-event-timeline">
+        <h4 className="timeline-heading">History</h4>
+        {eventsQuery.isLoading && <p className="message">Loading history...</p>}
+        {eventsQuery.data && eventsQuery.data.length === 0 && (
+          <p className="timeline-empty">No history recorded yet.</p>
+        )}
+        {eventsQuery.data && eventsQuery.data.length > 0 && (
+          <ol className="timeline-list">
+            {eventsQuery.data.map((event) => (
+              <li className="timeline-event" key={event.id}>
+                <span className="timeline-label">
+                  {EVENT_LABELS[event.eventType] ?? event.eventType}
+                </span>
+                <span className="timeline-meta">
+                  {dateFormat.format(new Date(event.occurredUtc))}
+                </span>
+                {event.notes && <p className="timeline-notes">{event.notes}</p>}
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
     </section>
   );
 }

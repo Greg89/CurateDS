@@ -11,4 +11,5 @@ public sealed record ItemSummaryDto(
     IReadOnlyList<string> Tags,
     int AttributeValueCount,
     DateTime CreatedUtc,
-    DateTime? UpdatedUtc);
+    DateTime? UpdatedUtc,
+    string? PrimaryImageUrl);
