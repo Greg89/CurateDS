@@ -22,6 +22,11 @@ public sealed class ItemRepository : IItemRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public void AddMediaAsset(MediaAsset asset)
+    {
+        _dbContext.MediaAssets.Add(asset);
+    }
+
     public async Task ReplaceAttributeValuesAsync(
         Guid itemId,
         IReadOnlyList<ItemAttributeValue> attributeValues,

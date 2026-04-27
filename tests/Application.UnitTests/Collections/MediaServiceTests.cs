@@ -181,6 +181,8 @@ public sealed class DeleteItemMediaServiceTests
             return Task.CompletedTask;
         }
 
+        public void AddMediaAsset(MediaAsset asset) { }
+
         public Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
@@ -300,6 +302,8 @@ public sealed class SetPrimaryItemMediaServiceTests
             SaveChangesCallCount++;
             return Task.CompletedTask;
         }
+
+        public void AddMediaAsset(MediaAsset asset) { }
 
         public Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
