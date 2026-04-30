@@ -50,9 +50,10 @@ public sealed class TagRepository : ITagRepository
         if (tag is null)
             return false;
 
-        await _dbContext.ItemTags
+        var itemTags = await _dbContext.ItemTags
             .Where(it => it.TagId == tagId)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
+        _dbContext.ItemTags.RemoveRange(itemTags);
 
         tag.SoftDelete(deletedUtc, deletedBy);
         await _dbContext.SaveChangesAsync(cancellationToken);

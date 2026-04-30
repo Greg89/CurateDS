@@ -11,18 +11,18 @@ internal static class PersistenceConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var useInMemoryDatabase = configuration.GetValue<bool>("Testing:UseInMemoryDatabase");
-
-        services.AddDbContext<CatalogDbContext>(options =>
+        services.AddDbContext<CatalogDbContext>((serviceProvider, options) =>
         {
-            if (useInMemoryDatabase)
+            var resolvedConfiguration = serviceProvider.GetRequiredService<IConfiguration>();
+
+            if (resolvedConfiguration.GetValue<bool>("Testing:UseInMemoryDatabase"))
             {
-                var databaseName = configuration["Testing:DatabaseName"] ?? "curateds-tests";
+                var databaseName = resolvedConfiguration["Testing:DatabaseName"] ?? "curateds-tests";
                 options.UseInMemoryDatabase(databaseName);
                 return;
             }
 
-            options.UseNpgsql(configuration.GetConnectionString("CatalogDb"));
+            options.UseNpgsql(resolvedConfiguration.GetConnectionString("CatalogDb"));
         });
 
         services.AddScoped<ICollectionRepository, CollectionRepository>();

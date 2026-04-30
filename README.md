@@ -1,101 +1,116 @@
 # CurateDS
 
-CurateDS is a web-first, hobby-agnostic catalog platform for curating personal collections.
+A web-first, hobby-agnostic catalog platform for curating personal collections.
 
-## Current Status
+Organise anything — books, vinyl, board games, tools — with custom attributes, tags, locations, and saved views. Built with a clean API-first architecture so a mobile client can follow later.
 
-This repository currently contains:
+## Features
 
-- lightweight discovery docs in `docs/`
-- implementation planning docs in `app-plan/`
-- an app/package repo skeleton for API, web, backend packages, and tests
+- **Multiple collections** — create separate catalogs for different hobbies or categories
+- **Custom attribute definitions** — define typed fields (text, number, date, boolean, enum) per collection
+- **Tags & locations** — organise items with reusable tags and physical locations
+- **Filtering & search** — filter by search text, location, tags, or custom attribute values
+- **Sorting & paging** — sort by name, quantity, created date, or last updated
+- **Saved views** — persist a combination of filters and sort options per collection
+- **Item detail & history** — view structured item detail and an activity event log
+- **Secure by default** — Auth0 JWT authentication on every API endpoint
 
-## Planned Architecture
+## Tech Stack
 
-- `apps/api` ASP.NET Core API
-- `apps/web` React web client
-- `packages/application` application use cases and contracts
-- `packages/domain` domain model and business rules
-- `packages/infrastructure` EF Core, PostgreSQL, logging, and external adapters
+| Layer | Technology |
+|---|---|
+| API | .NET 9, ASP.NET Core minimal APIs |
+| ORM | EF Core + Npgsql (PostgreSQL) |
+| Frontend | React 19, Vite, TypeScript, React Router 7, TanStack Query |
+| Auth | Auth0 |
+| Logging | Serilog → console + Seq |
+| Storage | S3-compatible object storage |
+| Hosting | Railway (beta from `develop`, production from `main`) |
+
+## Repository Structure
+
+```
+apps/
+  api/          ASP.NET Core API
+  web/          React web client
+packages/
+  domain/       Domain model and business rules
+  application/  Use cases and service contracts
+  infrastructure/  EF Core, PostgreSQL, storage, and logging adapters
+tests/
+  Domain.UnitTests/
+  Application.UnitTests/
+  Infrastructure.IntegrationTests/
+  Api.IntegrationTests/
+  Web.UnitTests/
+  EndToEndTests/
+```
 
 ## Local Development
 
-For local containerized development:
+Requires Docker Desktop.
 
-1. Run `docker compose up --build`
-2. Open the web app at `http://localhost:3000`
-3. Open the API at `http://localhost:8080`
-4. Check API health at `http://localhost:8080/health`
-5. Open Seq at `http://localhost:8081`
+```bash
+docker compose up --build
+```
 
-The compose stack is designed to resemble the Railway deployment shape:
+| Service | URL |
+|---|---|
+| Web app | http://localhost:3000 |
+| API | http://localhost:8080 |
+| API health | http://localhost:8080/health |
+| Seq (logs) | http://localhost:8081 |
 
-- one Seq log service
-- one PostgreSQL service
-- one API service
-- one web service
+The compose stack mirrors the Railway deployment shape — one Postgres service, one API service, one web service, and one Seq log aggregator. Configuration is environment-variable driven so local and hosted setups stay aligned.
 
-The web app is built with a configurable `VITE_API_BASE_URL`, while the API gets its database connection and optional Seq sink settings from environment variables, which keeps local and hosted configuration patterns aligned.
+## Running Tests
 
-## Local Logging
+```bash
+# Backend (all projects)
+dotnet test CurateDS.sln
 
-The API always logs to console and can optionally forward structured events to Seq.
+# Frontend unit tests
+npm run test:web
 
-In Docker Compose, Seq is available locally:
+# Frontend unit tests (watch mode)
+npm run test:web:watch
 
-- UI: `http://localhost:8081`
-- ingestion endpoint: `http://localhost:5341`
+# E2E (local only — requires the full stack running)
+npm run test:e2e
+```
 
-The local compose setup starts Seq without authentication for convenience. For Railway or any shared environment, you should switch that to a proper admin password or managed access model.
+## Environment Variables
 
-## Test Layout
+### API
 
-- `tests/Domain.UnitTests`
-- `tests/Application.UnitTests`
-- `tests/Infrastructure.IntegrationTests`
-- `tests/Api.IntegrationTests`
-- `tests/Web.UnitTests`
-- `tests/EndToEndTests`
+| Variable | Description |
+|---|---|
+| `Auth0__Domain` | Auth0 tenant domain |
+| `Auth0__Audience` | Auth0 API identifier |
+| `ConnectionStrings__CatalogDb` | PostgreSQL connection string |
+| `Cors__AllowedOrigins__0` | Allowed CORS origin (web app URL) |
+| `Serilog__SeqUrl` | Optional Seq ingestion endpoint |
 
-## Client Testing
+### Web (build-time)
 
-The web client now supports a layered TDD workflow:
+| Variable | Description |
+|---|---|
+| `VITE_API_BASE_URL` | API base URL |
+| `VITE_AUTH0_DOMAIN` | Auth0 tenant domain |
+| `VITE_AUTH0_CLIENT_ID` | Auth0 SPA client ID |
+| `VITE_AUTH0_AUDIENCE` | Auth0 API identifier |
 
-- `npm run test:web` runs fast client-side tests with Vitest, Testing Library, jsdom, and MSW
-- `npm run test:web:watch` starts the watch-mode loop for frontend TDD
-- `npm run test:e2e` runs the Playwright browser smoke tests
+## CI / CD
 
-Use the web unit tests for most client behavior and routing changes, and keep Playwright focused on a small number of critical real-browser flows.
+GitHub Actions runs two required checks on every PR — `backend` and `frontend`. Both must pass before a branch can be merged. Railway is configured to wait for CI before deploying.
 
-## Next Implementation Focus
+- PRs into `develop` → deploy to **beta** on Railway after CI passes
+- PRs into `main` → deploy to **production** on Railway after CI passes
 
-The current vertical slice covers:
+## Contributing
 
-1. creating a collection
-2. listing collections
-3. navigating a routed collection workspace with overview, items, and settings screens
-4. defining custom attribute definitions per collection
-5. creating items with typed custom attribute values
-6. listing items for a collection
-7. viewing item detail
-8. editing items after creation
-9. organizing items with reusable tags and locations
-10. filtering a collection's items by search text, location, and tags
-11. filtering item lists by custom attribute values
-12. sorting item lists by updated date, created date, name, or quantity
-13. saving collection-specific item views in the web app for reuse
-
-The original MVP slice still has these notable gaps:
-
-1. denser list or table browsing for larger collections
-2. media metadata or attachments
-3. item history or activity tracking
-4. dashboard and reporting views above the collection workspace
-
-The next roadmap changes are:
-
-1. refactor item listing so search, filter, and sort execute in the repository/EF query instead of in memory
-2. add a paged item-list contract and UI flow on top of that query refactor
-3. continue tightening API contracts with the same Problem Details strategy and paged DTO consistency
-4. keep decomposing the routed client into smaller reusable feature components and hooks
+1. Branch from `develop`: `feature/<short-description>`
+2. Follow the TDD workflow — write the failing test first
+3. Ensure `dotnet test CurateDS.sln` and `npm run test:web` are green
+4. Open a PR into `develop`; CI must pass before merge
 5. return to the remaining MVP features once the browsing path is scalable enough to support larger collections

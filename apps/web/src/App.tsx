@@ -14,7 +14,7 @@ export function App() {
 
   if (error) {
     return (
-      <div style={{ padding: "2rem", color: "#f0ebe3" }}>
+      <div style={{ padding: "2rem", color: "oklch(0.98 0 0)" }}>
         <p>Authentication error: {error.message}</p>
       </div>
     );

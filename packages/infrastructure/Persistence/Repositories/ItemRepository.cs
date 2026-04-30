@@ -105,7 +105,7 @@ public sealed class ItemRepository : IItemRepository
                 continue;
 
             var key = filter.AttributeKey.Trim();
-            var value = filter.Value.Trim();
+            var value = filter.Value.Trim().ToLower();
 
             q = q.Where(i => _dbContext.ItemAttributeValues
                 .Join(
@@ -115,28 +115,28 @@ public sealed class ItemRepository : IItemRepository
                     (iav, ad) => new { iav, ad })
                 .Any(joined =>
                     joined.iav.ItemId == i.Id &&
-                    (joined.iav.ValueText != null && EF.Functions.ILike(joined.iav.ValueText, $"%{value}%"))));
+                    (joined.iav.ValueText != null && joined.iav.ValueText.ToLower().Contains(value))));
         }
 
         // Full-text search across name, description, location name, tag names, attribute text values
         if (!string.IsNullOrWhiteSpace(query.SearchText))
         {
-            var search = query.SearchText.Trim();
+            var search = query.SearchText.Trim().ToLower();
             q = q.Where(i =>
-                EF.Functions.ILike(i.Name, $"%{search}%") ||
-                (i.Description != null && EF.Functions.ILike(i.Description, $"%{search}%")) ||
+                i.Name.ToLower().Contains(search) ||
+                (i.Description != null && i.Description.ToLower().Contains(search)) ||
                 (i.LocationId != null && _dbContext.Locations.Any(l =>
                     l.Id == i.LocationId &&
-                    (EF.Functions.ILike(l.Name, $"%{search}%") ||
-                     (l.Description != null && EF.Functions.ILike(l.Description, $"%{search}%"))))) ||
+                    (l.Name.ToLower().Contains(search) ||
+                     (l.Description != null && l.Description.ToLower().Contains(search))))) ||
                 _dbContext.ItemTags
-                    .Join(_dbContext.Tags.Where(t => EF.Functions.ILike(t.Name, $"%{search}%")),
+                    .Join(_dbContext.Tags.Where(t => t.Name.ToLower().Contains(search)),
                         it => it.TagId, t => t.Id, (it, t) => it.ItemId)
                     .Any(itemId => itemId == i.Id) ||
                 _dbContext.ItemAttributeValues.Any(iav =>
                     iav.ItemId == i.Id &&
                     iav.ValueText != null &&
-                    EF.Functions.ILike(iav.ValueText, $"%{search}%")));
+                    iav.ValueText.ToLower().Contains(search)));
         }
 
         var totalCount = await q.CountAsync(cancellationToken);
