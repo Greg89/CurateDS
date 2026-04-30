@@ -344,8 +344,8 @@ h1 {
 .field input:focus,
 .field select:focus,
 .field-textarea:focus {
-  outline: 2px solid oklch(0.70 0.15 65 / 0.55);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px oklch(0.70 0.15 65 / 0.65);
 }
 
 .primary-button {
@@ -1253,6 +1253,11 @@ h1 {
 .sidebar .tab-link.active {
   border-color: oklch(0.70 0.15 65 / 0.6);
   background: oklch(0.70 0.15 65 / 0.18);
+}
+
+.sidebar .primary-button {
+  background: oklch(0.70 0.15 65);
+  color: oklch(0.25 0.04 260);
 }
 
 /* --- Responsive � narrow desktop (sidebar becomes drawer) ----------------- */
