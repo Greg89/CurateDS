@@ -1,4 +1,7 @@
+using System.Reflection;
+using System.Security.Claims;
 using CurateDS.Api.Collections;
+using CurateDS.Api.Observability;
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,12 +39,23 @@ using Serilog.Sinks.Seq;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var serviceVersion = Assembly.GetEntryAssembly()
+    ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+    ?.InformationalVersion
+    ?? Assembly.GetEntryAssembly()?.GetName().Version?.ToString()
+    ?? "unknown";
+
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
+        .Enrich.WithMachineName()
+        .Enrich.WithEnvironmentName()
+        .Enrich.WithThreadId()
+        .Enrich.WithProperty("Service", "catalog-api")
+        .Enrich.WithProperty("Version", serviceVersion)
         .WriteTo.Console(new RenderedCompactJsonFormatter());
 
     var seqUrl = context.Configuration["Serilog:SeqUrl"];
@@ -165,7 +179,28 @@ await using (var scope = app.Services.CreateAsyncScope())
     }
 }
 
-app.UseSerilogRequestLogging();
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        var userId = httpContext.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            diagnosticContext.Set("UserId", userId);
+        }
+
+        if (httpContext.Items.TryGetValue(CorrelationIdMiddleware.ItemKey, out var correlationId)
+            && correlationId is string correlationIdValue)
+        {
+            diagnosticContext.Set("CorrelationId", correlationIdValue);
+        }
+
+        diagnosticContext.Set("ClientIp", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+        diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent.ToString());
+    };
+});
 
 if (app.Environment.IsDevelopment())
 {
@@ -180,10 +215,6 @@ else
 
         if (ex is not null)
         {
-            // Write directly to stderr — guaranteed to appear in Railway log stream
-            await Console.Error.WriteLineAsync(
-                $"[UNHANDLED] {ex.GetType().FullName}: {ex.Message}\n{ex.StackTrace}");
-
             var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
             logger.LogError(ex, "Unhandled exception on {Method} {Path}",
                 context.Request.Method, context.Request.Path);
@@ -192,14 +223,19 @@ else
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
 
-        // Return full error detail in response — visible in browser network tab
-        // Safe for a private/internal app; remove if this ever becomes public
-        var detail = ex is not null
-            ? $"{ex.GetType().Name}: {ex.Message}"
-            : "An unexpected error occurred.";
+        // Generic response body — full detail is captured in structured logs (Seq).
+        // Correlation ID is echoed via the X-Correlation-ID header so a caller
+        // can quote it when reporting an issue.
+        var correlationId = context.Items.TryGetValue(CorrelationIdMiddleware.ItemKey, out var cid)
+            ? cid as string
+            : null;
 
         await context.Response.WriteAsync(
-            System.Text.Json.JsonSerializer.Serialize(new { error = detail }));
+            System.Text.Json.JsonSerializer.Serialize(new
+            {
+                error = "An unexpected error occurred.",
+                correlationId
+            }));
     }));
 }
 
@@ -228,6 +264,12 @@ app.MapGet("/", () => Results.Ok(new
 app.MapCollectionEndpoints();
 app.MapMediaEndpoints();
 app.MapHealthChecks("/health");
+
+app.Logger.LogInformation(
+    "CurateDS API starting. Environment={Environment} Version={Version} SeqConfigured={SeqConfigured}",
+    app.Environment.EnvironmentName,
+    serviceVersion,
+    !string.IsNullOrWhiteSpace(app.Configuration["Serilog:SeqUrl"]));
 
 app.Run();
 
