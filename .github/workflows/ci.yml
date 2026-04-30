@@ -55,3 +55,41 @@ jobs:
 
       - name: Test web
         run: npm run test:web
+
+  mobile:
+    name: mobile
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect mobile changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            mobile:
+              - 'apps/mobile/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/ci.yml'
+
+      - name: Setup Node
+        if: steps.changes.outputs.mobile == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.changes.outputs.mobile == 'true'
+        run: npm ci
+
+      - name: Typecheck mobile
+        if: steps.changes.outputs.mobile == 'true'
+        run: npm run typecheck:mobile
+
+      - name: Test mobile
+        if: steps.changes.outputs.mobile == 'true'
+        run: npm run test:mobile

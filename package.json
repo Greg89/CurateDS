@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": [
     "apps/web",
+    "apps/mobile",
     "tests/Web.UnitTests",
     "tests/EndToEndTests"
   ],
@@ -10,6 +11,8 @@
     "build:web": "npm run build --workspace @curateds/web",
     "test:web": "npm run test --workspace @curateds/web-tests",
     "test:web:watch": "npm run test:watch --workspace @curateds/web-tests",
-    "test:e2e": "npm run test --workspace @curateds/e2e"
+    "test:e2e": "npm run test --workspace @curateds/e2e",
+    "typecheck:mobile": "npm run typecheck --workspace @curateds/mobile",
+    "test:mobile": "npm run test --workspace @curateds/mobile"
   }
 }
