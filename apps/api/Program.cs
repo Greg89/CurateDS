@@ -199,6 +199,27 @@ app.UseSerilogRequestLogging(options =>
 
         diagnosticContext.Set("ClientIp", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
         diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent.ToString());
+
+        // Auto-enrich the request log with route-derived domain identifiers and a
+        // human-friendly Feature name. This means every request log line carries
+        // the entity context without each endpoint having to opt in.
+        var endpoint = httpContext.GetEndpoint();
+        if (endpoint is Microsoft.AspNetCore.Routing.RouteEndpoint routeEndpoint)
+        {
+            var feature = $"{httpContext.Request.Method} /{routeEndpoint.RoutePattern.RawText?.TrimStart('/')}";
+            diagnosticContext.Set("Feature", feature);
+        }
+
+        var routeValues = httpContext.Request.RouteValues;
+        foreach (var routeKey in DiagnosticRouteKeys)
+        {
+            if (routeValues.TryGetValue(routeKey.RouteName, out var raw)
+                && raw is not null
+                && !string.IsNullOrWhiteSpace(raw.ToString()))
+            {
+                diagnosticContext.Set(routeKey.LogProperty, raw.ToString()!);
+            }
+        }
     };
 });
 
@@ -275,6 +296,18 @@ app.Run();
 
 public partial class Program
 {
+    // Route parameter names → log property names. Whenever a request matches a
+    // route that has one of these segments, the request log will carry the value.
+    private static readonly IReadOnlyList<(string RouteName, string LogProperty)> DiagnosticRouteKeys =
+    [
+        ("collectionId", "CollectionId"),
+        ("itemId", "ItemId"),
+        ("mediaAssetId", "MediaAssetId"),
+        ("attributeDefinitionId", "AttributeDefinitionId"),
+        ("locationId", "LocationId"),
+        ("tagId", "TagId")
+    ];
+
     protected Program()
     {
     }
