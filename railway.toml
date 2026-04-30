@@ -1,6 +1,6 @@
 # Railway configuration for the CurateDS API service.
 #
-# In Railway, create two separate services pointing to this repo:
+# In Railway, create three separate services pointing to this repo / image:
 #
 #   Service: catalog-api
 #     Dockerfile:    apps/api/Dockerfile
@@ -14,6 +14,12 @@
 #     Branch:        develop  →  staging environment
 #                    main     →  production environment
 #
+#   Service: catalog-seq
+#     Source:        Docker image  datalust/seq:2025.2
+#     Volume:        mount a persistent volume at /data
+#     Public port:   80     (Seq UI — protect with an admin password, see below)
+#     Private port:  5341   (CLEF ingestion — keep on Railway internal networking)
+#
 # Required environment variables per service (set in Railway dashboard):
 #
 #  catalog-api:
@@ -22,12 +28,21 @@
 #    ConnectionStrings__CatalogDb
 #      Host=${{Postgres.PGHOST}};Port=${{Postgres.PGPORT}};Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}}
 #    Cors__AllowedOrigins__0    https://<your-web-service>.up.railway.app
+#    Serilog__SeqUrl            http://${{catalog-seq.RAILWAY_PRIVATE_DOMAIN}}:5341
+#                               (private networking only — never use the public URL)
+#    Serilog__SeqApiKey         <optional; create per-service API key in Seq → Settings → API Keys>
 #
 #  catalog-web (build variables):
 #    VITE_API_BASE_URL          https://<your-api-service>.up.railway.app
 #    VITE_AUTH0_DOMAIN          your-tenant.us.auth0.com
 #    VITE_AUTH0_CLIENT_ID       <SPA application Client ID>
 #    VITE_AUTH0_AUDIENCE        https://api.curateds.com
+#
+#  catalog-seq:
+#    ACCEPT_EULA                Y
+#    SEQ_FIRSTRUN_ADMINPASSWORD <strong password — required on first boot to gate the UI>
+#                               Do NOT set SEQ_FIRSTRUN_NOAUTHENTICATION on Railway;
+#                               that flag is only for the local docker-compose stack.
 #
 # Auth0 application setup (do this once in the Auth0 dashboard):
 #   1. Create a "Single Page Application" — copy its Domain and Client ID
@@ -36,6 +51,14 @@
 #   3. Under Allowed Logout URLs + Allowed Web Origins: same URLs
 #   4. Create an "API" application — set the identifier (becomes your Audience)
 #      Enable "RBAC" and "Add Permissions in the Access Token" if needed later
+#
+# Seq setup (do this once after the catalog-seq service is running):
+#   1. Open the public Seq UI URL, sign in with the SEQ_FIRSTRUN_ADMINPASSWORD
+#   2. (Optional) Settings → API Keys → New API Key for "catalog-api" with the
+#      "Ingest" permission only. Paste the token into Serilog__SeqApiKey on the
+#      catalog-api service. Without an API key, any service that can reach
+#      port 5341 internally can write events.
+#   3. Configure retention under Settings → Retention to match your storage budget.
 
 [deploy]
 healthcheckPath = "/health"
