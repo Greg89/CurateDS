@@ -1,6 +1,6 @@
 # CurateDS Mobile
 
-Expo + React Native + TypeScript companion app for CurateDS. Phase 0 scaffold — no auth, no API integration yet.
+Expo + React Native + TypeScript companion app for CurateDS. Auth0 PKCE login is wired; API integration arrives in Phase 1.
 
 See [`app-plan/curateds-mobile-plan/`](../../app-plan/curateds-mobile-plan/) for the full plan.
 
@@ -13,6 +13,30 @@ npm install
 ```
 
 This installs mobile dependencies via the npm workspace.
+
+### Auth0 configuration
+
+The mobile app needs its own **native** Auth0 application registration on the existing CurateDS tenant. The web SPA client cannot be reused.
+
+In the Auth0 dashboard, create a new **Native** application and configure:
+
+- **Allowed Callback URLs**: `curateds://redirect`, `exp://127.0.0.1:8081/--/redirect` (Expo Go dev)
+- **Allowed Logout URLs**: same as above
+- **Token Endpoint Authentication Method**: None (PKCE)
+- **Refresh Token Rotation**: enabled
+- **Refresh Token Behavior**: Rotating, with absolute lifetime
+- **Grant Types**: Authorization Code, Refresh Token
+- **Application API Audience**: the same `audience` the web app uses
+
+Then copy `.env.example` to `.env` in `apps/mobile/` and fill in the three values:
+
+```text
+EXPO_PUBLIC_AUTH0_DOMAIN=...
+EXPO_PUBLIC_AUTH0_CLIENT_ID=...
+EXPO_PUBLIC_AUTH0_AUDIENCE=...
+```
+
+`.env` is gitignored. CI/EAS builds inject these values via build-profile environment variables instead.
 
 ## Run it on your phone (recommended first taste)
 
@@ -54,22 +78,25 @@ For now, the phone+Expo Go path is faster to set up.
 
 ```text
 apps/mobile/
-  App.tsx              # Root component — placeholder screen for now
-  index.ts             # Expo entry point
+  App.tsx              # Root — gates between SignInScreen and HomeScreen on auth state
+  app.config.ts        # Expo config (reads Auth0 env vars into expo.extra.auth0)
   app.json             # Expo native config (name, bundle id, splash, etc.)
+  index.ts             # Expo entry point
   package.json         # Workspace package, scripts, deps
   tsconfig.json        # Extends expo/tsconfig.base, strict mode on
-  __tests__/           # Jest tests
+  src/
+    auth/              # Auth0 PKCE client, secure-store wrapper, AuthContext + useAuth hook
+    screens/           # SignInScreen, HomeScreen
+  __tests__/           # Jest tests (auth/, App.test.tsx)
   assets/              # Icons, splash images
 ```
 
 ## What's intentionally not here yet
 
-- **Auth0** — comes in the next ticket. Requires a new Auth0 native application registration.
-- **Navigation library** — added when the app has more than one screen.
+- **Navigation library** — added when the app has more than two screens.
 - **API client / TanStack Query** — added with the first read-only collections list (Phase 1).
 - **EAS Build, TestFlight, Play Store** — happens when there's a real build to ship.
-- **ESLint** — added once the codebase is large enough to warrant it. Right now the placeholder is small enough that `tsc --strict` carries the load.
+- **ESLint** — added once the codebase is large enough to warrant it. Right now `tsc --strict` carries the load.
 
 See [`02-mobile-feature-roadmap.md`](../../app-plan/curateds-mobile-plan/02-mobile-feature-roadmap.md) for the full phased plan.
 

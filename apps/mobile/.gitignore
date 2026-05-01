@@ -9,6 +9,10 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Local env (never commit Auth0 credentials)
+.env
+.env.local
+
 # Native
 .kotlin/
 *.orig.*
