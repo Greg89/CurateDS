@@ -6,6 +6,8 @@ public interface ILocationRepository
 {
     Task AddAsync(Location location, CancellationToken cancellationToken);
 
+    Task<bool> ExistsByNameAsync(Guid ownerId, string name, CancellationToken cancellationToken);
+
     Task<Location?> GetByIdAndOwnerAsync(Guid locationId, Guid ownerId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Location>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken);
