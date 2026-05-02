@@ -73,6 +73,18 @@ export function CatalogApp({
     setItemPage,
     pageSize,
     normalizedItemFilterTagIds,
+    itemFilterMinQuantity,
+    setItemFilterMinQuantity,
+    itemFilterMaxQuantity,
+    setItemFilterMaxQuantity,
+    itemFilterCreatedAfter,
+    setItemFilterCreatedAfter,
+    itemFilterCreatedBefore,
+    setItemFilterCreatedBefore,
+    itemFilterHasNoLocation,
+    setItemFilterHasNoLocation,
+    itemFilterHasNoTags,
+    setItemFilterHasNoTags,
     clearItemFilters,
     toggleFilterTag,
     handleAttributeFilterChange,
@@ -628,6 +640,12 @@ export function CatalogApp({
               selectedItemId={selectedItemId}
               tags={tagsQuery.data ?? []}
               updateItemError={updateItemMutation.error?.message ?? null}
+              itemFilterMinQuantity={itemFilterMinQuantity}
+              itemFilterMaxQuantity={itemFilterMaxQuantity}
+              itemFilterCreatedAfter={itemFilterCreatedAfter}
+              itemFilterCreatedBefore={itemFilterCreatedBefore}
+              itemFilterHasNoLocation={itemFilterHasNoLocation}
+              itemFilterHasNoTags={itemFilterHasNoTags}
               onApplySavedView={applySavedView}
               onAttributeFilterChange={handleAttributeFilterChange}
               onAttributeValueChange={handleAttributeValueChange}
@@ -649,6 +667,12 @@ export function CatalogApp({
               onSelectItem={setSelectedItemId}
               onToggleFilterTag={toggleFilterTag}
               onToggleItemTag={toggleItemTag}
+              onItemMinQuantityChange={(v) => { setItemPage(1); setItemFilterMinQuantity(v); }}
+              onItemMaxQuantityChange={(v) => { setItemPage(1); setItemFilterMaxQuantity(v); }}
+              onItemCreatedAfterChange={(v) => { setItemPage(1); setItemFilterCreatedAfter(v); }}
+              onItemCreatedBeforeChange={(v) => { setItemPage(1); setItemFilterCreatedBefore(v); }}
+              onItemHasNoLocationChange={(v) => { setItemPage(1); setItemFilterHasNoLocation(v); }}
+              onItemHasNoTagsChange={(v) => { setItemPage(1); setItemFilterHasNoTags(v); }}
               isDeleteItemPending={deleteItemMutation.isPending}
               onDeleteItem={() =>
                 deleteItemMutation.mutate({

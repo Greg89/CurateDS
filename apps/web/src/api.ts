@@ -121,6 +121,12 @@ export interface ItemFilters {
   attributeFilters?: Record<string, string>;
   sortBy?: "updatedUtc" | "createdUtc" | "name" | "quantity";
   sortDirection?: "asc" | "desc";
+  minQuantity?: number;
+  maxQuantity?: number;
+  createdAfter?: string;  // ISO date string e.g. "2025-06-01"
+  createdBefore?: string;
+  hasNoLocation?: boolean;
+  hasNoTags?: boolean;
 }
 
 export interface ItemEvent {
@@ -473,6 +479,30 @@ export async function listItems(
 
   if (filters?.sortDirection) {
     searchParams.set("sortDirection", filters.sortDirection);
+  }
+
+  if (filters?.minQuantity != null) {
+    searchParams.set("minQuantity", String(filters.minQuantity));
+  }
+
+  if (filters?.maxQuantity != null) {
+    searchParams.set("maxQuantity", String(filters.maxQuantity));
+  }
+
+  if (filters?.createdAfter) {
+    searchParams.set("createdAfter", filters.createdAfter);
+  }
+
+  if (filters?.createdBefore) {
+    searchParams.set("createdBefore", filters.createdBefore);
+  }
+
+  if (filters?.hasNoLocation) {
+    searchParams.set("hasNoLocation", "true");
+  }
+
+  if (filters?.hasNoTags) {
+    searchParams.set("hasNoTags", "true");
   }
 
   searchParams.set("page", String(page));

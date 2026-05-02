@@ -692,6 +692,22 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         return (await response.Content.ReadFromJsonAsync<ItemSummaryResponse>(JsonOptions))!;
     }
 
+    private async Task<ItemSummaryResponse> CreateItemWithQuantityAsync(Guid collectionId, string name, int quantity)
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collectionId}/items",
+            new { name, quantity });
+        return (await response.Content.ReadFromJsonAsync<ItemSummaryResponse>(JsonOptions))!;
+    }
+
+    private async Task<ItemSummaryResponse> CreateItemAtLocationAsync(Guid collectionId, string name, Guid locationId)
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collectionId}/items",
+            new { name, quantity = 1, locationId });
+        return (await response.Content.ReadFromJsonAsync<ItemSummaryResponse>(JsonOptions))!;
+    }
+
     private async Task<AttributeDefinitionResponse> CreateAttributeDefinitionAsync(
         Guid collectionId,
         string name,
@@ -1024,6 +1040,79 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     {
         var response = await _client.GetAsync($"/collections/{Guid.NewGuid()}/export");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetItems_QuantityRangeFilter_ShouldReturnOnlyMatchingItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("QtyRange"));
+        await CreateItemWithQuantityAsync(collection.Id, "Five", 5);
+        await CreateItemWithQuantityAsync(collection.Id, "Ten", 10);
+        await CreateItemWithQuantityAsync(collection.Id, "Twenty", 20);
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?minQuantity=8&maxQuantity=15");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        paged!.Items.Should().ContainSingle(i => i.Name == "Ten");
+        paged.Items.Should().NotContain(i => i.Name == "Five");
+        paged.Items.Should().NotContain(i => i.Name == "Twenty");
+    }
+
+    [Fact]
+    public async Task GetItems_DateRangeFilter_ShouldReturnOnlyMatchingItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("DateRange"));
+        await CreateItemAsync(collection.Id, "Before");
+
+        // We rely on the fact that items created after a future date are excluded
+        var tomorrow = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?createdAfter={tomorrow}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        paged!.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetItems_HasNoLocationFilter_ShouldReturnOnlyUnassignedItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("NoLocation"));
+        var location = await CreateLocationAsync(UniqueName("Shelf"), "A shelf");
+        await CreateItemAsync(collection.Id, "Unassigned");
+        await CreateItemAtLocationAsync(collection.Id, "Assigned", location.Id);
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?hasNoLocation=true");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        paged!.Items.Should().ContainSingle(i => i.Name == "Unassigned");
+        paged.Items.Should().NotContain(i => i.Name == "Assigned");
+    }
+
+    [Fact]
+    public async Task GetItems_HasNoTagsFilter_ShouldReturnOnlyUntaggedItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("NoTags"));
+        var tag = await CreateTagAsync(UniqueName("Rare"));
+
+        await CreateItemAsync(collection.Id, "Untagged");
+        var tagged = await CreateItemAsync(collection.Id, "Tagged");
+        await _client.PutAsJsonAsync(
+            $"/collections/{collection.Id}/items/{tagged.Id}",
+            new { name = "Tagged", quantity = 1, tagIds = new[] { tag.Id } });
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?hasNoTags=true");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        paged!.Items.Should().ContainSingle(i => i.Name == "Untagged");
+        paged.Items.Should().NotContain(i => i.Name == "Tagged");
     }
 
     private sealed record SavedViewResponse(Guid Id, Guid CollectionId, string Name, string FiltersJson, DateTime CreatedUtc);

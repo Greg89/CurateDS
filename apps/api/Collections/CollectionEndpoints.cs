@@ -475,7 +475,13 @@ public static class CollectionEndpoints
                         request.SortBy,
                         request.SortDirection,
                         request.Page ?? 1,
-                        request.PageSize ?? 50),
+                        request.PageSize ?? 50,
+                        MinQuantity: request.MinQuantity,
+                        MaxQuantity: request.MaxQuantity,
+                        CreatedAfter: request.CreatedAfter,
+                        CreatedBefore: request.CreatedBefore,
+                        HasNoLocation: request.HasNoLocation ?? false,
+                        HasNoTags: request.HasNoTags ?? false),
                     cancellationToken);
 
                 return Results.Ok(new PagedItemsResponse(

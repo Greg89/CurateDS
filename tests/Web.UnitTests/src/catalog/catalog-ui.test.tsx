@@ -174,8 +174,8 @@ describe("CatalogApp UI structure", () => {
     // Wait for the overview quick-action links — these only render once selectedCollection loads
     await screen.findByRole("link", { name: /Browse Items/i });
 
-    // 4 metric cards are rendered
-    expect(document.querySelectorAll(".metric-card").length).toBe(4);
+    // 7 metric cards are rendered (Items, Attributes, Tags in use, Locations in use, No location, No tags, Media assets)
+    expect(document.querySelectorAll(".metric-card").length).toBe(7);
 
     // Removed panels must not be present
     expect(screen.queryByRole("heading", { name: "Collection Shape" })).not.toBeInTheDocument();
