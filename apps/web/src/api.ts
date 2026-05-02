@@ -133,6 +133,17 @@ export interface ItemEvent {
   notes: string | null;
 }
 
+export interface CollectionSummary {
+  collectionId: string;
+  totalItems: number;
+  totalAttributeDefinitions: number;
+  tagsUsed: number;
+  locationsUsed: number;
+  itemsWithNoLocation: number;
+  itemsWithNoTags: number;
+  totalMediaAssets: number;
+}
+
 export async function listCollections(): Promise<Collection[]> {
   const response = await fetch(`${appConfig.apiBaseUrl}/collections`, {
     headers: await authHeader()
@@ -143,6 +154,19 @@ export async function listCollections(): Promise<Collection[]> {
   }
 
   return (await response.json()) as Collection[];
+}
+
+export async function getCollectionSummary(collectionId: string): Promise<CollectionSummary> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/summary`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load collection summary.");
+  }
+
+  return (await response.json()) as CollectionSummary;
 }
 
 export async function createCollection(name: string): Promise<Collection> {

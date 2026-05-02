@@ -10,6 +10,7 @@ using CurateDS.Application.Collections.DeleteItem;
 using CurateDS.Application.Collections.DeleteTag;
 using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteAttributeDefinition;
+using CurateDS.Application.Collections.GetCollectionSummary;
 using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
@@ -81,6 +82,35 @@ public static class CollectionEndpoints
             catch (NotFoundException)
             {
                 return Results.NotFound();
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/summary", async (
+            Guid collectionId,
+            GetCollectionSummaryService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var summary = await service.ExecuteAsync(
+                    new GetCollectionSummaryQuery(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.Ok(new CollectionSummaryResponse(
+                    summary.CollectionId,
+                    summary.TotalItems,
+                    summary.TotalAttributeDefinitions,
+                    summary.TagsUsed,
+                    summary.LocationsUsed,
+                    summary.ItemsWithNoLocation,
+                    summary.ItemsWithNoTags,
+                    summary.TotalMediaAssets));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
             }
         });
 

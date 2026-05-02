@@ -779,6 +779,73 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         AttributeDataType DataType,
         string Value);
 
+    [Fact]
+    public async Task GetCollectionSummary_ShouldReturnZeroCounts_ForEmptyCollection()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Summary Empty"));
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/summary");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var summary = await response.Content.ReadFromJsonAsync<CollectionSummaryResponse>(JsonOptions);
+
+        summary.Should().NotBeNull();
+        summary!.CollectionId.Should().Be(collection.Id);
+        summary.TotalItems.Should().Be(0);
+        summary.TotalAttributeDefinitions.Should().Be(0);
+        summary.TagsUsed.Should().Be(0);
+        summary.LocationsUsed.Should().Be(0);
+        summary.ItemsWithNoLocation.Should().Be(0);
+        summary.ItemsWithNoTags.Should().Be(0);
+        summary.TotalMediaAssets.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetCollectionSummary_ShouldReflectCreatedItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Summary With Items"));
+        var tag = await CreateTagAsync(UniqueName("SumTag"));
+        var location = await CreateLocationAsync(UniqueName("SumLoc"), "");
+
+        // Item with a tag and location
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new { name = "Tagged + Located", quantity = 1, locationId = location.Id, tagIds = new[] { tag.Id } });
+
+        // Item with no tag and no location
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new { name = "Bare Item", quantity = 1 });
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/summary");
+        var summary = await response.Content.ReadFromJsonAsync<CollectionSummaryResponse>(JsonOptions);
+
+        summary!.TotalItems.Should().Be(2);
+        summary.TagsUsed.Should().Be(1);
+        summary.LocationsUsed.Should().Be(1);
+        summary.ItemsWithNoLocation.Should().Be(1);
+        summary.ItemsWithNoTags.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetCollectionSummary_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.GetAsync($"/collections/{Guid.NewGuid()}/summary");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    private sealed record CollectionSummaryResponse(
+        Guid CollectionId,
+        int TotalItems,
+        int TotalAttributeDefinitions,
+        int TagsUsed,
+        int LocationsUsed,
+        int ItemsWithNoLocation,
+        int ItemsWithNoTags,
+        int TotalMediaAssets);
+
     private sealed record TagResponse(Guid Id, string Name, string Key, DateTime CreatedUtc);
 
     private sealed record LocationResponse(Guid Id, string Name, string? Description, DateTime CreatedUtc);

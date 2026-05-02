@@ -1,4 +1,5 @@
 using CurateDS.Application.Abstractions.Persistence;
+using CurateDS.Application.Collections;
 using CurateDS.Domain.Collections;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,5 +51,46 @@ public sealed class CollectionRepository : ICollectionRepository
         collection.SoftDelete(deletedUtc, deletedBy);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)
+    {
+        var totalItems = await _dbContext.Items
+            .CountAsync(i => i.CollectionId == collectionId, cancellationToken);
+
+        var totalAttributeDefinitions = await _dbContext.AttributeDefinitions
+            .CountAsync(a => a.CollectionId == collectionId, cancellationToken);
+
+        var tagsUsed = await _dbContext.ItemTags
+            .Where(it => _dbContext.Items.Any(i => i.Id == it.ItemId && i.CollectionId == collectionId))
+            .Select(it => it.TagId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        var locationsUsed = await _dbContext.Items
+            .Where(i => i.CollectionId == collectionId && i.LocationId != null)
+            .Select(i => i.LocationId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        var itemsWithNoLocation = await _dbContext.Items
+            .CountAsync(i => i.CollectionId == collectionId && i.LocationId == null, cancellationToken);
+
+        var itemsWithNoTags = await _dbContext.Items
+            .CountAsync(i => i.CollectionId == collectionId &&
+                !_dbContext.ItemTags.Any(it => it.ItemId == i.Id), cancellationToken);
+
+        var totalMediaAssets = await _dbContext.MediaAssets
+            .CountAsync(ma => _dbContext.Items.Any(i => i.Id == ma.ItemId && i.CollectionId == collectionId), cancellationToken);
+
+        return new CollectionSummaryDto(
+            collectionId,
+            totalItems,
+            totalAttributeDefinitions,
+            tagsUsed,
+            locationsUsed,
+            itemsWithNoLocation,
+            itemsWithNoTags,
+            totalMediaAssets);
     }
 }

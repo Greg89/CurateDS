@@ -186,6 +186,9 @@ public sealed class UploadItemMediaServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid id, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
     }
 
     private sealed class FakeItemRepository : IItemRepository

@@ -1,5 +1,6 @@
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
+using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateCollection;
 using CurateDS.Domain.Collections;
 using FluentAssertions;
@@ -49,5 +50,8 @@ public sealed class CreateCollectionServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid collectionId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
     }
 }

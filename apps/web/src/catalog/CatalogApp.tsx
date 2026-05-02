@@ -583,11 +583,7 @@ export function CatalogApp({
             </section>
           ) : section === "overview" ? (
             <OverviewPage
-              attributeDefinitions={attributeDefinitionsQuery.data ?? []}
-              items={itemsQuery.data?.items ?? []}
-              locations={locationsQuery.data ?? []}
               selectedCollection={selectedCollection}
-              tags={tagsQuery.data ?? []}
             />
           ) : section === "items" ? (
             <ItemsPage

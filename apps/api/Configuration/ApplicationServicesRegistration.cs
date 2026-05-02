@@ -10,6 +10,7 @@ using CurateDS.Application.Collections.DeleteItem;
 using CurateDS.Application.Collections.DeleteItemMedia;
 using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteTag;
+using CurateDS.Application.Collections.GetCollectionSummary;
 using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
@@ -52,6 +53,7 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<DeleteTagService>();
         services.AddScoped<DeleteLocationService>();
         services.AddScoped<DeleteAttributeDefinitionService>();
+        services.AddScoped<GetCollectionSummaryService>();
         services.AddScoped<GetItemDetailService>();
         services.AddScoped<ListAttributeDefinitionsService>();
         services.AddScoped<ListCollectionsService>();
