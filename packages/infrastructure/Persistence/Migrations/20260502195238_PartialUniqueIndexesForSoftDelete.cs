@@ -23,14 +23,14 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                 table: "tags",
                 columns: new[] { "OwnerId", "Key" },
                 unique: true,
-                filter: "deleted_utc IS NULL");
+                filter: "\"DeletedUtc\" IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_locations_OwnerId_Name",
                 table: "locations",
                 columns: new[] { "OwnerId", "Name" },
                 unique: true,
-                filter: "deleted_utc IS NULL");
+                filter: "\"DeletedUtc\" IS NULL");
         }
 
         /// <inheritdoc />

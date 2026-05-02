@@ -42,6 +42,6 @@ internal sealed class TagConfiguration : IEntityTypeConfiguration<Tag>
 
         builder.HasIndex(tag => new { tag.OwnerId, tag.Key })
             .IsUnique()
-            .HasFilter("deleted_utc IS NULL");
+            .HasFilter("\"DeletedUtc\" IS NULL");
     }
 }
