@@ -1,6 +1,7 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ItemDetail, listItemEvents } from "../../api";
+import { MediaLightbox } from "./MediaLightbox";
 
 const EVENT_LABELS: Record<string, string> = {
   Created: "Item created",
@@ -38,6 +39,7 @@ export function ItemDetailCard({
   isUploadPending: boolean;
 }>) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const eventsQuery = useQuery({
     queryKey: ["item-events", item?.collectionId, item?.id],
     queryFn: () => listItemEvents(item!.collectionId, item!.id),
@@ -122,32 +124,17 @@ export function ItemDetailCard({
       <div className="item-event-timeline">
         <h4 className="timeline-heading">Media</h4>
         <div className="media-gallery">
-          {(item.mediaAssets ?? []).map((asset) => (
-            <div
+          {(item.mediaAssets ?? []).map((asset, index) => (
+            <button
+              aria-label={`View ${asset.fileName}`}
               className={`media-thumb${asset.isPrimary ? " primary" : ""}`}
               key={asset.id}
+              type="button"
+              onClick={() => setLightboxIndex(index)}
             >
               <img alt={asset.fileName} src={asset.url} />
               {asset.isPrimary && <span className="media-primary-badge">Primary</span>}
-              <div className="media-thumb-actions">
-                {!asset.isPrimary && (
-                  <button
-                    className="secondary-button small"
-                    onClick={() => onSetPrimaryMedia(asset.id)}
-                    type="button"
-                  >
-                    Set primary
-                  </button>
-                )}
-                <button
-                  className="danger-button small"
-                  onClick={() => onDeleteMedia(asset.id)}
-                  type="button"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
+            </button>
           ))}
         </div>
         <div className="media-upload-row">
@@ -197,6 +184,17 @@ export function ItemDetailCard({
           </ol>
         )}
       </div>
+
+      {lightboxIndex !== null && (item.mediaAssets ?? []).length > 0 && (
+        <MediaLightbox
+          assets={item.mediaAssets}
+          currentIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onDelete={(id) => { onDeleteMedia(id); }}
+          onNavigate={setLightboxIndex}
+          onSetPrimary={(id) => { onSetPrimaryMedia(id); }}
+        />
+      )}
     </section>
   );
 }
