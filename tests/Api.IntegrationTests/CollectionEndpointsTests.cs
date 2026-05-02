@@ -836,6 +836,100 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task GetCollectionReports_ShouldReturnEmptyBreakdowns_ForEmptyCollection()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Reports Empty"));
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/reports");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var reports = await response.Content.ReadFromJsonAsync<CollectionReportsResponse>(JsonOptions);
+
+        reports.Should().NotBeNull();
+        reports!.ItemsByLocation.Should().BeEmpty();
+        reports.ItemsByTag.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetCollectionReports_ShouldReturnBreakdowns_WhenItemsExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Reports With Data"));
+        var tag = await CreateTagAsync(UniqueName("ReportTag"));
+        var location = await CreateLocationAsync(UniqueName("ReportLoc"), "");
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new { name = "Item A", quantity = 1, locationId = location.Id, tagIds = new[] { tag.Id } });
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new { name = "Item B", quantity = 1, tagIds = new[] { tag.Id } });
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/reports");
+        var reports = await response.Content.ReadFromJsonAsync<CollectionReportsResponse>(JsonOptions);
+
+        reports!.ItemsByTag.Should().ContainSingle(x => x.TagId == tag.Id && x.Count == 2);
+        reports.ItemsByLocation.Should().Contain(x => x.LocationId == location.Id && x.Count == 1);
+        reports.ItemsByLocation.Should().Contain(x => x.LocationId == null && x.Count == 1);
+    }
+
+    [Fact]
+    public async Task GetCollectionReports_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.GetAsync($"/collections/{Guid.NewGuid()}/reports");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetCollectionActivity_ShouldReturnEvents_AfterItemCreated()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Activity"));
+        await CreateItemAsync(collection.Id, "Activity Item");
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/activity?page=1&pageSize=20");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var activity = await response.Content.ReadFromJsonAsync<PagedCollectionActivityResponse>(JsonOptions);
+
+        activity.Should().NotBeNull();
+        activity!.TotalCount.Should().BeGreaterThan(0);
+        activity.Events.Should().Contain(e => e.ItemName == "Activity Item" && e.EventType == "Created");
+    }
+
+    [Fact]
+    public async Task GetCollectionActivity_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.GetAsync($"/collections/{Guid.NewGuid()}/activity?page=1&pageSize=20");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    private sealed record CollectionReportsResponse(
+        IReadOnlyList<ItemsByLocationResponse> ItemsByLocation,
+        IReadOnlyList<ItemsByTagResponse> ItemsByTag);
+
+    private sealed record ItemsByLocationResponse(Guid? LocationId, string LocationName, int Count);
+
+    private sealed record ItemsByTagResponse(Guid TagId, string TagName, int Count);
+
+    private sealed record PagedCollectionActivityResponse(
+        IReadOnlyList<CollectionActivityEventResponse> Events,
+        int TotalCount,
+        int Page,
+        int PageSize,
+        int TotalPages);
+
+    private sealed record CollectionActivityEventResponse(
+        Guid EventId,
+        Guid ItemId,
+        string ItemName,
+        string EventType,
+        DateTime OccurredUtc,
+        string OccurredBy,
+        string? Notes);
+
     private sealed record CollectionSummaryResponse(
         Guid CollectionId,
         int TotalItems,

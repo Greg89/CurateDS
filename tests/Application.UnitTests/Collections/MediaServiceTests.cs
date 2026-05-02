@@ -151,6 +151,9 @@ public sealed class DeleteItemMediaServiceTests
 
         public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)
             => throw new NotImplementedException();
+
+        public Task<CollectionReportsDto> GetReportsAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
     }
 
     private sealed class FakeItemRepository : IItemRepository
@@ -275,6 +278,9 @@ public sealed class SetPrimaryItemMediaServiceTests
             => Task.FromResult(false);
 
         public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
+
+        public Task<CollectionReportsDto> GetReportsAsync(Guid collectionId, CancellationToken cancellationToken)
             => throw new NotImplementedException();
     }
 

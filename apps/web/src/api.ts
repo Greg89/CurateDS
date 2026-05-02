@@ -169,6 +169,71 @@ export async function getCollectionSummary(collectionId: string): Promise<Collec
   return (await response.json()) as CollectionSummary;
 }
 
+export interface ItemsByLocation {
+  locationId: string | null;
+  locationName: string;
+  count: number;
+}
+
+export interface ItemsByTag {
+  tagId: string;
+  tagName: string;
+  count: number;
+}
+
+export interface CollectionReports {
+  itemsByLocation: ItemsByLocation[];
+  itemsByTag: ItemsByTag[];
+}
+
+export async function getCollectionReports(collectionId: string): Promise<CollectionReports> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/reports`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load collection reports.");
+  }
+
+  return (await response.json()) as CollectionReports;
+}
+
+export interface CollectionActivityEvent {
+  eventId: string;
+  itemId: string;
+  itemName: string;
+  eventType: string;
+  occurredUtc: string;
+  occurredBy: string;
+  notes: string | null;
+}
+
+export interface PagedCollectionActivity {
+  events: CollectionActivityEvent[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export async function listCollectionActivity(
+  collectionId: string,
+  page: number,
+  pageSize: number
+): Promise<PagedCollectionActivity> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/activity?page=${page}&pageSize=${pageSize}`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load collection activity.");
+  }
+
+  return (await response.json()) as PagedCollectionActivity;
+}
+
 export async function createCollection(name: string): Promise<Collection> {
   const response = await fetch(`${appConfig.apiBaseUrl}/collections`, {
     method: "POST",

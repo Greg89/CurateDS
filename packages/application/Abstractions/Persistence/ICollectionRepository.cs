@@ -14,4 +14,6 @@ public interface ICollectionRepository
     Task<bool> SoftDeleteAsync(Guid collectionId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken);
 
     Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken);
+
+    Task<CollectionReportsDto> GetReportsAsync(Guid collectionId, CancellationToken cancellationToken);
 }

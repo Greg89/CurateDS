@@ -189,6 +189,9 @@ public sealed class UploadItemMediaServiceTests
 
         public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)
             => throw new NotImplementedException();
+
+        public Task<CollectionReportsDto> GetReportsAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
     }
 
     private sealed class FakeItemRepository : IItemRepository

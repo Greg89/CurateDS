@@ -32,6 +32,7 @@ import { useSavedViews } from "./hooks/useSavedViews";
 import { CollectionList } from "./components/CollectionList";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ItemsPage } from "./pages/ItemsPage";
+import { ReportsPage } from "./pages/ReportsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 export function CatalogApp({
@@ -542,7 +543,9 @@ export function CatalogApp({
                     ? "Collection Overview"
                     : section === "items"
                       ? "Items Workspace"
-                      : "Collection Settings"}
+                      : section === "reports"
+                        ? "Reports"
+                        : "Collection Settings"}
                 </h2>
               </div>
             </div>
@@ -553,7 +556,9 @@ export function CatalogApp({
                   ? "See the collection at a glance before drilling into items or settings."
                   : section === "items"
                     ? "Create, filter, sort, and refine catalog entries in one focused workspace."
-                    : "Manage custom fields, reusable tags, and locations for this collection."
+                    : section === "reports"
+                      ? "Breakdowns and activity across this collection."
+                      : "Manage custom fields, reusable tags, and locations for this collection."
                 : "Create or choose a collection from the sidebar to begin."}
             </p>
           </div>
@@ -565,6 +570,9 @@ export function CatalogApp({
               </NavLink>
               <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/items`}>
                 Items
+              </NavLink>
+              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/reports`}>
+                Reports
               </NavLink>
               <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/settings`}>
                 Settings
@@ -672,6 +680,8 @@ export function CatalogApp({
               }
               isUploadMediaPending={uploadItemMediaMutation.isPending}
             />
+          ) : section === "reports" ? (
+            <ReportsPage selectedCollection={selectedCollection} />
           ) : (
             <SettingsPage
               attributeDataType={attributeDataType}

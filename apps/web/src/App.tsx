@@ -40,6 +40,10 @@ export function App() {
         element={<CatalogApp section="items" />}
       />
       <Route
+        path="/collections/:collectionId/reports"
+        element={<CatalogApp section="reports" />}
+      />
+      <Route
         path="/collections/:collectionId/settings"
         element={<CatalogApp section="settings" />}
       />

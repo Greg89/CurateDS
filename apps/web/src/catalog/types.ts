@@ -1,6 +1,6 @@
 import { ItemFilters } from "../api";
 
-export type CatalogSection = "overview" | "items" | "settings";
+export type CatalogSection = "overview" | "items" | "reports" | "settings";
 
 export interface SavedItemView {
   id: string;

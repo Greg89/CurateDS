@@ -10,8 +10,10 @@ using CurateDS.Application.Collections.DeleteItem;
 using CurateDS.Application.Collections.DeleteTag;
 using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteAttributeDefinition;
+using CurateDS.Application.Collections.GetCollectionReports;
 using CurateDS.Application.Collections.GetCollectionSummary;
 using CurateDS.Application.Collections.GetItemDetail;
+using CurateDS.Application.Collections.ListCollectionActivity;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
 using CurateDS.Application.Collections.ListItemEvents;
@@ -107,6 +109,58 @@ public static class CollectionEndpoints
                     summary.ItemsWithNoLocation,
                     summary.ItemsWithNoTags,
                     summary.TotalMediaAssets));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/reports", async (
+            Guid collectionId,
+            GetCollectionReportsService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var reports = await service.ExecuteAsync(
+                    new GetCollectionReportsQuery(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.Ok(new CollectionReportsResponse(
+                    reports.ItemsByLocation.Select(x => new ItemsByLocationResponse(x.LocationId, x.LocationName, x.Count)).ToArray(),
+                    reports.ItemsByTag.Select(x => new ItemsByTagResponse(x.TagId, x.TagName, x.Count)).ToArray()));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/activity", async (
+            Guid collectionId,
+            int page,
+            int pageSize,
+            ListCollectionActivityService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var result = await service.ExecuteAsync(
+                    new ListCollectionActivityQuery(ownerId, collectionId, page, pageSize),
+                    cancellationToken);
+
+                return Results.Ok(new PagedCollectionActivityResponse(
+                    result.Items.Select(e => new CollectionActivityEventResponse(
+                        e.EventId, e.ItemId, e.ItemName, e.EventType, e.OccurredUtc, e.OccurredBy, e.Notes)).ToArray(),
+                    result.TotalCount,
+                    result.Page,
+                    result.PageSize,
+                    result.TotalPages));
             }
             catch (NotFoundException)
             {
