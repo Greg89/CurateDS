@@ -40,6 +40,7 @@ internal sealed class LocationConfiguration : IEntityTypeConfiguration<Location>
             .HasMaxLength(200);
 
         builder.HasIndex(location => new { location.OwnerId, location.Name })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("\"DeletedUtc\" IS NULL");
     }
 }

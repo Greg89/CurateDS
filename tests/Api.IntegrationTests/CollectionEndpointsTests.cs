@@ -642,6 +642,29 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     }
 
     [Fact]
+    public async Task PostLocation_ShouldReturn422_WhenNameAlreadyExistsForActiveLocation()
+    {
+        var name = UniqueName("Duplicate Shelf");
+        await CreateLocationAsync(name, "");
+
+        var response = await _client.PostAsJsonAsync("/locations", new { name, description = "" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task PostLocation_ShouldReturn201_WhenRecreatingPreviouslyDeletedLocationName()
+    {
+        var name = UniqueName("Recyclable Shelf");
+        var original = await CreateLocationAsync(name, "");
+        await _client.DeleteAsync($"/locations/{original.Id}");
+
+        var response = await _client.PostAsJsonAsync("/locations", new { name, description = "" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
     public async Task DeleteLocation_ShouldReturn404_WhenLocationDoesNotExist()
     {
         var response = await _client.DeleteAsync($"/locations/{Guid.NewGuid()}");

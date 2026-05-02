@@ -41,6 +41,7 @@ internal sealed class TagConfiguration : IEntityTypeConfiguration<Tag>
             .HasMaxLength(200);
 
         builder.HasIndex(tag => new { tag.OwnerId, tag.Key })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("\"DeletedUtc\" IS NULL");
     }
 }

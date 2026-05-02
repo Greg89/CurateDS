@@ -276,6 +276,9 @@ public sealed class CreateItemServiceTests
     {
         public Task AddAsync(Location location, CancellationToken cancellationToken) => Task.CompletedTask;
 
+        public Task<bool> ExistsByNameAsync(Guid ownerId, string name, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
         public Task<Location?> GetByIdAndOwnerAsync(Guid locationId, Guid ownerId, CancellationToken cancellationToken)
             => Task.FromResult<Location?>(null);
 

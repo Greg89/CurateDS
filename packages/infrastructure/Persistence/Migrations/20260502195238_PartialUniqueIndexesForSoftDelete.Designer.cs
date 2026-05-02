@@ -3,6 +3,7 @@ using System;
 using CurateDS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CurateDS.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(CatalogDbContext))]
-    partial class CatalogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260502195238_PartialUniqueIndexesForSoftDelete")]
+    partial class PartialUniqueIndexesForSoftDelete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -312,7 +315,7 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OwnerId", "Name")
                         .IsUnique()
-                        .HasFilter("\"DeletedUtc\" IS NULL");
+                        .HasFilter("deleted_utc IS NULL");
 
                     b.ToTable("locations", (string)null);
                 });
@@ -434,7 +437,7 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OwnerId", "Key")
                         .IsUnique()
-                        .HasFilter("\"DeletedUtc\" IS NULL");
+                        .HasFilter("deleted_utc IS NULL");
 
                     b.ToTable("tags", (string)null);
                 });
