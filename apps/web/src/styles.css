@@ -1336,3 +1336,304 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+/* --- Entity management table --------------------------------------------- */
+.entity-management {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  background: var(--c-card-bg);
+}
+
+.entity-management-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.entity-management-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--c-text);
+}
+
+.entity-management-search {
+  flex: 0 1 18rem;
+  min-width: 12rem;
+  background: var(--c-input-bg);
+  border: 1px solid oklch(0.25 0.04 260 / 0.2);
+  border-radius: 10px;
+  color: var(--c-text);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.9rem;
+}
+
+.entity-management-search::placeholder {
+  color: var(--c-text-faint);
+}
+
+.entity-management-search:focus {
+  outline: 2px solid oklch(0.70 0.15 65 / 0.55);
+  outline-offset: 2px;
+}
+
+.entity-management-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--c-border);
+}
+
+.entity-management-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  color: var(--c-text);
+}
+
+.entity-management-table thead th {
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-text-faint);
+  padding: 0.7rem 0.85rem;
+  background: oklch(0.25 0.04 260 / 0.04);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.entity-management-table tbody td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid oklch(0.25 0.04 260 / 0.08);
+  vertical-align: middle;
+}
+
+.entity-management-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.entity-management-table tbody tr:hover {
+  background: oklch(0.25 0.04 260 / 0.03);
+}
+
+.entity-management-name {
+  font-weight: 500;
+  color: var(--c-text);
+}
+
+.entity-management-description {
+  margin-top: 0.15rem;
+  font-size: 0.82rem;
+  color: var(--c-text-muted);
+}
+
+.entity-management-secondary-col {
+  width: 10rem;
+}
+
+.entity-management-numeric-col {
+  width: 5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.entity-management-actions-col {
+  width: 6rem;
+  text-align: right;
+}
+
+.entity-management-sort {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.entity-management-sort:hover {
+  color: var(--c-text);
+}
+
+.entity-management-delete {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.82rem;
+}
+
+.entity-management-empty {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 12px;
+  background: oklch(0.25 0.04 260 / 0.04);
+  color: var(--c-text-muted);
+  font-size: 0.92rem;
+}
+
+.entity-management-muted {
+  color: var(--c-text-faint);
+}
+
+.entity-management-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.85rem;
+  font-size: 0.88rem;
+  color: var(--c-text-muted);
+}
+
+.entity-management-pagination button {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  border: 1px solid oklch(0.25 0.04 260 / 0.18);
+  background: var(--c-input-bg);
+  color: var(--c-text);
+  cursor: pointer;
+}
+
+.entity-management-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Reports page -------------------------------------------------------- */
+.reports-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.reports-aggregates {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+}
+
+.reports-card,
+.reports-activity-card {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  background: var(--c-card-bg);
+}
+
+.reports-card-header {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.reports-card-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.reports-card-subtitle {
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: 0.85rem;
+}
+
+.reports-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  color: var(--c-text);
+}
+
+.reports-table thead th {
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-text-faint);
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.reports-table tbody td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid oklch(0.25 0.04 260 / 0.07);
+}
+
+.reports-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.reports-table .reports-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.reports-drill-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--c-accent);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reports-drill-link:hover {
+  text-decoration: underline;
+}
+
+.reports-empty {
+  margin: 0;
+  padding: 0.75rem 0.6rem;
+  color: var(--c-text-faint);
+  font-style: italic;
+}
+
+.reports-view-button {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid oklch(0.70 0.15 65 / 0.4);
+  background: oklch(0.70 0.15 65 / 0.1);
+  color: var(--c-text);
+  cursor: pointer;
+}
+
+.reports-view-button:hover {
+  background: oklch(0.70 0.15 65 / 0.2);
+}
+
+.reports-pagination {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 0.88rem;
+  color: var(--c-text-muted);
+}
+
+.reports-pagination button {
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid oklch(0.25 0.04 260 / 0.18);
+  background: var(--c-input-bg);
+  color: var(--c-text);
+  cursor: pointer;
+}
+
+.reports-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reports-loading {
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: 0.9rem;
+}

@@ -1,5 +1,5 @@
 ﻿import { FormEvent, useEffect, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { NavLink, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AttributeDataType,
@@ -44,6 +44,7 @@ export function CatalogApp({
   const queryClient = useQueryClient();
   const { collectionId: routeCollectionId } = useParams<{ collectionId: string }>();
   const selectedCollectionId = routeCollectionId ?? "";
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [collectionName, setCollectionName] = useState("");
   const [attributeName, setAttributeName] = useState("");
@@ -64,6 +65,7 @@ export function CatalogApp({
     itemFilterLocationId,
     setItemFilterLocationId,
     itemFilterTagIds,
+    setItemFilterTagIds,
     itemAttributeFilters,
     itemSortBy,
     setItemSortBy,
@@ -394,6 +396,42 @@ export function CatalogApp({
   useEffect(() => {
     setSelectedItemId("");
   }, [selectedCollectionId]);
+
+  useEffect(() => {
+    const drillTagId = searchParams.get("tagId");
+    const drillLocationId = searchParams.get("locationId");
+    const drillItemId = searchParams.get("itemId");
+
+    if (!drillTagId && !drillLocationId && !drillItemId) {
+      return;
+    }
+
+    if (drillItemId) {
+      clearItemFilters();
+      setSelectedItemId(drillItemId);
+    }
+    if (drillTagId) {
+      setItemFilterTagIds([drillTagId]);
+    }
+    if (drillLocationId) {
+      setItemFilterLocationId(drillLocationId);
+    }
+    setItemPage(1);
+
+    const next = new URLSearchParams(searchParams);
+    next.delete("tagId");
+    next.delete("locationId");
+    next.delete("itemId");
+    setSearchParams(next, { replace: true });
+  }, [
+    searchParams,
+    setItemFilterTagIds,
+    setItemFilterLocationId,
+    setSelectedItemId,
+    setItemPage,
+    setSearchParams,
+    clearItemFilters
+  ]);
 
   useEffect(() => {
     if (!itemsQuery.data) {
