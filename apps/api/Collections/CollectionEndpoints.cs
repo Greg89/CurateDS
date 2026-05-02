@@ -3,10 +3,12 @@ using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.CreateItemType;
 using CurateDS.Application.Collections.CreateLocation;
 using CurateDS.Application.Collections.CreateTag;
 using CurateDS.Application.Collections.DeleteCollection;
 using CurateDS.Application.Collections.DeleteItem;
+using CurateDS.Application.Collections.DeleteItemType;
 using CurateDS.Application.Collections.DeleteTag;
 using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteAttributeDefinition;
@@ -22,6 +24,7 @@ using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
 using CurateDS.Application.Collections.ListItemEvents;
 using CurateDS.Application.Collections.ListItems;
+using CurateDS.Application.Collections.ListItemTypes;
 using CurateDS.Application.Collections.ListLocations;
 using CurateDS.Application.Collections.ListTags;
 using CurateDS.Application.Collections.UpdateItem;
@@ -407,7 +410,8 @@ public static class CollectionEndpoints
                         request.Name,
                         request.DataType,
                         request.IsRequired,
-                        request.IsFilterable),
+                        request.IsFilterable,
+                        request.ItemTypeId),
                     cancellationToken);
 
                 return Results.Created(
@@ -421,6 +425,7 @@ public static class CollectionEndpoints
                         result.IsRequired,
                         result.IsFilterable,
                         result.SortOrder,
+                        result.ItemTypeId,
                         result.CreatedUtc)));
             }
             catch (ValidationException exception)
@@ -451,6 +456,73 @@ public static class CollectionEndpoints
             catch (NotFoundException)
             {
                 return ApiResponses.NotFound("Attribute definition was not found.");
+            }
+        }).RequireAuthorization();
+
+        group.MapGet("/{collectionId:guid}/item-types", async (
+            Guid collectionId,
+            ListItemTypesService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var itemTypes = await service.ExecuteAsync(
+                    new ListItemTypesQuery(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.Ok(itemTypes.Select(it =>
+                    new ItemTypeResponse(it.Id, it.CollectionId, it.Name, it.SortOrder, it.CreatedUtc)));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        }).RequireAuthorization();
+
+        group.MapPost("/{collectionId:guid}/item-types", async (
+            Guid collectionId,
+            CreateItemTypeRequest request,
+            CreateItemTypeService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var result = await service.ExecuteAsync(
+                    new CreateItemTypeCommand(ownerId, collectionId, request.Name),
+                    cancellationToken);
+
+                return Results.Created(
+                    $"/collections/{collectionId}/item-types/{result.Id}",
+                    new ItemTypeResponse(result.Id, result.CollectionId, result.Name, result.SortOrder, result.CreatedUtc));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        }).RequireAuthorization();
+
+        group.MapDelete("/{collectionId:guid}/item-types/{itemTypeId:guid}", async (
+            Guid collectionId,
+            Guid itemTypeId,
+            DeleteItemTypeService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            var ownerId = GetDefaultOwnerId(configuration);
+            try
+            {
+                await service.ExecuteAsync(
+                    new DeleteItemTypeCommand(ownerId, collectionId, itemTypeId),
+                    cancellationToken);
+                return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Item type was not found.");
             }
         }).RequireAuthorization();
 
@@ -515,6 +587,7 @@ public static class CollectionEndpoints
                         request.Description,
                         request.Quantity,
                         request.LocationId,
+                        request.ItemTypeId,
                         request.TagIds ?? [],
                         (request.AttributeValues ?? []).Select(attributeValue =>
                             new CreateItemAttributeValueInput(
@@ -532,6 +605,7 @@ public static class CollectionEndpoints
                         result.Quantity,
                         result.LocationId,
                         result.LocationName,
+                        result.ItemTypeId,
                         result.Tags,
                         result.CreatedUtc,
                         result.UpdatedUtc,
@@ -619,6 +693,7 @@ public static class CollectionEndpoints
                         request.Description,
                         request.Quantity,
                         request.LocationId,
+                        request.ItemTypeId,
                         request.TagIds ?? [],
                         (request.AttributeValues ?? []).Select(attributeValue =>
                             new CreateItemAttributeValueInput(
@@ -634,6 +709,7 @@ public static class CollectionEndpoints
                     result.Quantity,
                     result.LocationId,
                     result.LocationName,
+                    result.ItemTypeId,
                     result.Tags,
                     result.CreatedUtc,
                     result.UpdatedUtc,
@@ -700,6 +776,7 @@ public static class CollectionEndpoints
             attributeDefinition.IsRequired,
             attributeDefinition.IsFilterable,
             attributeDefinition.SortOrder,
+            attributeDefinition.ItemTypeId,
             attributeDefinition.CreatedUtc);
 
     private static ItemSummaryResponse ToResponse(ItemSummaryDto item) =>
@@ -726,6 +803,7 @@ public static class CollectionEndpoints
             item.Quantity,
             item.LocationId,
             item.LocationName,
+            item.ItemTypeId,
             item.Tags.Select(tag => new TagResponse(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)).ToArray(),
             item.CreatedUtc,
             item.UpdatedUtc,

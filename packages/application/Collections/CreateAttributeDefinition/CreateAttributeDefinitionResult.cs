@@ -11,4 +11,5 @@ public sealed record CreateAttributeDefinitionResult(
     bool IsRequired,
     bool IsFilterable,
     int SortOrder,
+    Guid? ItemTypeId,
     DateTime CreatedUtc);

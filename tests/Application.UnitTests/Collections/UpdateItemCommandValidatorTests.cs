@@ -18,6 +18,7 @@ public sealed class UpdateItemCommandValidatorTests
             null,
             1,
             null,
+            null,
             [],
             []);
 
@@ -38,6 +39,7 @@ public sealed class UpdateItemCommandValidatorTests
             "Vintage Card",
             null,
             1,
+            null,
             null,
             [],
             [

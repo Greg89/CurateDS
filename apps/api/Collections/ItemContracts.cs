@@ -7,6 +7,7 @@ public sealed record CreateItemRequest(
     string? Description,
     int Quantity,
     Guid? LocationId,
+    Guid? ItemTypeId,
     IReadOnlyList<Guid> TagIds,
     IReadOnlyList<CreateItemAttributeValueRequest> AttributeValues);
 
@@ -15,6 +16,7 @@ public sealed record UpdateItemRequest(
     string? Description,
     int Quantity,
     Guid? LocationId,
+    Guid? ItemTypeId,
     IReadOnlyList<Guid> TagIds,
     IReadOnlyList<CreateItemAttributeValueRequest> AttributeValues);
 
@@ -42,6 +44,7 @@ public sealed record ItemDetailResponse(
     int Quantity,
     Guid? LocationId,
     string? LocationName,
+    Guid? ItemTypeId,
     IReadOnlyList<TagResponse> Tags,
     DateTime CreatedUtc,
     DateTime? UpdatedUtc,  // null until a PUT action is taken

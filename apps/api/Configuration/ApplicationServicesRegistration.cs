@@ -2,11 +2,13 @@ using CurateDS.Application.Abstractions;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.CreateItemType;
 using CurateDS.Application.Collections.CreateLocation;
 using CurateDS.Application.Collections.CreateTag;
 using CurateDS.Application.Collections.DeleteAttributeDefinition;
 using CurateDS.Application.Collections.DeleteCollection;
 using CurateDS.Application.Collections.DeleteItem;
+using CurateDS.Application.Collections.DeleteItemType;
 using CurateDS.Application.Collections.DeleteItemMedia;
 using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteTag;
@@ -22,6 +24,7 @@ using CurateDS.Application.Collections.ListCollectionActivity;
 using CurateDS.Application.Collections.ListSavedViews;
 using CurateDS.Application.Collections.ListItemEvents;
 using CurateDS.Application.Collections.ListItems;
+using CurateDS.Application.Collections.ListItemTypes;
 using CurateDS.Application.Collections.ListLocations;
 using CurateDS.Application.Collections.ListTags;
 using CurateDS.Application.Collections.SetPrimaryItemMedia;
@@ -74,6 +77,11 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<ListLocationsService>();
         services.AddScoped<ListTagsService>();
         services.AddScoped<UpdateItemService>();
+
+        // Item type services
+        services.AddScoped<CreateItemTypeService>();
+        services.AddScoped<ListItemTypesService>();
+        services.AddScoped<DeleteItemTypeService>();
 
         // Media services
         services.AddScoped<UploadItemMediaService>();

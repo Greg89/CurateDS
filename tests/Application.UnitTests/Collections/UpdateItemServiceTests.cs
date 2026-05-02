@@ -67,6 +67,7 @@ public sealed class UpdateItemServiceTests
                 "Better copy",
                 2,
                 null,
+                null,
                 [],
                 [
                     new CreateItemAttributeValueInput(issueNumber.Id, "12"),
@@ -114,6 +115,7 @@ public sealed class UpdateItemServiceTests
                 null,
                 1,
                 null,
+                null,
                 [],
                 []),
             CancellationToken.None);
@@ -144,6 +146,7 @@ public sealed class UpdateItemServiceTests
                 "Missing Item",
                 null,
                 1,
+                null,
                 null,
                 [],
                 []),
@@ -192,6 +195,7 @@ public sealed class UpdateItemServiceTests
                 "Changed Description",
                 2,
                 null,
+                null,
                 [],
                 [new CreateItemAttributeValueInput(releaseYear.Id, "not-a-number")]),
             CancellationToken.None);
@@ -221,7 +225,7 @@ public sealed class UpdateItemServiceTests
             new UpdateItemCommandValidator());
 
         await service.ExecuteAsync(
-            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "New Name", null, 1, null, [], []),
+            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "New Name", null, 1, null, null, [], []),
             CancellationToken.None);
 
         eventRepository.Recorded.Should().ContainSingle();
@@ -246,7 +250,7 @@ public sealed class UpdateItemServiceTests
             new UpdateItemCommandValidator());
 
         await service.ExecuteAsync(
-            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Abbey Road", null, 5, null, [], []),
+            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Abbey Road", null, 5, null, null, [], []),
             CancellationToken.None);
 
         eventRepository.Recorded.Should().ContainSingle();
@@ -271,7 +275,7 @@ public sealed class UpdateItemServiceTests
             new UpdateItemCommandValidator());
 
         await service.ExecuteAsync(
-            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Same Name", "Same desc", 2, null, [], []),
+            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Same Name", "Same desc", 2, null, null, [], []),
             CancellationToken.None);
 
         eventRepository.Recorded.Should().ContainSingle();
@@ -296,7 +300,7 @@ public sealed class UpdateItemServiceTests
             new UpdateItemCommandValidator());
 
         await service.ExecuteAsync(
-            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Updated", null, 3, null, [], []),
+            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Updated", null, 3, null, null, [], []),
             CancellationToken.None);
 
         var notes = eventRepository.Recorded[0].Notes;

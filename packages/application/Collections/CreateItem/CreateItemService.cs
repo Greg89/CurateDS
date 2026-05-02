@@ -69,7 +69,7 @@ public sealed class CreateItemService
             _tagRepository,
             cancellationToken);
 
-        ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup);
+        ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup, command.ItemTypeId);
 
         var now = DateTime.UtcNow;
         var actor = _currentUser.GetCurrentUser();
@@ -96,6 +96,7 @@ public sealed class CreateItemService
             command.Description,
             command.Quantity,
             organization.Location?.Id,
+            command.ItemTypeId,
             tags,
             attributeValues,
             now,
@@ -116,6 +117,7 @@ public sealed class CreateItemService
             item.Quantity,
             organization.Location?.Id,
             organization.Location?.Name,
+            item.ItemTypeId,
             organization.Tags.Select(tag => new TagDto(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)).ToArray(),
             item.CreatedUtc,
             item.UpdatedUtc,
@@ -147,11 +149,19 @@ public sealed class CreateItemService
     private static void ValidateAttributeValues(
         IReadOnlyList<CreateItemAttributeValueInput> attributeValues,
         IReadOnlyList<AttributeDefinition> attributeDefinitions,
-        IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup)
+        IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup,
+        Guid? itemTypeId)
     {
         var failures = new List<ValidationFailure>();
 
-        var requiredDefinitionIds = attributeDefinitions
+        // Valid definitions for this item: global (null ItemTypeId) OR matching the item's type
+        var validDefinitions = attributeDefinitions
+            .Where(d => d.ItemTypeId == null || d.ItemTypeId == itemTypeId)
+            .ToList();
+
+        var validDefinitionIds = validDefinitions.Select(d => d.Id).ToHashSet();
+
+        var requiredDefinitionIds = validDefinitions
             .Where(definition => definition.IsRequired)
             .Select(definition => definition.Id)
             .ToHashSet();
@@ -162,11 +172,11 @@ public sealed class CreateItemService
 
         foreach (var attributeValue in attributeValues)
         {
-            if (!attributeDefinitionLookup.ContainsKey(attributeValue.AttributeDefinitionId))
+            if (!validDefinitionIds.Contains(attributeValue.AttributeDefinitionId))
             {
                 failures.Add(new ValidationFailure(
                     nameof(CreateItemCommand.AttributeValues),
-                    "Attribute values must belong to the selected collection."));
+                    "Attribute values must belong to the selected collection and item type."));
             }
         }
 

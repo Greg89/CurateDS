@@ -776,6 +776,7 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         bool IsRequired,
         bool IsFilterable,
         int SortOrder,
+        Guid? ItemTypeId,
         DateTime CreatedUtc);
 
     private sealed record ItemSummaryResponse(
@@ -806,6 +807,7 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         int Quantity,
         Guid? LocationId,
         string? LocationName,
+        Guid? ItemTypeId,
         IReadOnlyList<TagResponse> Tags,
         DateTime CreatedUtc,
         DateTime? UpdatedUtc,
@@ -1177,5 +1179,93 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     private sealed record TagResponse(Guid Id, string Name, string Key, DateTime CreatedUtc);
 
     private sealed record LocationResponse(Guid Id, string Name, string? Description, DateTime CreatedUtc);
+
+    private sealed record ItemTypeResponse(Guid Id, Guid CollectionId, string Name, int SortOrder, DateTime CreatedUtc);
+
+    [Fact]
+    public async Task PostItemTypes_ShouldCreateItemType()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("ItemTypes"));
+
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/item-types",
+            new { name = "Machine" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var created = await response.Content.ReadFromJsonAsync<ItemTypeResponse>(JsonOptions);
+        created.Should().NotBeNull();
+        created!.Name.Should().Be("Machine");
+        created.CollectionId.Should().Be(collection.Id);
+        created.SortOrder.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetItemTypes_ShouldReturnCreatedItemTypes()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("ItemTypesGet"));
+
+        await _client.PostAsJsonAsync($"/collections/{collection.Id}/item-types", new { name = "Machine" });
+        await _client.PostAsJsonAsync($"/collections/{collection.Id}/item-types", new { name = "Part" });
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/item-types");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var itemTypes = await response.Content.ReadFromJsonAsync<IReadOnlyList<ItemTypeResponse>>(JsonOptions);
+        itemTypes.Should().NotBeNull();
+        itemTypes!.Should().HaveCount(2);
+        itemTypes.Select(it => it.Name).Should().Contain(["Machine", "Part"]);
+        itemTypes.Select(it => it.SortOrder).Should().BeInAscendingOrder();
+    }
+
+    [Fact]
+    public async Task DeleteItemType_ShouldReturnNoContent()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("ItemTypesDel"));
+
+        var createResponse = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/item-types",
+            new { name = "Machine" });
+        var created = await createResponse.Content.ReadFromJsonAsync<ItemTypeResponse>(JsonOptions);
+
+        var deleteResponse = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/item-types/{created!.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync($"/collections/{collection.Id}/item-types");
+        var itemTypes = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<ItemTypeResponse>>(JsonOptions);
+        itemTypes!.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteItemType_ShouldReturnNotFound_WhenItemTypeDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("ItemTypesNF"));
+
+        var response = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/item-types/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task PostItems_ShouldCreateItem_WithItemTypeAssigned()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("ItemWithType"));
+        var createTypeResponse = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/item-types", new { name = "Machine" });
+        var itemType = await createTypeResponse.Content.ReadFromJsonAsync<ItemTypeResponse>(JsonOptions);
+
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new { name = "Singer 66", quantity = 1, itemTypeId = itemType!.Id });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var created = await response.Content.ReadFromJsonAsync<ItemDetailResponse>(JsonOptions);
+        created!.ItemTypeId.Should().Be(itemType.Id);
+    }
 
 }

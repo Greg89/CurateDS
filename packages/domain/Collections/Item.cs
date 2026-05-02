@@ -37,6 +37,7 @@ public sealed class Item : AuditableEntity
         string? description,
         int quantity,
         Guid? locationId,
+        Guid? itemTypeId,
         IReadOnlyList<ItemTag> tags,
         IReadOnlyList<ItemAttributeValue> attributeValues,
         DateTime createdUtc,
@@ -48,11 +49,14 @@ public sealed class Item : AuditableEntity
         Description = description;
         Quantity = quantity;
         LocationId = locationId;
+        ItemTypeId = itemTypeId;
         AttributeValues = [..attributeValues];
         ItemTags = [..tags];
         MediaAssets = [];
         SetAuditOnCreate(createdUtc, createdBy);
     }
+
+
 
     public Guid Id { get; }
 
@@ -65,6 +69,8 @@ public sealed class Item : AuditableEntity
     public int Quantity { get; private set; }
 
     public Guid? LocationId { get; private set; }
+
+    public Guid? ItemTypeId { get; private set; }
 
     public List<ItemAttributeValue> AttributeValues { get; private set; }
 
@@ -113,7 +119,7 @@ public sealed class Item : AuditableEntity
 
     /// <summary>
     /// Full-initialization factory used by the create application service.
-    /// Sets location, tags, and attribute values directly without stamping UpdatedUtc/UpdatedBy.
+    /// Sets location, item type, tags, and attribute values directly without stamping UpdatedUtc/UpdatedBy.
     /// </summary>
     public static Item Create(
         Guid id,
@@ -122,6 +128,7 @@ public sealed class Item : AuditableEntity
         string? description,
         int quantity,
         Guid? locationId,
+        Guid? itemTypeId,
         IReadOnlyList<ItemTag> tags,
         IReadOnlyList<ItemAttributeValue> attributeValues,
         DateTime createdUtc,
@@ -160,10 +167,17 @@ public sealed class Item : AuditableEntity
             normalizedDescription,
             quantity,
             locationId,
+            itemTypeId,
             tags,
             attributeValues,
             createdUtc,
             createdBy);
+    }
+
+    public void AssignItemType(Guid? itemTypeId, DateTime updatedUtc, string updatedBy)
+    {
+        ItemTypeId = itemTypeId;
+        SetUpdated(updatedUtc, updatedBy);
     }
 
     public void AddAttributeValue(ItemAttributeValue attributeValue, DateTime updatedUtc, string updatedBy)

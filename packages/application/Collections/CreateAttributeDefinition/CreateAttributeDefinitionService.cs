@@ -51,7 +51,8 @@ public sealed class CreateAttributeDefinitionService
             command.IsFilterable,
             sortOrder,
             DateTime.UtcNow,
-            _currentUser.GetCurrentUser());
+            _currentUser.GetCurrentUser(),
+            command.ItemTypeId);
 
         await _attributeDefinitionRepository.AddAsync(attributeDefinition, cancellationToken);
 
@@ -64,6 +65,7 @@ public sealed class CreateAttributeDefinitionService
             attributeDefinition.IsRequired,
             attributeDefinition.IsFilterable,
             attributeDefinition.SortOrder,
+            attributeDefinition.ItemTypeId,
             attributeDefinition.CreatedUtc);
     }
 }

@@ -16,6 +16,7 @@ public sealed class CreateItemCommandValidatorTests
             null,
             1,
             null,
+            null,
             [],
             []);
 
@@ -35,6 +36,7 @@ public sealed class CreateItemCommandValidatorTests
             "Vintage Card",
             null,
             1,
+            null,
             null,
             [],
             [

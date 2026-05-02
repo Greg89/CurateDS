@@ -77,7 +77,7 @@ public sealed class UpdateItemService
             _tagRepository,
             cancellationToken);
 
-        ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup);
+        ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup, command.ItemTypeId);
 
         var attributeValues = command.AttributeValues
             .Select(attributeValue =>
@@ -94,6 +94,7 @@ public sealed class UpdateItemService
 
         item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc, actor);
         item.AssignLocation(organization.Location?.Id, updatedUtc, actor);
+        item.AssignItemType(command.ItemTypeId, updatedUtc, actor);
         await _itemRepository.ReplaceAttributeValuesAsync(item.Id, attributeValues, cancellationToken);
         await _itemRepository.ReplaceTagsAsync(
             item.Id,
@@ -114,6 +115,7 @@ public sealed class UpdateItemService
             item.Quantity,
             organization.Location?.Id,
             organization.Location?.Name,
+            item.ItemTypeId,
             organization.Tags.Select(tag => new TagDto(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)).ToArray(),
             item.CreatedUtc,
             item.UpdatedUtc,
@@ -145,11 +147,19 @@ public sealed class UpdateItemService
     private static void ValidateAttributeValues(
         IReadOnlyList<CreateItemAttributeValueInput> attributeValues,
         IReadOnlyList<AttributeDefinition> attributeDefinitions,
-        IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup)
+        IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup,
+        Guid? itemTypeId)
     {
         var failures = new List<ValidationFailure>();
 
-        var requiredDefinitionIds = attributeDefinitions
+        // Valid definitions for this item: global (null ItemTypeId) OR matching the item's type
+        var validDefinitions = attributeDefinitions
+            .Where(d => d.ItemTypeId == null || d.ItemTypeId == itemTypeId)
+            .ToList();
+
+        var validDefinitionIds = validDefinitions.Select(d => d.Id).ToHashSet();
+
+        var requiredDefinitionIds = validDefinitions
             .Where(definition => definition.IsRequired)
             .Select(definition => definition.Id)
             .ToHashSet();
@@ -160,11 +170,11 @@ public sealed class UpdateItemService
 
         foreach (var attributeValue in attributeValues)
         {
-            if (!attributeDefinitionLookup.ContainsKey(attributeValue.AttributeDefinitionId))
+            if (!validDefinitionIds.Contains(attributeValue.AttributeDefinitionId))
             {
                 failures.Add(new ValidationFailure(
                     nameof(UpdateItemCommand.AttributeValues),
-                    "Attribute values must belong to the selected collection."));
+                    "Attribute values must belong to the selected collection and item type."));
             }
         }
 

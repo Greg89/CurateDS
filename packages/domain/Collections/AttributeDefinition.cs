@@ -17,6 +17,7 @@ public sealed class AttributeDefinition : AuditableEntity
         bool isRequired,
         bool isFilterable,
         int sortOrder,
+        Guid? itemTypeId,
         DateTime createdUtc,
         string createdBy)
     {
@@ -28,6 +29,7 @@ public sealed class AttributeDefinition : AuditableEntity
         IsRequired = isRequired;
         IsFilterable = isFilterable;
         SortOrder = sortOrder;
+        ItemTypeId = itemTypeId;
         SetAuditOnCreate(createdUtc, createdBy);
     }
 
@@ -47,6 +49,8 @@ public sealed class AttributeDefinition : AuditableEntity
 
     public int SortOrder { get; private set; }
 
+    public Guid? ItemTypeId { get; private set; }
+
     public static AttributeDefinition Create(
         Guid collectionId,
         string name,
@@ -55,7 +59,8 @@ public sealed class AttributeDefinition : AuditableEntity
         bool isFilterable,
         int sortOrder,
         DateTime createdUtc,
-        string createdBy)
+        string createdBy,
+        Guid? itemTypeId = null)
     {
         if (collectionId == Guid.Empty)
         {
@@ -83,6 +88,7 @@ public sealed class AttributeDefinition : AuditableEntity
             isRequired,
             isFilterable,
             sortOrder,
+            itemTypeId,
             createdUtc,
             createdBy);
     }

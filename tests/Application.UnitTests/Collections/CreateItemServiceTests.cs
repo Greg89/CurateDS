@@ -59,6 +59,7 @@ public sealed class CreateItemServiceTests
                 "First edition",
                 1,
                 null,
+                null,
                 [],
                 [
                     new CreateItemAttributeValueInput(issueNumber.Id, "12"),
@@ -103,6 +104,7 @@ public sealed class CreateItemServiceTests
                 null,
                 1,
                 null,
+                null,
                 [],
                 []),
             CancellationToken.None);
@@ -130,6 +132,7 @@ public sealed class CreateItemServiceTests
                 "Missing Collection Item",
                 null,
                 1,
+                null,
                 null,
                 [],
                 []),
