@@ -312,7 +312,7 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OwnerId", "Name")
                         .IsUnique()
-                        .HasFilter("deleted_utc IS NULL");
+                        .HasFilter("\"DeletedUtc\" IS NULL");
 
                     b.ToTable("locations", (string)null);
                 });
@@ -434,7 +434,7 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OwnerId", "Key")
                         .IsUnique()
-                        .HasFilter("deleted_utc IS NULL");
+                        .HasFilter("\"DeletedUtc\" IS NULL");
 
                     b.ToTable("tags", (string)null);
                 });
