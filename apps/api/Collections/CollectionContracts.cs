@@ -37,3 +37,7 @@ public sealed record PagedCollectionActivityResponse(
     int Page,
     int PageSize,
     int TotalPages);
+
+public sealed record SavedViewResponse(Guid Id, Guid CollectionId, string Name, string FiltersJson, DateTime CreatedUtc);
+
+public sealed record CreateSavedViewRequest(string Name, string FiltersJson);

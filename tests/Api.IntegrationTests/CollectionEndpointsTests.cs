@@ -906,6 +906,95 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task ListSavedViews_ShouldReturnEmpty_WhenNoneExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV Empty"));
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/saved-views");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var views = await response.Content.ReadFromJsonAsync<SavedViewResponse[]>(JsonOptions);
+        views.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CreateSavedView_ShouldPersistAndReturn201()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV Create"));
+        var filtersJson = """{"searchText":"test","tagIds":[]}""";
+
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/saved-views",
+            new { name = "My View", filtersJson });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var view = await response.Content.ReadFromJsonAsync<SavedViewResponse>(JsonOptions);
+        view!.Name.Should().Be("My View");
+        view.FiltersJson.Should().Be(filtersJson);
+        view.CollectionId.Should().Be(collection.Id);
+    }
+
+    [Fact]
+    public async Task CreateThenListSavedViews_ShouldReturnCreatedView()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV List"));
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/saved-views",
+            new { name = "View A", filtersJson = "{}" });
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/saved-views");
+        var views = await response.Content.ReadFromJsonAsync<SavedViewResponse[]>(JsonOptions);
+
+        views.Should().ContainSingle(v => v.Name == "View A");
+    }
+
+    [Fact]
+    public async Task DeleteSavedView_ShouldReturn204_AndRemoveView()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV Delete"));
+
+        var createResponse = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/saved-views",
+            new { name = "Temp View", filtersJson = "{}" });
+
+        var created = await createResponse.Content.ReadFromJsonAsync<SavedViewResponse>(JsonOptions);
+
+        var deleteResponse = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/saved-views/{created!.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync($"/collections/{collection.Id}/saved-views");
+        var views = await listResponse.Content.ReadFromJsonAsync<SavedViewResponse[]>(JsonOptions);
+        views.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteSavedView_ShouldReturn404_WhenViewDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV Delete 404"));
+
+        var response = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/saved-views/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task CreateSavedView_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{Guid.NewGuid()}/saved-views",
+            new { name = "View", filtersJson = "{}" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    private sealed record SavedViewResponse(Guid Id, Guid CollectionId, string Name, string FiltersJson, DateTime CreatedUtc);
+
     private sealed record CollectionReportsResponse(
         IReadOnlyList<ItemsByLocationResponse> ItemsByLocation,
         IReadOnlyList<ItemsByTagResponse> ItemsByTag);

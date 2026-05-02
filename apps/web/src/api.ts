@@ -234,6 +234,53 @@ export async function listCollectionActivity(
   return (await response.json()) as PagedCollectionActivity;
 }
 
+export interface SavedView {
+  id: string;
+  collectionId: string;
+  name: string;
+  filtersJson: string;
+  createdUtc: string;
+}
+
+export async function listSavedViews(collectionId: string): Promise<SavedView[]> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/saved-views`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) throw new Error("Failed to load saved views.");
+
+  return (await response.json()) as SavedView[];
+}
+
+export async function createSavedView(
+  collectionId: string,
+  name: string,
+  filtersJson: string
+): Promise<SavedView> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/saved-views`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeader()) },
+      body: JSON.stringify({ name, filtersJson })
+    }
+  );
+
+  if (!response.ok) throw new Error("Failed to save view.");
+
+  return (await response.json()) as SavedView;
+}
+
+export async function deleteSavedView(collectionId: string, viewId: string): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/saved-views/${viewId}`,
+    { method: "DELETE", headers: await authHeader() }
+  );
+
+  if (!response.ok) throw new Error("Failed to delete saved view.");
+}
+
 export async function createCollection(name: string): Promise<Collection> {
   const response = await fetch(`${appConfig.apiBaseUrl}/collections`, {
     method: "POST",

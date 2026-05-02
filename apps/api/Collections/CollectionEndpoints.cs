@@ -10,10 +10,13 @@ using CurateDS.Application.Collections.DeleteItem;
 using CurateDS.Application.Collections.DeleteTag;
 using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteAttributeDefinition;
+using CurateDS.Application.Collections.CreateSavedView;
+using CurateDS.Application.Collections.DeleteSavedView;
 using CurateDS.Application.Collections.GetCollectionReports;
 using CurateDS.Application.Collections.GetCollectionSummary;
 using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListCollectionActivity;
+using CurateDS.Application.Collections.ListSavedViews;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
 using CurateDS.Application.Collections.ListItemEvents;
@@ -165,6 +168,74 @@ public static class CollectionEndpoints
             catch (NotFoundException)
             {
                 return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/saved-views", async (
+            Guid collectionId,
+            ListSavedViewsService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var views = await service.ExecuteAsync(
+                    new ListSavedViewsQuery(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.Ok(views.Select(v =>
+                    new SavedViewResponse(v.Id, v.CollectionId, v.Name, v.FiltersJson, v.CreatedUtc)));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapPost("/{collectionId:guid}/saved-views", async (
+            Guid collectionId,
+            CreateSavedViewRequest request,
+            CreateSavedViewService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var view = await service.ExecuteAsync(
+                    new CreateSavedViewCommand(ownerId, collectionId, request.Name, request.FiltersJson),
+                    cancellationToken);
+
+                return Results.Created(
+                    $"/collections/{collectionId}/saved-views/{view.Id}",
+                    new SavedViewResponse(view.Id, view.CollectionId, view.Name, view.FiltersJson, view.CreatedUtc));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapDelete("/{collectionId:guid}/saved-views/{viewId:guid}", async (
+            Guid collectionId,
+            Guid viewId,
+            DeleteSavedViewService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                await service.ExecuteAsync(
+                    new DeleteSavedViewCommand(ownerId, collectionId, viewId),
+                    cancellationToken);
+
+                return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Saved view was not found.");
             }
         });
 
