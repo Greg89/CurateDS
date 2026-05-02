@@ -100,6 +100,7 @@ export function useItemFilters(selectedCollectionId: string) {
     itemFilterLocationId,
     setItemFilterLocationId,
     itemFilterTagIds,
+    setItemFilterTagIds,
     itemAttributeFilters,
     itemSortBy,
     setItemSortBy,
