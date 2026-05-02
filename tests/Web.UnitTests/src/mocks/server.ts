@@ -190,5 +190,53 @@ export const server = setupServer(
       { status: 201 }
     );
   }),
-  http.get(`${apiBaseUrl}/health`, () => HttpResponse.json({ status: "Healthy" }))
+  http.get(`${apiBaseUrl}/health`, () => HttpResponse.json({ status: "Healthy" })),
+  http.get(`${apiBaseUrl}/collections/:collectionId/saved-views`, () =>
+    HttpResponse.json([])
+  ),
+  http.post(`${apiBaseUrl}/collections/:collectionId/saved-views`, async ({ params, request }) => {
+    const body = (await request.json()) as { name?: string; filtersJson?: string };
+    return HttpResponse.json(
+      {
+        id: "vvvvvvvv-vvvv-vvvv-vvvv-vvvvvvvvvvvv",
+        collectionId: params.collectionId,
+        name: body.name ?? "My View",
+        filtersJson: body.filtersJson ?? "{}",
+        createdUtc: "2026-04-21T00:12:00Z"
+      },
+      { status: 201 }
+    );
+  }),
+  http.delete(
+    `${apiBaseUrl}/collections/:collectionId/saved-views/:viewId`,
+    () => new HttpResponse(null, { status: 204 })
+  ),
+  http.get(`${apiBaseUrl}/collections/:collectionId/summary`, () =>
+    HttpResponse.json({
+      collectionId: defaultCollection.id,
+      totalItems: 1,
+      totalAttributeDefinitions: 1,
+      tagsUsed: 0,
+      locationsUsed: 0,
+      itemsWithNoLocation: 1,
+      itemsWithNoTags: 1,
+      totalMediaAssets: 0
+    })
+  ),
+  http.get(
+    `${apiBaseUrl}/collections/:collectionId/items/:itemId/events`,
+    () => HttpResponse.json([])
+  ),
+  http.get(`${apiBaseUrl}/collections/:collectionId/reports`, () =>
+    HttpResponse.json({ itemsByLocation: [], itemsByTag: [] })
+  ),
+  http.get(`${apiBaseUrl}/collections/:collectionId/activity`, () =>
+    HttpResponse.json({
+      events: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 20,
+      totalPages: 1
+    })
+  )
 );

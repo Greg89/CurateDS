@@ -423,15 +423,8 @@ export function CatalogApp({
     next.delete("locationId");
     next.delete("itemId");
     setSearchParams(next, { replace: true });
-  }, [
-    searchParams,
-    setItemFilterTagIds,
-    setItemFilterLocationId,
-    setSelectedItemId,
-    setItemPage,
-    setSearchParams,
-    clearItemFilters
-  ]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (!itemsQuery.data) {
