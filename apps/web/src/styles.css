@@ -65,6 +65,7 @@ textarea {
   --c-card-bg: oklch(1 0 0 / 0.06);
   --c-input-bg: oklch(1 0 0 / 0.08);
   background: oklch(0.25 0.04 260);
+  color: var(--c-text);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 1.25rem;
@@ -100,6 +101,7 @@ textarea {
 
 .sidebar-body {
   display: grid;
+  align-content: start;
   gap: 1rem;
   min-height: 0;
   overflow-y: auto;
