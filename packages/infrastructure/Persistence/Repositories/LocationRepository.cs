@@ -19,6 +19,13 @@ public sealed class LocationRepository : ILocationRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public Task<bool> ExistsByNameAsync(Guid ownerId, string name, CancellationToken cancellationToken)
+    {
+        return _dbContext.Locations.AnyAsync(
+            location => location.OwnerId == ownerId && location.Name == name,
+            cancellationToken);
+    }
+
     public async Task<Location?> GetByIdAndOwnerAsync(Guid locationId, Guid ownerId, CancellationToken cancellationToken)
     {
         return await _dbContext.Locations
