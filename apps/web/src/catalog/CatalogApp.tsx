@@ -32,6 +32,7 @@ import { useSavedViews } from "./hooks/useSavedViews";
 import { CollectionList } from "./components/CollectionList";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ItemsPage } from "./pages/ItemsPage";
+import { ReportsPage } from "./pages/ReportsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 export function CatalogApp({
@@ -72,6 +73,18 @@ export function CatalogApp({
     setItemPage,
     pageSize,
     normalizedItemFilterTagIds,
+    itemFilterMinQuantity,
+    setItemFilterMinQuantity,
+    itemFilterMaxQuantity,
+    setItemFilterMaxQuantity,
+    itemFilterCreatedAfter,
+    setItemFilterCreatedAfter,
+    itemFilterCreatedBefore,
+    setItemFilterCreatedBefore,
+    itemFilterHasNoLocation,
+    setItemFilterHasNoLocation,
+    itemFilterHasNoTags,
+    setItemFilterHasNoTags,
     clearItemFilters,
     toggleFilterTag,
     handleAttributeFilterChange,
@@ -542,7 +555,9 @@ export function CatalogApp({
                     ? "Collection Overview"
                     : section === "items"
                       ? "Items Workspace"
-                      : "Collection Settings"}
+                      : section === "reports"
+                        ? "Reports"
+                        : "Collection Settings"}
                 </h2>
               </div>
             </div>
@@ -553,7 +568,9 @@ export function CatalogApp({
                   ? "See the collection at a glance before drilling into items or settings."
                   : section === "items"
                     ? "Create, filter, sort, and refine catalog entries in one focused workspace."
-                    : "Manage custom fields, reusable tags, and locations for this collection."
+                    : section === "reports"
+                      ? "Breakdowns and activity across this collection."
+                      : "Manage custom fields, reusable tags, and locations for this collection."
                 : "Create or choose a collection from the sidebar to begin."}
             </p>
           </div>
@@ -565,6 +582,9 @@ export function CatalogApp({
               </NavLink>
               <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/items`}>
                 Items
+              </NavLink>
+              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/reports`}>
+                Reports
               </NavLink>
               <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/settings`}>
                 Settings
@@ -583,11 +603,7 @@ export function CatalogApp({
             </section>
           ) : section === "overview" ? (
             <OverviewPage
-              attributeDefinitions={attributeDefinitionsQuery.data ?? []}
-              items={itemsQuery.data?.items ?? []}
-              locations={locationsQuery.data ?? []}
               selectedCollection={selectedCollection}
-              tags={tagsQuery.data ?? []}
             />
           ) : section === "items" ? (
             <ItemsPage
@@ -624,6 +640,12 @@ export function CatalogApp({
               selectedItemId={selectedItemId}
               tags={tagsQuery.data ?? []}
               updateItemError={updateItemMutation.error?.message ?? null}
+              itemFilterMinQuantity={itemFilterMinQuantity}
+              itemFilterMaxQuantity={itemFilterMaxQuantity}
+              itemFilterCreatedAfter={itemFilterCreatedAfter}
+              itemFilterCreatedBefore={itemFilterCreatedBefore}
+              itemFilterHasNoLocation={itemFilterHasNoLocation}
+              itemFilterHasNoTags={itemFilterHasNoTags}
               onApplySavedView={applySavedView}
               onAttributeFilterChange={handleAttributeFilterChange}
               onAttributeValueChange={handleAttributeValueChange}
@@ -645,6 +667,12 @@ export function CatalogApp({
               onSelectItem={setSelectedItemId}
               onToggleFilterTag={toggleFilterTag}
               onToggleItemTag={toggleItemTag}
+              onItemMinQuantityChange={(v) => { setItemPage(1); setItemFilterMinQuantity(v); }}
+              onItemMaxQuantityChange={(v) => { setItemPage(1); setItemFilterMaxQuantity(v); }}
+              onItemCreatedAfterChange={(v) => { setItemPage(1); setItemFilterCreatedAfter(v); }}
+              onItemCreatedBeforeChange={(v) => { setItemPage(1); setItemFilterCreatedBefore(v); }}
+              onItemHasNoLocationChange={(v) => { setItemPage(1); setItemFilterHasNoLocation(v); }}
+              onItemHasNoTagsChange={(v) => { setItemPage(1); setItemFilterHasNoTags(v); }}
               isDeleteItemPending={deleteItemMutation.isPending}
               onDeleteItem={() =>
                 deleteItemMutation.mutate({
@@ -676,6 +704,8 @@ export function CatalogApp({
               }
               isUploadMediaPending={uploadItemMediaMutation.isPending}
             />
+          ) : section === "reports" ? (
+            <ReportsPage selectedCollection={selectedCollection} />
           ) : (
             <SettingsPage
               attributeDataType={attributeDataType}

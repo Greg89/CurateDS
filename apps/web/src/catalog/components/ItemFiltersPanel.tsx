@@ -17,6 +17,12 @@ export function ItemFiltersPanel({
   sortBy,
   sortDirection,
   tags,
+  minQuantity,
+  maxQuantity,
+  createdAfter,
+  createdBefore,
+  hasNoLocation,
+  hasNoTags,
   onApplySavedView,
   onAttributeFilterChange,
   onClear,
@@ -27,7 +33,13 @@ export function ItemFiltersPanel({
   onSearchTextChange,
   onSortByChange,
   onSortDirectionChange,
-  onToggleTag
+  onToggleTag,
+  onMinQuantityChange,
+  onMaxQuantityChange,
+  onCreatedAfterChange,
+  onCreatedBeforeChange,
+  onHasNoLocationChange,
+  onHasNoTagsChange
 }: Readonly<{
   attributeDefinitions: AttributeDefinition[];
   attributeFilters: Record<string, string>;
@@ -41,6 +53,12 @@ export function ItemFiltersPanel({
   sortBy: ItemFilters["sortBy"];
   sortDirection: ItemFilters["sortDirection"];
   tags: Tag[];
+  minQuantity: number | undefined;
+  maxQuantity: number | undefined;
+  createdAfter: string;
+  createdBefore: string;
+  hasNoLocation: boolean;
+  hasNoTags: boolean;
   onApplySavedView: (view: SavedItemView) => void;
   onAttributeFilterChange: (attributeKey: string, value: string) => void;
   onClear: () => void;
@@ -52,6 +70,12 @@ export function ItemFiltersPanel({
   onSortByChange: (sortBy: ItemFilters["sortBy"]) => void;
   onSortDirectionChange: (sortDirection: ItemFilters["sortDirection"]) => void;
   onToggleTag: (tagId: string) => void;
+  onMinQuantityChange: (value: number | undefined) => void;
+  onMaxQuantityChange: (value: number | undefined) => void;
+  onCreatedAfterChange: (value: string) => void;
+  onCreatedBeforeChange: (value: string) => void;
+  onHasNoLocationChange: (value: boolean) => void;
+  onHasNoTagsChange: (value: boolean) => void;
 }>) {
   const hasActiveFilters =
     searchText.trim().length > 0 ||
@@ -59,7 +83,13 @@ export function ItemFiltersPanel({
     selectedTagIds.length > 0 ||
     Object.values(attributeFilters).some((value) => value.trim().length > 0) ||
     sortBy !== "updatedUtc" ||
-    sortDirection !== "desc";
+    sortDirection !== "desc" ||
+    minQuantity != null ||
+    maxQuantity != null ||
+    createdAfter.length > 0 ||
+    createdBefore.length > 0 ||
+    hasNoLocation ||
+    hasNoTags;
 
   return (
     <section className="filter-panel">
@@ -125,6 +155,76 @@ export function ItemFiltersPanel({
             <option value="desc">Descending</option>
             <option value="asc">Ascending</option>
           </select>
+        </label>
+
+        <label className="field">
+          <span>Min Quantity</span>
+          <input
+            type="number"
+            min={0}
+            value={minQuantity ?? ""}
+            onChange={(e) =>
+              onMinQuantityChange(e.target.value === "" ? undefined : Number(e.target.value))
+            }
+            disabled={disabled}
+            placeholder="e.g. 1"
+          />
+        </label>
+
+        <label className="field">
+          <span>Max Quantity</span>
+          <input
+            type="number"
+            min={0}
+            value={maxQuantity ?? ""}
+            onChange={(e) =>
+              onMaxQuantityChange(e.target.value === "" ? undefined : Number(e.target.value))
+            }
+            disabled={disabled}
+            placeholder="e.g. 100"
+          />
+        </label>
+
+        <label className="field">
+          <span>Created After</span>
+          <input
+            type="date"
+            value={createdAfter}
+            onChange={(e) => onCreatedAfterChange(e.target.value)}
+            disabled={disabled}
+          />
+        </label>
+
+        <label className="field">
+          <span>Created Before</span>
+          <input
+            type="date"
+            value={createdBefore}
+            onChange={(e) => onCreatedBeforeChange(e.target.value)}
+            disabled={disabled}
+          />
+        </label>
+      </div>
+
+      <div className="filter-grid">
+        <label className="field checkbox-field">
+          <input
+            type="checkbox"
+            checked={hasNoLocation}
+            onChange={(e) => onHasNoLocationChange(e.target.checked)}
+            disabled={disabled}
+          />
+          <span>No location assigned</span>
+        </label>
+
+        <label className="field checkbox-field">
+          <input
+            type="checkbox"
+            checked={hasNoTags}
+            onChange={(e) => onHasNoTagsChange(e.target.checked)}
+            disabled={disabled}
+          />
+          <span>No tags assigned</span>
         </label>
       </div>
 

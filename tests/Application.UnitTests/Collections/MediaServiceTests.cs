@@ -148,6 +148,12 @@ public sealed class DeleteItemMediaServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid id, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
+
+        public Task<CollectionReportsDto> GetReportsAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
     }
 
     private sealed class FakeItemRepository : IItemRepository
@@ -270,6 +276,12 @@ public sealed class SetPrimaryItemMediaServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid id, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
+
+        public Task<CollectionReportsDto> GetReportsAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
     }
 
     private sealed class FakeSPItemRepository : IItemRepository

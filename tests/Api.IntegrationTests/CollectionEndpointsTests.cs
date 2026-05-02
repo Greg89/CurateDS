@@ -692,6 +692,22 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         return (await response.Content.ReadFromJsonAsync<ItemSummaryResponse>(JsonOptions))!;
     }
 
+    private async Task<ItemSummaryResponse> CreateItemWithQuantityAsync(Guid collectionId, string name, int quantity)
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collectionId}/items",
+            new { name, quantity });
+        return (await response.Content.ReadFromJsonAsync<ItemSummaryResponse>(JsonOptions))!;
+    }
+
+    private async Task<ItemSummaryResponse> CreateItemAtLocationAsync(Guid collectionId, string name, Guid locationId)
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collectionId}/items",
+            new { name, quantity = 1, locationId });
+        return (await response.Content.ReadFromJsonAsync<ItemSummaryResponse>(JsonOptions))!;
+    }
+
     private async Task<AttributeDefinitionResponse> CreateAttributeDefinitionAsync(
         Guid collectionId,
         string name,
@@ -778,6 +794,362 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         string AttributeKey,
         AttributeDataType DataType,
         string Value);
+
+    [Fact]
+    public async Task GetCollectionSummary_ShouldReturnZeroCounts_ForEmptyCollection()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Summary Empty"));
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/summary");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var summary = await response.Content.ReadFromJsonAsync<CollectionSummaryResponse>(JsonOptions);
+
+        summary.Should().NotBeNull();
+        summary!.CollectionId.Should().Be(collection.Id);
+        summary.TotalItems.Should().Be(0);
+        summary.TotalAttributeDefinitions.Should().Be(0);
+        summary.TagsUsed.Should().Be(0);
+        summary.LocationsUsed.Should().Be(0);
+        summary.ItemsWithNoLocation.Should().Be(0);
+        summary.ItemsWithNoTags.Should().Be(0);
+        summary.TotalMediaAssets.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetCollectionSummary_ShouldReflectCreatedItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Summary With Items"));
+        var tag = await CreateTagAsync(UniqueName("SumTag"));
+        var location = await CreateLocationAsync(UniqueName("SumLoc"), "");
+
+        // Item with a tag and location
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new { name = "Tagged + Located", quantity = 1, locationId = location.Id, tagIds = new[] { tag.Id } });
+
+        // Item with no tag and no location
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new { name = "Bare Item", quantity = 1 });
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/summary");
+        var summary = await response.Content.ReadFromJsonAsync<CollectionSummaryResponse>(JsonOptions);
+
+        summary!.TotalItems.Should().Be(2);
+        summary.TagsUsed.Should().Be(1);
+        summary.LocationsUsed.Should().Be(1);
+        summary.ItemsWithNoLocation.Should().Be(1);
+        summary.ItemsWithNoTags.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetCollectionSummary_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.GetAsync($"/collections/{Guid.NewGuid()}/summary");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetCollectionReports_ShouldReturnEmptyBreakdowns_ForEmptyCollection()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Reports Empty"));
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/reports");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var reports = await response.Content.ReadFromJsonAsync<CollectionReportsResponse>(JsonOptions);
+
+        reports.Should().NotBeNull();
+        reports!.ItemsByLocation.Should().BeEmpty();
+        reports.ItemsByTag.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetCollectionReports_ShouldReturnBreakdowns_WhenItemsExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Reports With Data"));
+        var tag = await CreateTagAsync(UniqueName("ReportTag"));
+        var location = await CreateLocationAsync(UniqueName("ReportLoc"), "");
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new { name = "Item A", quantity = 1, locationId = location.Id, tagIds = new[] { tag.Id } });
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new { name = "Item B", quantity = 1, tagIds = new[] { tag.Id } });
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/reports");
+        var reports = await response.Content.ReadFromJsonAsync<CollectionReportsResponse>(JsonOptions);
+
+        reports!.ItemsByTag.Should().ContainSingle(x => x.TagId == tag.Id && x.Count == 2);
+        reports.ItemsByLocation.Should().Contain(x => x.LocationId == location.Id && x.Count == 1);
+        reports.ItemsByLocation.Should().Contain(x => x.LocationId == null && x.Count == 1);
+    }
+
+    [Fact]
+    public async Task GetCollectionReports_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.GetAsync($"/collections/{Guid.NewGuid()}/reports");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetCollectionActivity_ShouldReturnEvents_AfterItemCreated()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Activity"));
+        await CreateItemAsync(collection.Id, "Activity Item");
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/activity?page=1&pageSize=20");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var activity = await response.Content.ReadFromJsonAsync<PagedCollectionActivityResponse>(JsonOptions);
+
+        activity.Should().NotBeNull();
+        activity!.TotalCount.Should().BeGreaterThan(0);
+        activity.Events.Should().Contain(e => e.ItemName == "Activity Item" && e.EventType == "Created");
+    }
+
+    [Fact]
+    public async Task GetCollectionActivity_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.GetAsync($"/collections/{Guid.NewGuid()}/activity?page=1&pageSize=20");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task ListSavedViews_ShouldReturnEmpty_WhenNoneExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV Empty"));
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/saved-views");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var views = await response.Content.ReadFromJsonAsync<SavedViewResponse[]>(JsonOptions);
+        views.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CreateSavedView_ShouldPersistAndReturn201()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV Create"));
+        var filtersJson = """{"searchText":"test","tagIds":[]}""";
+
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/saved-views",
+            new { name = "My View", filtersJson });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var view = await response.Content.ReadFromJsonAsync<SavedViewResponse>(JsonOptions);
+        view!.Name.Should().Be("My View");
+        view.FiltersJson.Should().Be(filtersJson);
+        view.CollectionId.Should().Be(collection.Id);
+    }
+
+    [Fact]
+    public async Task CreateThenListSavedViews_ShouldReturnCreatedView()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV List"));
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/saved-views",
+            new { name = "View A", filtersJson = "{}" });
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/saved-views");
+        var views = await response.Content.ReadFromJsonAsync<SavedViewResponse[]>(JsonOptions);
+
+        views.Should().ContainSingle(v => v.Name == "View A");
+    }
+
+    [Fact]
+    public async Task DeleteSavedView_ShouldReturn204_AndRemoveView()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV Delete"));
+
+        var createResponse = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/saved-views",
+            new { name = "Temp View", filtersJson = "{}" });
+
+        var created = await createResponse.Content.ReadFromJsonAsync<SavedViewResponse>(JsonOptions);
+
+        var deleteResponse = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/saved-views/{created!.Id}");
+
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var listResponse = await _client.GetAsync($"/collections/{collection.Id}/saved-views");
+        var views = await listResponse.Content.ReadFromJsonAsync<SavedViewResponse[]>(JsonOptions);
+        views.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteSavedView_ShouldReturn404_WhenViewDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV Delete 404"));
+
+        var response = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/saved-views/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task CreateSavedView_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{Guid.NewGuid()}/saved-views",
+            new { name = "View", filtersJson = "{}" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task ExportCollection_ShouldReturnZip_WithItemsCsv()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Export"));
+        await CreateItemAsync(collection.Id, "Export Item A");
+        await CreateItemAsync(collection.Id, "Export Item B");
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/export");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/zip");
+
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        bytes.Length.Should().BeGreaterThan(0);
+
+        using var zip = new System.IO.Compression.ZipArchive(new System.IO.MemoryStream(bytes));
+        zip.Entries.Should().Contain(e => e.Name == "items.csv");
+        zip.Entries.Should().Contain(e => e.Name == "attribute_definitions.csv");
+
+        var itemsEntry = zip.Entries.First(e => e.Name == "items.csv");
+        using var reader = new System.IO.StreamReader(itemsEntry.Open());
+        var csvContent = reader.ReadToEnd();
+        csvContent.Should().Contain("Export Item A");
+        csvContent.Should().Contain("Export Item B");
+    }
+
+    [Fact]
+    public async Task ExportCollection_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.GetAsync($"/collections/{Guid.NewGuid()}/export");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetItems_QuantityRangeFilter_ShouldReturnOnlyMatchingItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("QtyRange"));
+        await CreateItemWithQuantityAsync(collection.Id, "Five", 5);
+        await CreateItemWithQuantityAsync(collection.Id, "Ten", 10);
+        await CreateItemWithQuantityAsync(collection.Id, "Twenty", 20);
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?minQuantity=8&maxQuantity=15");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        paged!.Items.Should().ContainSingle(i => i.Name == "Ten");
+        paged.Items.Should().NotContain(i => i.Name == "Five");
+        paged.Items.Should().NotContain(i => i.Name == "Twenty");
+    }
+
+    [Fact]
+    public async Task GetItems_DateRangeFilter_ShouldReturnOnlyMatchingItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("DateRange"));
+        await CreateItemAsync(collection.Id, "Before");
+
+        // We rely on the fact that items created after a future date are excluded
+        var tomorrow = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?createdAfter={tomorrow}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        paged!.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetItems_HasNoLocationFilter_ShouldReturnOnlyUnassignedItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("NoLocation"));
+        var location = await CreateLocationAsync(UniqueName("Shelf"), "A shelf");
+        await CreateItemAsync(collection.Id, "Unassigned");
+        await CreateItemAtLocationAsync(collection.Id, "Assigned", location.Id);
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?hasNoLocation=true");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        paged!.Items.Should().ContainSingle(i => i.Name == "Unassigned");
+        paged.Items.Should().NotContain(i => i.Name == "Assigned");
+    }
+
+    [Fact]
+    public async Task GetItems_HasNoTagsFilter_ShouldReturnOnlyUntaggedItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("NoTags"));
+        var tag = await CreateTagAsync(UniqueName("Rare"));
+
+        await CreateItemAsync(collection.Id, "Untagged");
+        var tagged = await CreateItemAsync(collection.Id, "Tagged");
+        await _client.PutAsJsonAsync(
+            $"/collections/{collection.Id}/items/{tagged.Id}",
+            new { name = "Tagged", quantity = 1, tagIds = new[] { tag.Id } });
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?hasNoTags=true");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        paged!.Items.Should().ContainSingle(i => i.Name == "Untagged");
+        paged.Items.Should().NotContain(i => i.Name == "Tagged");
+    }
+
+    private sealed record SavedViewResponse(Guid Id, Guid CollectionId, string Name, string FiltersJson, DateTime CreatedUtc);
+
+    private sealed record CollectionReportsResponse(
+        IReadOnlyList<ItemsByLocationResponse> ItemsByLocation,
+        IReadOnlyList<ItemsByTagResponse> ItemsByTag);
+
+    private sealed record ItemsByLocationResponse(Guid? LocationId, string LocationName, int Count);
+
+    private sealed record ItemsByTagResponse(Guid TagId, string TagName, int Count);
+
+    private sealed record PagedCollectionActivityResponse(
+        IReadOnlyList<CollectionActivityEventResponse> Events,
+        int TotalCount,
+        int Page,
+        int PageSize,
+        int TotalPages);
+
+    private sealed record CollectionActivityEventResponse(
+        Guid EventId,
+        Guid ItemId,
+        string ItemName,
+        string EventType,
+        DateTime OccurredUtc,
+        string OccurredBy,
+        string? Notes);
+
+    private sealed record CollectionSummaryResponse(
+        Guid CollectionId,
+        int TotalItems,
+        int TotalAttributeDefinitions,
+        int TagsUsed,
+        int LocationsUsed,
+        int ItemsWithNoLocation,
+        int ItemsWithNoTags,
+        int TotalMediaAssets);
 
     private sealed record TagResponse(Guid Id, string Name, string Key, DateTime CreatedUtc);
 

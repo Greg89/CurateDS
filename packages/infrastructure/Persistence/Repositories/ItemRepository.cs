@@ -139,6 +139,27 @@ public sealed class ItemRepository : IItemRepository
                     iav.ValueText.ToLower().Contains(search)));
         }
 
+        // Quantity range
+        if (query.MinQuantity.HasValue)
+            q = q.Where(i => i.Quantity >= query.MinQuantity.Value);
+
+        if (query.MaxQuantity.HasValue)
+            q = q.Where(i => i.Quantity <= query.MaxQuantity.Value);
+
+        // Created date range
+        if (query.CreatedAfter.HasValue)
+            q = q.Where(i => i.CreatedUtc >= query.CreatedAfter.Value);
+
+        if (query.CreatedBefore.HasValue)
+            q = q.Where(i => i.CreatedUtc <= query.CreatedBefore.Value);
+
+        // No-location / no-tags quick filters
+        if (query.HasNoLocation)
+            q = q.Where(i => i.LocationId == null);
+
+        if (query.HasNoTags)
+            q = q.Where(i => !_dbContext.ItemTags.Any(it => it.ItemId == i.Id));
+
         var totalCount = await q.CountAsync(cancellationToken);
 
         // Sorting
