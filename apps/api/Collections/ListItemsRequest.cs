@@ -17,4 +17,16 @@ public sealed class ListItemsRequest
     public int? Page { get; init; }
 
     public int? PageSize { get; init; }
+
+    public int? MinQuantity { get; init; }
+
+    public int? MaxQuantity { get; init; }
+
+    public DateTime? CreatedAfter { get; init; }
+
+    public DateTime? CreatedBefore { get; init; }
+
+    public bool? HasNoLocation { get; init; }
+
+    public bool? HasNoTags { get; init; }
 }

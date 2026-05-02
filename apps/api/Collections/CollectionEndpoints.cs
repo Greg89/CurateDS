@@ -10,7 +10,14 @@ using CurateDS.Application.Collections.DeleteItem;
 using CurateDS.Application.Collections.DeleteTag;
 using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteAttributeDefinition;
+using CurateDS.Application.Collections.CreateSavedView;
+using CurateDS.Application.Collections.DeleteSavedView;
+using CurateDS.Application.Collections.ExportCollection;
+using CurateDS.Application.Collections.GetCollectionReports;
+using CurateDS.Application.Collections.GetCollectionSummary;
 using CurateDS.Application.Collections.GetItemDetail;
+using CurateDS.Application.Collections.ListCollectionActivity;
+using CurateDS.Application.Collections.ListSavedViews;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
 using CurateDS.Application.Collections.ListCollections;
 using CurateDS.Application.Collections.ListItemEvents;
@@ -81,6 +88,176 @@ public static class CollectionEndpoints
             catch (NotFoundException)
             {
                 return Results.NotFound();
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/summary", async (
+            Guid collectionId,
+            GetCollectionSummaryService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var summary = await service.ExecuteAsync(
+                    new GetCollectionSummaryQuery(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.Ok(new CollectionSummaryResponse(
+                    summary.CollectionId,
+                    summary.TotalItems,
+                    summary.TotalAttributeDefinitions,
+                    summary.TagsUsed,
+                    summary.LocationsUsed,
+                    summary.ItemsWithNoLocation,
+                    summary.ItemsWithNoTags,
+                    summary.TotalMediaAssets));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/reports", async (
+            Guid collectionId,
+            GetCollectionReportsService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var reports = await service.ExecuteAsync(
+                    new GetCollectionReportsQuery(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.Ok(new CollectionReportsResponse(
+                    reports.ItemsByLocation.Select(x => new ItemsByLocationResponse(x.LocationId, x.LocationName, x.Count)).ToArray(),
+                    reports.ItemsByTag.Select(x => new ItemsByTagResponse(x.TagId, x.TagName, x.Count)).ToArray()));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/activity", async (
+            Guid collectionId,
+            int page,
+            int pageSize,
+            ListCollectionActivityService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var result = await service.ExecuteAsync(
+                    new ListCollectionActivityQuery(ownerId, collectionId, page, pageSize),
+                    cancellationToken);
+
+                return Results.Ok(new PagedCollectionActivityResponse(
+                    result.Items.Select(e => new CollectionActivityEventResponse(
+                        e.EventId, e.ItemId, e.ItemName, e.EventType, e.OccurredUtc, e.OccurredBy, e.Notes)).ToArray(),
+                    result.TotalCount,
+                    result.Page,
+                    result.PageSize,
+                    result.TotalPages));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/export", async (
+            Guid collectionId,
+            ExportCollectionService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var result = await service.ExecuteAsync(
+                    new ExportCollectionQuery(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.File(result.ZipBytes, "application/zip", result.FileName);
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/saved-views", async (
+            Guid collectionId,
+            ListSavedViewsService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var views = await service.ExecuteAsync(
+                    new ListSavedViewsQuery(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.Ok(views.Select(v =>
+                    new SavedViewResponse(v.Id, v.CollectionId, v.Name, v.FiltersJson, v.CreatedUtc)));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapPost("/{collectionId:guid}/saved-views", async (
+            Guid collectionId,
+            CreateSavedViewRequest request,
+            CreateSavedViewService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var view = await service.ExecuteAsync(
+                    new CreateSavedViewCommand(ownerId, collectionId, request.Name, request.FiltersJson),
+                    cancellationToken);
+
+                return Results.Created(
+                    $"/collections/{collectionId}/saved-views/{view.Id}",
+                    new SavedViewResponse(view.Id, view.CollectionId, view.Name, view.FiltersJson, view.CreatedUtc));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapDelete("/{collectionId:guid}/saved-views/{viewId:guid}", async (
+            Guid collectionId,
+            Guid viewId,
+            DeleteSavedViewService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                await service.ExecuteAsync(
+                    new DeleteSavedViewCommand(ownerId, collectionId, viewId),
+                    cancellationToken);
+
+                return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Saved view was not found.");
             }
         });
 
@@ -298,7 +475,13 @@ public static class CollectionEndpoints
                         request.SortBy,
                         request.SortDirection,
                         request.Page ?? 1,
-                        request.PageSize ?? 50),
+                        request.PageSize ?? 50,
+                        MinQuantity: request.MinQuantity,
+                        MaxQuantity: request.MaxQuantity,
+                        CreatedAfter: request.CreatedAfter,
+                        CreatedBefore: request.CreatedBefore,
+                        HasNoLocation: request.HasNoLocation ?? false,
+                        HasNoTags: request.HasNoTags ?? false),
                     cancellationToken);
 
                 return Results.Ok(new PagedItemsResponse(

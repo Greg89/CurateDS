@@ -10,6 +10,12 @@ public sealed record ListItemsQuery(
     string? SortBy,
     string? SortDirection,
     int Page,
-    int PageSize);
+    int PageSize,
+    int? MinQuantity = null,
+    int? MaxQuantity = null,
+    DateTime? CreatedAfter = null,
+    DateTime? CreatedBefore = null,
+    bool HasNoLocation = false,
+    bool HasNoTags = false);
 
 public sealed record ListItemsAttributeFilter(string AttributeKey, string Value);

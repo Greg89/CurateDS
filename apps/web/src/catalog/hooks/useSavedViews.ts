@@ -1,65 +1,60 @@
-import { useEffect, useState } from "react";
-import { ItemFilters } from "../../api";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ItemFilters, createSavedView, deleteSavedView, listSavedViews } from "../../api";
 import { SavedItemView } from "../types";
-import { getSavedViewsStorageKey, readSavedViews } from "../utils";
 
 export function useSavedViews(selectedCollectionId: string) {
   const [savedViewName, setSavedViewName] = useState("");
-  const [savedViews, setSavedViews] = useState<SavedItemView[]>([]);
-  const [savedViewsCollectionId, setSavedViewsCollectionId] = useState("");
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!selectedCollectionId) {
-      setSavedViews([]);
-      setSavedViewName("");
-      setSavedViewsCollectionId("");
-      return;
+  const savedViewsQuery = useQuery({
+    queryKey: ["saved-views", selectedCollectionId],
+    queryFn: () => listSavedViews(selectedCollectionId),
+    enabled: !!selectedCollectionId,
+    select: (data): SavedItemView[] =>
+      data.map((v) => ({
+        id: v.id,
+        name: v.name,
+        filters: JSON.parse(v.filtersJson) as ItemFilters
+      }))
+  });
+
+  const createMutation = useMutation({
+    mutationFn: ({ name, filtersJson }: { name: string; filtersJson: string }) =>
+      createSavedView(selectedCollectionId, name, filtersJson),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["saved-views", selectedCollectionId] });
     }
+  });
 
-    setSavedViews(readSavedViews(selectedCollectionId));
-    setSavedViewName("");
-    setSavedViewsCollectionId(selectedCollectionId);
-  }, [selectedCollectionId]);
-
-  useEffect(() => {
-    if (!selectedCollectionId || savedViewsCollectionId !== selectedCollectionId) {
-      return;
+  const deleteMutation = useMutation({
+    mutationFn: (viewId: string) => deleteSavedView(selectedCollectionId, viewId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["saved-views", selectedCollectionId] });
     }
-
-    window.localStorage.setItem(
-      getSavedViewsStorageKey(selectedCollectionId),
-      JSON.stringify(savedViews)
-    );
-  }, [savedViews, savedViewsCollectionId, selectedCollectionId]);
+  });
 
   function saveCurrentView(filters: ItemFilters) {
     const normalizedName = savedViewName.trim();
+    if (!selectedCollectionId || normalizedName.length === 0) return;
 
-    if (!selectedCollectionId || normalizedName.length === 0) {
-      return;
-    }
-
-    const nextView: SavedItemView = {
-      id: crypto.randomUUID(),
+    createMutation.mutate({
       name: normalizedName,
-      filters
-    };
-
-    setSavedViews((currentViews) => [...currentViews, nextView]);
+      filtersJson: JSON.stringify(filters)
+    });
     setSavedViewName("");
   }
 
-  function deleteSavedView(viewId: string) {
-    setSavedViews((currentViews) =>
-      currentViews.filter((view) => view.id !== viewId)
-    );
+  function deleteSavedViewById(viewId: string) {
+    deleteMutation.mutate(viewId);
   }
 
   return {
     savedViewName,
     setSavedViewName,
-    savedViews,
+    savedViews: savedViewsQuery.data ?? [],
     saveCurrentView,
-    deleteSavedView
+    deleteSavedView: deleteSavedViewById
   };
 }
+

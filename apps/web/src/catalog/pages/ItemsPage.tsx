@@ -47,6 +47,12 @@ export function ItemsPage({
   selectedItemId,
   tags,
   updateItemError,
+  itemFilterMinQuantity,
+  itemFilterMaxQuantity,
+  itemFilterCreatedAfter,
+  itemFilterCreatedBefore,
+  itemFilterHasNoLocation,
+  itemFilterHasNoTags,
   onApplySavedView,
   onAttributeFilterChange,
   onAttributeValueChange,
@@ -68,6 +74,12 @@ export function ItemsPage({
   onSelectItem,
   onToggleFilterTag,
   onToggleItemTag,
+  onItemMinQuantityChange,
+  onItemMaxQuantityChange,
+  onItemCreatedAfterChange,
+  onItemCreatedBeforeChange,
+  onItemHasNoLocationChange,
+  onItemHasNoTagsChange,
   isDeleteItemPending,
   onDeleteItem,
   itemPage,
@@ -109,6 +121,12 @@ export function ItemsPage({
   selectedItemId: string;
   tags: Tag[];
   updateItemError: string | null;
+  itemFilterMinQuantity: number | undefined;
+  itemFilterMaxQuantity: number | undefined;
+  itemFilterCreatedAfter: string;
+  itemFilterCreatedBefore: string;
+  itemFilterHasNoLocation: boolean;
+  itemFilterHasNoTags: boolean;
   onApplySavedView: (view: SavedItemView) => void;
   onAttributeFilterChange: (attributeKey: string, value: string) => void;
   onAttributeValueChange: (attributeDefinitionId: string, value: string) => void;
@@ -130,6 +148,12 @@ export function ItemsPage({
   onSelectItem: (itemId: string) => void;
   onToggleFilterTag: (tagId: string) => void;
   onToggleItemTag: (tagId: string) => void;
+  onItemMinQuantityChange: (value: number | undefined) => void;
+  onItemMaxQuantityChange: (value: number | undefined) => void;
+  onItemCreatedAfterChange: (value: string) => void;
+  onItemCreatedBeforeChange: (value: string) => void;
+  onItemHasNoLocationChange: (value: boolean) => void;
+  onItemHasNoTagsChange: (value: boolean) => void;
   isDeleteItemPending: boolean;
   onDeleteItem: () => void;
   itemPage: number;
@@ -154,7 +178,13 @@ export function ItemsPage({
     (itemFilterLocationId.length > 0 ? 1 : 0) +
     (itemFilterTagIds.length > 0 ? 1 : 0) +
     Object.values(itemAttributeFilters).filter((v) => v.trim().length > 0).length +
-    (itemSortBy !== "updatedUtc" || itemSortDirection !== "desc" ? 1 : 0);
+    (itemSortBy !== "updatedUtc" || itemSortDirection !== "desc" ? 1 : 0) +
+    (itemFilterMinQuantity != null ? 1 : 0) +
+    (itemFilterMaxQuantity != null ? 1 : 0) +
+    (itemFilterCreatedAfter.length > 0 ? 1 : 0) +
+    (itemFilterCreatedBefore.length > 0 ? 1 : 0) +
+    (itemFilterHasNoLocation ? 1 : 0) +
+    (itemFilterHasNoTags ? 1 : 0);
 
   useEffect(() => {
     if (itemSaveCount > 0) {
@@ -270,6 +300,12 @@ export function ItemsPage({
             sortBy={itemSortBy}
             sortDirection={itemSortDirection}
             tags={tags}
+            minQuantity={itemFilterMinQuantity}
+            maxQuantity={itemFilterMaxQuantity}
+            createdAfter={itemFilterCreatedAfter}
+            createdBefore={itemFilterCreatedBefore}
+            hasNoLocation={itemFilterHasNoLocation}
+            hasNoTags={itemFilterHasNoTags}
             onApplySavedView={onApplySavedView}
             onAttributeFilterChange={onAttributeFilterChange}
             onClear={onClearItemFilters}
@@ -281,6 +317,12 @@ export function ItemsPage({
             onSortByChange={onItemSortByChange}
             onSortDirectionChange={onItemSortDirectionChange}
             onToggleTag={onToggleFilterTag}
+            onMinQuantityChange={onItemMinQuantityChange}
+            onMaxQuantityChange={onItemMaxQuantityChange}
+            onCreatedAfterChange={onItemCreatedAfterChange}
+            onCreatedBeforeChange={onItemCreatedBeforeChange}
+            onHasNoLocationChange={onItemHasNoLocationChange}
+            onHasNoTagsChange={onItemHasNoTagsChange}
           />
         </div>
       )}

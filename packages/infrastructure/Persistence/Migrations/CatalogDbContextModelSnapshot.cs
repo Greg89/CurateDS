@@ -359,6 +359,35 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                     b.ToTable("media_assets", (string)null);
                 });
 
+            modelBuilder.Entity("CurateDS.Domain.Collections.SavedView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FiltersJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("saved_views", (string)null);
+                });
+
             modelBuilder.Entity("CurateDS.Domain.Collections.Tag", b =>
                 {
                     b.Property<Guid>("Id")

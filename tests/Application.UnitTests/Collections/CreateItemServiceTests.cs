@@ -167,6 +167,12 @@ public sealed class CreateItemServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid collectionId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
+
+        public Task<CollectionReportsDto> GetReportsAsync(Guid collectionId, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
     }
 
     private sealed class FakeAttributeDefinitionRepository : IAttributeDefinitionRepository
@@ -259,6 +265,9 @@ public sealed class CreateItemServiceTests
 
         public Task<IReadOnlyList<ItemEvent>> ListByItemAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<ItemEvent>>([]);
+
+        public Task<PagedResult<CollectionActivityEventDto>> ListByCollectionAsync(Guid collectionId, int page, int pageSize, CancellationToken cancellationToken)
+            => throw new NotImplementedException();
 
         public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }

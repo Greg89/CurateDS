@@ -5,7 +5,8 @@ import {
   Collection,
   ItemSummary,
   Location,
-  Tag
+  Tag,
+  downloadCollectionExport
 } from "../../api";
 import { AttributeDefinitionList } from "../components/AttributeDefinitionList";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -227,6 +228,24 @@ export function SettingsPage({
           onDeleteTag={onDeleteTag}
           onDeleteLocation={onDeleteLocation}
         />
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <h3>Export Data</h3>
+          <p>Download all items and attribute definitions as CSV files in a ZIP archive.</p>
+        </div>
+        <button
+          className="button"
+          onClick={() => {
+            void downloadCollectionExport(
+              selectedCollection.id,
+              `${selectedCollection.name}-export.zip`
+            );
+          }}
+        >
+          Export Collection
+        </button>
       </section>
 
       <section className="panel panel-danger">

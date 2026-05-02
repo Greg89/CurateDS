@@ -121,6 +121,12 @@ export interface ItemFilters {
   attributeFilters?: Record<string, string>;
   sortBy?: "updatedUtc" | "createdUtc" | "name" | "quantity";
   sortDirection?: "asc" | "desc";
+  minQuantity?: number;
+  maxQuantity?: number;
+  createdAfter?: string;  // ISO date string e.g. "2025-06-01"
+  createdBefore?: string;
+  hasNoLocation?: boolean;
+  hasNoTags?: boolean;
 }
 
 export interface ItemEvent {
@@ -133,6 +139,17 @@ export interface ItemEvent {
   notes: string | null;
 }
 
+export interface CollectionSummary {
+  collectionId: string;
+  totalItems: number;
+  totalAttributeDefinitions: number;
+  tagsUsed: number;
+  locationsUsed: number;
+  itemsWithNoLocation: number;
+  itemsWithNoTags: number;
+  totalMediaAssets: number;
+}
+
 export async function listCollections(): Promise<Collection[]> {
   const response = await fetch(`${appConfig.apiBaseUrl}/collections`, {
     headers: await authHeader()
@@ -143,6 +160,148 @@ export async function listCollections(): Promise<Collection[]> {
   }
 
   return (await response.json()) as Collection[];
+}
+
+export async function getCollectionSummary(collectionId: string): Promise<CollectionSummary> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/summary`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load collection summary.");
+  }
+
+  return (await response.json()) as CollectionSummary;
+}
+
+export interface ItemsByLocation {
+  locationId: string | null;
+  locationName: string;
+  count: number;
+}
+
+export interface ItemsByTag {
+  tagId: string;
+  tagName: string;
+  count: number;
+}
+
+export interface CollectionReports {
+  itemsByLocation: ItemsByLocation[];
+  itemsByTag: ItemsByTag[];
+}
+
+export async function getCollectionReports(collectionId: string): Promise<CollectionReports> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/reports`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load collection reports.");
+  }
+
+  return (await response.json()) as CollectionReports;
+}
+
+export interface CollectionActivityEvent {
+  eventId: string;
+  itemId: string;
+  itemName: string;
+  eventType: string;
+  occurredUtc: string;
+  occurredBy: string;
+  notes: string | null;
+}
+
+export interface PagedCollectionActivity {
+  events: CollectionActivityEvent[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export async function listCollectionActivity(
+  collectionId: string,
+  page: number,
+  pageSize: number
+): Promise<PagedCollectionActivity> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/activity?page=${page}&pageSize=${pageSize}`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load collection activity.");
+  }
+
+  return (await response.json()) as PagedCollectionActivity;
+}
+
+export interface SavedView {
+  id: string;
+  collectionId: string;
+  name: string;
+  filtersJson: string;
+  createdUtc: string;
+}
+
+export async function listSavedViews(collectionId: string): Promise<SavedView[]> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/saved-views`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) throw new Error("Failed to load saved views.");
+
+  return (await response.json()) as SavedView[];
+}
+
+export async function createSavedView(
+  collectionId: string,
+  name: string,
+  filtersJson: string
+): Promise<SavedView> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/saved-views`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeader()) },
+      body: JSON.stringify({ name, filtersJson })
+    }
+  );
+
+  if (!response.ok) throw new Error("Failed to save view.");
+
+  return (await response.json()) as SavedView;
+}
+
+export async function deleteSavedView(collectionId: string, viewId: string): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/saved-views/${viewId}`,
+    { method: "DELETE", headers: await authHeader() }
+  );
+
+  if (!response.ok) throw new Error("Failed to delete saved view.");
+}
+
+export async function downloadCollectionExport(collectionId: string, fileName: string): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/export`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) throw new Error("Failed to export collection.");
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export async function createCollection(name: string): Promise<Collection> {
@@ -320,6 +479,30 @@ export async function listItems(
 
   if (filters?.sortDirection) {
     searchParams.set("sortDirection", filters.sortDirection);
+  }
+
+  if (filters?.minQuantity != null) {
+    searchParams.set("minQuantity", String(filters.minQuantity));
+  }
+
+  if (filters?.maxQuantity != null) {
+    searchParams.set("maxQuantity", String(filters.maxQuantity));
+  }
+
+  if (filters?.createdAfter) {
+    searchParams.set("createdAfter", filters.createdAfter);
+  }
+
+  if (filters?.createdBefore) {
+    searchParams.set("createdBefore", filters.createdBefore);
+  }
+
+  if (filters?.hasNoLocation) {
+    searchParams.set("hasNoLocation", "true");
+  }
+
+  if (filters?.hasNoTags) {
+    searchParams.set("hasNoTags", "true");
   }
 
   searchParams.set("page", String(page));

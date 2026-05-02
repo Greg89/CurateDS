@@ -1,20 +1,20 @@
 import { Link } from "react-router-dom";
-import { AttributeDefinition, Collection, ItemSummary, Location, Tag } from "../../api";
+import { useQuery } from "@tanstack/react-query";
+import { Collection, getCollectionSummary } from "../../api";
 import { MetricCard } from "../components/MetricCard";
 
 export function OverviewPage({
-  attributeDefinitions,
-  items,
-  locations,
-  selectedCollection,
-  tags
+  selectedCollection
 }: Readonly<{
-  attributeDefinitions: AttributeDefinition[];
-  items: ItemSummary[];
-  locations: Location[];
   selectedCollection: Collection;
-  tags: Tag[];
 }>) {
+  const summaryQuery = useQuery({
+    queryKey: ["collection-summary", selectedCollection.id],
+    queryFn: () => getCollectionSummary(selectedCollection.id)
+  });
+
+  const summary = summaryQuery.data;
+
   return (
     <section className="overview-shell">
       <section className="panel">
@@ -24,10 +24,13 @@ export function OverviewPage({
         </div>
 
         <div className="metric-grid">
-          <MetricCard label="Items" value={items.length.toString()} />
-          <MetricCard label="Attributes" value={attributeDefinitions.length.toString()} />
-          <MetricCard label="Tags" value={tags.length.toString()} />
-          <MetricCard label="Locations" value={locations.length.toString()} />
+          <MetricCard label="Items" value={summary?.totalItems.toString() ?? "—"} />
+          <MetricCard label="Attributes" value={summary?.totalAttributeDefinitions.toString() ?? "—"} />
+          <MetricCard label="Tags in use" value={summary?.tagsUsed.toString() ?? "—"} />
+          <MetricCard label="Locations in use" value={summary?.locationsUsed.toString() ?? "—"} />
+          <MetricCard label="No location" value={summary?.itemsWithNoLocation.toString() ?? "—"} />
+          <MetricCard label="No tags" value={summary?.itemsWithNoTags.toString() ?? "—"} />
+          <MetricCard label="Media assets" value={summary?.totalMediaAssets.toString() ?? "—"} />
         </div>
       </section>
 

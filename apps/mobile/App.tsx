@@ -1,48 +1,38 @@
-import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-const appVersion = Constants.expoConfig?.version ?? 'unknown';
+import { AuthProvider, useAuth } from './src/auth/AuthContext';
+import HomeScreen from './src/screens/HomeScreen';
+import SignInScreen from './src/screens/SignInScreen';
+
+function RootRouter() {
+  const { state } = useAuth();
+
+  if (state === 'loading') {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return state === 'signedIn' ? <HomeScreen /> : <SignInScreen />;
+}
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>CurateDS</Text>
-      <Text style={styles.subtitle}>Mobile companion</Text>
-      <View style={styles.meta}>
-        <Text style={styles.metaLine}>v{appVersion}</Text>
-        <Text style={styles.metaLine}>phase 0 scaffold</Text>
-      </View>
+    <AuthProvider>
+      <RootRouter />
       <StatusBar style="auto" />
-    </View>
+    </AuthProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loading: {
     flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#111',
-  },
-  subtitle: {
-    marginTop: 8,
-    fontSize: 16,
-    color: '#666',
-  },
-  meta: {
-    position: 'absolute',
-    bottom: 48,
-    alignItems: 'center',
-  },
-  metaLine: {
-    fontSize: 12,
-    color: '#999',
   },
 });
