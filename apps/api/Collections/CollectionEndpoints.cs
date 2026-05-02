@@ -12,6 +12,7 @@ using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteAttributeDefinition;
 using CurateDS.Application.Collections.CreateSavedView;
 using CurateDS.Application.Collections.DeleteSavedView;
+using CurateDS.Application.Collections.ExportCollection;
 using CurateDS.Application.Collections.GetCollectionReports;
 using CurateDS.Application.Collections.GetCollectionSummary;
 using CurateDS.Application.Collections.GetItemDetail;
@@ -164,6 +165,27 @@ public static class CollectionEndpoints
                     result.Page,
                     result.PageSize,
                     result.TotalPages));
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        });
+
+        group.MapGet("/{collectionId:guid}/export", async (
+            Guid collectionId,
+            ExportCollectionService service,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var ownerId = GetDefaultOwnerId(configuration);
+                var result = await service.ExecuteAsync(
+                    new ExportCollectionQuery(ownerId, collectionId),
+                    cancellationToken);
+
+                return Results.File(result.ZipBytes, "application/zip", result.FileName);
             }
             catch (NotFoundException)
             {

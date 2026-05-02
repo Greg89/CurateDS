@@ -12,6 +12,7 @@ using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteTag;
 using CurateDS.Application.Collections.CreateSavedView;
 using CurateDS.Application.Collections.DeleteSavedView;
+using CurateDS.Application.Collections.ExportCollection;
 using CurateDS.Application.Collections.GetCollectionReports;
 using CurateDS.Application.Collections.GetCollectionSummary;
 using CurateDS.Application.Collections.GetItemDetail;
@@ -60,6 +61,7 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<DeleteAttributeDefinitionService>();
         services.AddScoped<CreateSavedViewService>();
         services.AddScoped<DeleteSavedViewService>();
+        services.AddScoped<ExportCollectionService>();
         services.AddScoped<GetCollectionReportsService>();
         services.AddScoped<GetCollectionSummaryService>();
         services.AddScoped<GetItemDetailService>();

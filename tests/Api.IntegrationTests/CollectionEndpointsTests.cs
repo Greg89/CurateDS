@@ -993,6 +993,39 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task ExportCollection_ShouldReturnZip_WithItemsCsv()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Export"));
+        await CreateItemAsync(collection.Id, "Export Item A");
+        await CreateItemAsync(collection.Id, "Export Item B");
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/export");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/zip");
+
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        bytes.Length.Should().BeGreaterThan(0);
+
+        using var zip = new System.IO.Compression.ZipArchive(new System.IO.MemoryStream(bytes));
+        zip.Entries.Should().Contain(e => e.Name == "items.csv");
+        zip.Entries.Should().Contain(e => e.Name == "attribute_definitions.csv");
+
+        var itemsEntry = zip.Entries.First(e => e.Name == "items.csv");
+        using var reader = new System.IO.StreamReader(itemsEntry.Open());
+        var csvContent = reader.ReadToEnd();
+        csvContent.Should().Contain("Export Item A");
+        csvContent.Should().Contain("Export Item B");
+    }
+
+    [Fact]
+    public async Task ExportCollection_ShouldReturn404_WhenCollectionDoesNotExist()
+    {
+        var response = await _client.GetAsync($"/collections/{Guid.NewGuid()}/export");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     private sealed record SavedViewResponse(Guid Id, Guid CollectionId, string Name, string FiltersJson, DateTime CreatedUtc);
 
     private sealed record CollectionReportsResponse(

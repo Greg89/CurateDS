@@ -281,6 +281,23 @@ export async function deleteSavedView(collectionId: string, viewId: string): Pro
   if (!response.ok) throw new Error("Failed to delete saved view.");
 }
 
+export async function downloadCollectionExport(collectionId: string, fileName: string): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/export`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) throw new Error("Failed to export collection.");
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function createCollection(name: string): Promise<Collection> {
   const response = await fetch(`${appConfig.apiBaseUrl}/collections`, {
     method: "POST",
