@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ItemSummary, Location, Tag } from "../../api";
 import { getTopUsageEntries } from "../utils";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { EntityManagementTable, EntityManagementRow } from "./EntityManagementTable";
 import { MetricCard } from "./MetricCard";
 import { UsageBreakdown } from "./UsageBreakdown";
+
+const MANAGEMENT_PAGE_SIZE = 25;
 
 export function OrganizationSummary({
   items = [],
@@ -36,6 +39,48 @@ export function OrganizationSummary({
       .filter((locationName): locationName is string => Boolean(locationName))
   );
 
+  const tagUsageCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of items) {
+      for (const tag of item.tags) {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [items]);
+
+  const locationUsageCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of items) {
+      if (item.locationName) {
+        counts.set(item.locationName, (counts.get(item.locationName) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [items]);
+
+  const tagRows: EntityManagementRow[] = useMemo(
+    () =>
+      tags.map((tag) => ({
+        id: tag.id,
+        name: tag.name,
+        secondary: tag.key,
+        usageCount: tagUsageCounts.get(tag.name) ?? 0
+      })),
+    [tags, tagUsageCounts]
+  );
+
+  const locationRows: EntityManagementRow[] = useMemo(
+    () =>
+      locations.map((location) => ({
+        id: location.id,
+        name: location.name,
+        description: location.description ?? undefined,
+        usageCount: locationUsageCounts.get(location.name) ?? 0
+      })),
+    [locations, locationUsageCounts]
+  );
+
   const confirmingTag = tags.find((t) => t.id === confirmDeleteTagId) ?? null;
   const confirmingLocation = locations.find((l) => l.id === confirmDeleteLocationId) ?? null;
 
@@ -61,51 +106,27 @@ export function OrganizationSummary({
         </div>
 
         {tags.length > 0 && onDeleteTag ? (
-          <div>
-            <h4>Manage Tags</h4>
-            <ul className="attribute-list">
-              {tags.map((tag) => (
-                <li className="attribute-card" key={tag.id}>
-                  <div className="attribute-card-header">
-                    <h3>{tag.name}</h3>
-                    <span className="attribute-pill">{tag.key}</span>
-                  </div>
-                  <button
-                    className="danger-button"
-                    onClick={() => setConfirmDeleteTagId(tag.id)}
-                    type="button"
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <EntityManagementTable
+            title="Manage Tags"
+            rows={tagRows}
+            pageSize={MANAGEMENT_PAGE_SIZE}
+            isDeletePending={isDeleteTagPending ?? false}
+            onDelete={(id) => setConfirmDeleteTagId(id)}
+            searchPlaceholder="Search tags\u2026"
+            emptyCopy="No tags created yet."
+          />
         ) : null}
 
         {locations.length > 0 && onDeleteLocation ? (
-          <div>
-            <h4>Manage Locations</h4>
-            <ul className="attribute-list">
-              {locations.map((location) => (
-                <li className="attribute-card" key={location.id}>
-                  <div className="attribute-card-header">
-                    <h3>{location.name}</h3>
-                  </div>
-                  {location.description ? (
-                    <p className="attribute-meta">{location.description}</p>
-                  ) : null}
-                  <button
-                    className="danger-button"
-                    onClick={() => setConfirmDeleteLocationId(location.id)}
-                    type="button"
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <EntityManagementTable
+            title="Manage Locations"
+            rows={locationRows}
+            pageSize={MANAGEMENT_PAGE_SIZE}
+            isDeletePending={isDeleteLocationPending ?? false}
+            onDelete={(id) => setConfirmDeleteLocationId(id)}
+            searchPlaceholder="Search locations\u2026"
+            emptyCopy="No locations created yet."
+          />
         ) : null}
       </div>
 
