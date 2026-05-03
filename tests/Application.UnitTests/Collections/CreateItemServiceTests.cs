@@ -113,6 +113,142 @@ public sealed class CreateItemServiceTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_ShouldThrowValidationException_WhenAttributeValueBelongsToDifferentItemType()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
+        var typeA = Guid.NewGuid();
+        var typeB = Guid.NewGuid();
+
+        var typeADefinition = AttributeDefinition.Create(
+            collection.Id,
+            "Rarity",
+            AttributeDataType.Text,
+            isRequired: false,
+            isFilterable: false,
+            sortOrder: 0,
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system",
+            itemTypeId: typeA);
+
+        var service = new CreateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(typeADefinition),
+            new FakeLocationRepository(),
+            new FakeItemRepository(),
+            new FakeTagRepository(),
+            new FakeItemEventRepository(),
+            new FakeCurrentUserService(),
+            new CreateItemCommandValidator());
+
+        var act = () => service.ExecuteAsync(
+            new CreateItemCommand(
+                collection.OwnerId,
+                collection.Id,
+                "Blue-Eyes White Dragon",
+                null,
+                1,
+                null,
+                typeB,
+                [],
+                [new CreateItemAttributeValueInput(typeADefinition.Id, "Rare")]),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*Attribute values must belong to the selected collection and item type*");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldNotRequireTypeSpecificAttribute_WhenDifferentItemTypeSelected()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
+        var typeA = Guid.NewGuid();
+        var typeB = Guid.NewGuid();
+
+        var typeARequired = AttributeDefinition.Create(
+            collection.Id,
+            "Rarity",
+            AttributeDataType.Text,
+            isRequired: true,
+            isFilterable: false,
+            sortOrder: 0,
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system",
+            itemTypeId: typeA);
+
+        var itemRepository = new FakeItemRepository();
+        var service = new CreateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(typeARequired),
+            new FakeLocationRepository(),
+            itemRepository,
+            new FakeTagRepository(),
+            new FakeItemEventRepository(),
+            new FakeCurrentUserService(),
+            new CreateItemCommandValidator());
+
+        // No attribute values provided, but the required definition belongs to typeA not typeB
+        var result = await service.ExecuteAsync(
+            new CreateItemCommand(
+                collection.OwnerId,
+                collection.Id,
+                "Dark Magician",
+                null,
+                1,
+                null,
+                typeB,
+                [],
+                []),
+            CancellationToken.None);
+
+        result.Name.Should().Be("Dark Magician");
+        itemRepository.Items.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRequireGlobalAttribute_EvenWhenItemTypeIsSelected()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
+        var typeA = Guid.NewGuid();
+
+        var globalRequired = AttributeDefinition.Create(
+            collection.Id,
+            "Condition",
+            AttributeDataType.Text,
+            isRequired: true,
+            isFilterable: false,
+            sortOrder: 0,
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system",
+            itemTypeId: null); // global
+
+        var service = new CreateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(globalRequired),
+            new FakeLocationRepository(),
+            new FakeItemRepository(),
+            new FakeTagRepository(),
+            new FakeItemEventRepository(),
+            new FakeCurrentUserService(),
+            new CreateItemCommandValidator());
+
+        var act = () => service.ExecuteAsync(
+            new CreateItemCommand(
+                collection.OwnerId,
+                collection.Id,
+                "Blue-Eyes White Dragon",
+                null,
+                1,
+                null,
+                typeA,
+                [],
+                []),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*Condition*required*");
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenCollectionDoesNotExist()
     {
         var service = new CreateItemService(
