@@ -42,6 +42,7 @@ public sealed class ListAttributeDefinitionsService
                 definition.IsRequired,
                 definition.IsFilterable,
                 definition.SortOrder,
+                definition.ItemTypeId,
                 definition.CreatedUtc))
             .ToArray();
     }

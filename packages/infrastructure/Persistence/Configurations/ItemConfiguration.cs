@@ -27,6 +27,8 @@ internal sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
 
         builder.Property(item => item.LocationId);
 
+        builder.Property(item => item.ItemTypeId);
+
         builder.Property(item => item.CreatedUtc)
             .IsRequired();
 
@@ -62,6 +64,11 @@ internal sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
         builder.HasOne<Location>()
             .WithMany()
             .HasForeignKey(item => item.LocationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne<ItemType>()
+            .WithMany()
+            .HasForeignKey(item => item.ItemTypeId)
             .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(item => new

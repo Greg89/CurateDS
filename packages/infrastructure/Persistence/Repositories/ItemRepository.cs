@@ -160,6 +160,10 @@ public sealed class ItemRepository : IItemRepository
         if (query.HasNoTags)
             q = q.Where(i => !_dbContext.ItemTags.Any(it => it.ItemId == i.Id));
 
+        // Item type filter
+        if (query.ItemTypeId.HasValue)
+            q = q.Where(i => i.ItemTypeId == query.ItemTypeId.Value);
+
         var totalCount = await q.CountAsync(cancellationToken);
 
         // Sorting

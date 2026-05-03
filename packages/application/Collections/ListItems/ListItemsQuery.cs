@@ -16,6 +16,7 @@ public sealed record ListItemsQuery(
     DateTime? CreatedAfter = null,
     DateTime? CreatedBefore = null,
     bool HasNoLocation = false,
-    bool HasNoTags = false);
+    bool HasNoTags = false,
+    Guid? ItemTypeId = null);
 
 public sealed record ListItemsAttributeFilter(string AttributeKey, string Value);

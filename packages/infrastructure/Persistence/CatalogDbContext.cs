@@ -11,6 +11,8 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
 
     public DbSet<Item> Items => Set<Item>();
 
+    public DbSet<ItemType> ItemTypes => Set<ItemType>();
+
     public DbSet<ItemAttributeValue> ItemAttributeValues => Set<ItemAttributeValue>();
 
     public DbSet<ItemEvent> ItemEvents => Set<ItemEvent>();
@@ -35,5 +37,6 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
         modelBuilder.Entity<Tag>().HasQueryFilter(t => t.DeletedUtc == null);
         modelBuilder.Entity<Location>().HasQueryFilter(l => l.DeletedUtc == null);
         modelBuilder.Entity<AttributeDefinition>().HasQueryFilter(a => a.DeletedUtc == null);
+        modelBuilder.Entity<ItemType>().HasQueryFilter(it => it.DeletedUtc == null);
     }
 }

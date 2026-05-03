@@ -6,6 +6,7 @@ export function useItemForm(selectedCollectionId: string) {
   const [itemDescription, setItemDescription] = useState("");
   const [itemQuantity, setItemQuantity] = useState("1");
   const [itemLocationId, setItemLocationId] = useState("");
+  const [itemTypeId, setItemTypeId] = useState("");
   const [itemTagIds, setItemTagIds] = useState<string[]>([]);
   const [itemAttributeValues, setItemAttributeValues] = useState<Record<string, string>>({});
   const [selectedItemId, setSelectedItemId] = useState("");
@@ -22,6 +23,7 @@ export function useItemForm(selectedCollectionId: string) {
     setItemDescription(item.description ?? "");
     setItemQuantity(item.quantity.toString());
     setItemLocationId(item.locationId ?? "");
+    setItemTypeId(item.itemTypeId ?? "");
     setItemTagIds(item.tags.map((tag) => tag.id));
     setItemAttributeValues(
       Object.fromEntries(
@@ -41,6 +43,7 @@ export function useItemForm(selectedCollectionId: string) {
     setItemDescription("");
     setItemQuantity("1");
     setItemLocationId("");
+    setItemTypeId("");
     setItemTagIds([]);
     setItemAttributeValues({});
     setEditingItemId(null);
@@ -70,6 +73,8 @@ export function useItemForm(selectedCollectionId: string) {
     setItemQuantity,
     itemLocationId,
     setItemLocationId,
+    itemTypeId,
+    setItemTypeId,
     itemTagIds,
     itemAttributeValues,
     selectedItemId,

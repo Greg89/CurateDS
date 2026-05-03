@@ -5,6 +5,7 @@ using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
 using FluentAssertions;
+using FluentValidation;
 
 namespace CurateDS.Application.UnitTests.Collections;
 
@@ -24,6 +25,7 @@ public sealed class CreateAttributeDefinitionServiceTests
         var service = new CreateAttributeDefinitionService(
             collectionRepository,
             attributeDefinitionRepository,
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new CreateAttributeDefinitionCommandValidator());
 
@@ -44,11 +46,40 @@ public sealed class CreateAttributeDefinitionServiceTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_ShouldThrowValidationException_WhenItemTypeIdDoesNotBelongToCollection()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Board Games", DateTime.UtcNow, "system");
+        var unknownItemTypeId = Guid.NewGuid();
+
+        var service = new CreateAttributeDefinitionService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(),
+            new FakeItemTypeRepository(), // empty — unknown type won't be found
+            new FakeCurrentUserService(),
+            new CreateAttributeDefinitionCommandValidator());
+
+        var act = () => service.ExecuteAsync(
+            new CreateAttributeDefinitionCommand(
+                collection.OwnerId,
+                collection.Id,
+                "Publisher",
+                AttributeDataType.Text,
+                false,
+                false,
+                unknownItemTypeId),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*Item type was not found in this collection*");
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenCollectionDoesNotExist()
     {
         var service = new CreateAttributeDefinitionService(
             new FakeCollectionRepository(),
             new FakeAttributeDefinitionRepository(),
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new CreateAttributeDefinitionCommandValidator());
 
@@ -126,4 +157,5 @@ public sealed class CreateAttributeDefinitionServiceTests
         public Task<bool> SoftDeleteAsync(Guid attributeDefinitionId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
     }
+
 }

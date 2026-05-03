@@ -41,6 +41,7 @@ export interface AttributeDefinition {
   isRequired: boolean;
   isFilterable: boolean;
   sortOrder: number;
+  itemTypeId: string | null;
   createdUtc: string;
 }
 
@@ -55,6 +56,14 @@ export interface Location {
   id: string;
   name: string;
   description: string | null;
+  createdUtc: string;
+}
+
+export interface ItemType {
+  id: string;
+  collectionId: string;
+  name: string;
+  sortOrder: number;
   createdUtc: string;
 }
 
@@ -107,6 +116,7 @@ export interface ItemDetail {
   quantity: number;
   locationId: string | null;
   locationName: string | null;
+  itemTypeId: string | null;
   tags: Tag[];
   createdUtc: string;
   updatedUtc: string;
@@ -117,6 +127,7 @@ export interface ItemDetail {
 export interface ItemFilters {
   searchText?: string;
   locationId?: string;
+  itemTypeId?: string;
   tagIds?: string[];
   attributeFilters?: Record<string, string>;
   sortBy?: "updatedUtc" | "createdUtc" | "name" | "quantity";
@@ -344,6 +355,7 @@ export async function createAttributeDefinition(input: {
   dataType: AttributeDataType;
   isRequired: boolean;
   isFilterable: boolean;
+  itemTypeId?: string | null;
 }): Promise<AttributeDefinition> {
   const response = await fetch(
     `${appConfig.apiBaseUrl}/collections/${input.collectionId}/attribute-definitions`,
@@ -357,7 +369,8 @@ export async function createAttributeDefinition(input: {
         name: input.name,
         dataType: input.dataType,
         isRequired: input.isRequired,
-        isFilterable: input.isFilterable
+        isFilterable: input.isFilterable,
+        itemTypeId: input.itemTypeId ?? null
       })
     }
   );
@@ -505,6 +518,11 @@ export async function listItems(
     searchParams.set("hasNoTags", "true");
   }
 
+  const itemTypeId = filters?.itemTypeId?.trim();
+  if (itemTypeId) {
+    searchParams.set("itemTypeId", itemTypeId);
+  }
+
   searchParams.set("page", String(page));
   searchParams.set("pageSize", String(pageSize));
 
@@ -559,6 +577,7 @@ export async function createItem(input: {
   description: string;
   quantity: number;
   locationId: string | null;
+  itemTypeId?: string | null;
   tagIds: string[];
   attributeValues: Array<{
     attributeDefinitionId: string;
@@ -578,6 +597,7 @@ export async function createItem(input: {
         description: input.description,
         quantity: input.quantity,
         locationId: input.locationId,
+        itemTypeId: input.itemTypeId ?? null,
         tagIds: input.tagIds,
         attributeValues: input.attributeValues
       })
@@ -598,6 +618,7 @@ export async function updateItem(input: {
   description: string;
   quantity: number;
   locationId: string | null;
+  itemTypeId?: string | null;
   tagIds: string[];
   attributeValues: Array<{
     attributeDefinitionId: string;
@@ -617,6 +638,7 @@ export async function updateItem(input: {
         description: input.description,
         quantity: input.quantity,
         locationId: input.locationId,
+        itemTypeId: input.itemTypeId ?? null,
         tagIds: input.tagIds,
         attributeValues: input.attributeValues
       })
@@ -732,6 +754,53 @@ export async function deleteAttributeDefinition(input: {
 
   if (!response.ok) {
     throw new Error("Failed to delete attribute definition.");
+  }
+}
+
+export async function listItemTypes(collectionId: string): Promise<ItemType[]> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${collectionId}/item-types`,
+    { headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load item types.");
+  }
+
+  return (await response.json()) as ItemType[];
+}
+
+export async function createItemType(input: {
+  collectionId: string;
+  name: string;
+}): Promise<ItemType> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${input.collectionId}/item-types`,
+    {
+      method: "POST",
+      headers: { ...await authHeader(), "Content-Type": "application/json" },
+      body: JSON.stringify({ name: input.name })
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error((await readValidationMessage(response)) ?? "Failed to create item type.");
+  }
+
+  return (await response.json()) as ItemType;
+}
+
+export async function deleteItemType(input: {
+  collectionId: string;
+  itemTypeId: string;
+}): Promise<void> {
+  const response = await fetch(
+    `${appConfig.apiBaseUrl}/collections/${input.collectionId}/item-types/${input.itemTypeId}`,
+    { method: "DELETE", headers: await authHeader() }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to delete item type.");
   }
 }
 

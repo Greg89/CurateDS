@@ -7,5 +7,6 @@ public sealed record CreateItemCommand(
     string? Description,
     int Quantity,
     Guid? LocationId,
+    Guid? ItemTypeId,
     IReadOnlyList<Guid> TagIds,
     IReadOnlyList<CreateItemAttributeValueInput> AttributeValues);

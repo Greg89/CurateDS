@@ -86,6 +86,7 @@ public sealed class GetItemDetailService
             item.LocationId.HasValue && locationLookup.TryGetValue(item.LocationId.Value, out var location)
                 ? location.Name
                 : null,
+            item.ItemTypeId,
             item.ItemTags
                 .Where(itemTag => tagLookup.ContainsKey(itemTag.TagId))
                 .Select(itemTag =>

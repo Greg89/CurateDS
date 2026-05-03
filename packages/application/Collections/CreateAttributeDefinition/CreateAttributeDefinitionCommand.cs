@@ -8,4 +8,5 @@ public sealed record CreateAttributeDefinitionCommand(
     string Name,
     AttributeDataType DataType,
     bool IsRequired,
-    bool IsFilterable);
+    bool IsFilterable,
+    Guid? ItemTypeId = null);
