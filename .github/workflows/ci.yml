@@ -112,7 +112,7 @@ jobs:
 
       - name: Audit npm dependencies
         if: steps.changes.outputs.frontend == 'true'
-        run: npm audit --audit-level=high
+        run: npm audit --workspace @curateds/web --workspace @curateds/web-tests --audit-level=high
 
       - name: Build web
         if: steps.changes.outputs.frontend == 'true'
