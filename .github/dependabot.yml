@@ -1,0 +1,79 @@
+version: 2
+
+updates:
+  # GitHub Actions — keep all workflow action versions current
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - github-actions
+
+  # NuGet — .NET packages across all projects
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - dotnet
+    groups:
+      dotnet-test:
+        patterns:
+          - "coverlet.*"
+          - "FluentAssertions"
+          - "Microsoft.AspNetCore.Mvc.Testing"
+          - "xunit*"
+
+  # npm — root workspace (covers web, mobile, and test packages)
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - javascript
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      vite:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@testing-library/*"
+          - "msw"
+          - "jsdom"
+
+  # Docker — API image base
+  - package-ecosystem: docker
+    directory: /apps/api
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - docker
+
+  # Docker — Web image base
+  - package-ecosystem: docker
+    directory: /apps/web
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - docker
