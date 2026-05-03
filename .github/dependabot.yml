@@ -4,6 +4,7 @@ updates:
   # GitHub Actions — keep all workflow action versions current
   - package-ecosystem: github-actions
     directory: /
+    target-branch: develop
     schedule:
       interval: weekly
       day: monday
@@ -14,6 +15,7 @@ updates:
   # NuGet — .NET packages across all projects
   - package-ecosystem: nuget
     directory: /
+    target-branch: develop
     schedule:
       interval: weekly
       day: monday
@@ -31,6 +33,7 @@ updates:
   # npm — root workspace (covers web, mobile, and test packages)
   - package-ecosystem: npm
     directory: /
+    target-branch: develop
     schedule:
       interval: weekly
       day: monday
@@ -61,6 +64,7 @@ updates:
   # Docker — API image base
   - package-ecosystem: docker
     directory: /apps/api
+    target-branch: develop
     schedule:
       interval: weekly
       day: monday
@@ -71,6 +75,7 @@ updates:
   # Docker — Web image base
   - package-ecosystem: docker
     directory: /apps/web
+    target-branch: develop
     schedule:
       interval: weekly
       day: monday
