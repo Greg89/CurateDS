@@ -24,7 +24,7 @@ ENV VITE_AUTH0_AUDIENCE=$VITE_AUTH0_AUDIENCE
 
 RUN npm run build --workspace @curateds/web
 
-FROM nginx:1.27-alpine AS final
+FROM nginx:1.29-alpine AS final
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 
