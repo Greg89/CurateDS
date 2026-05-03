@@ -14,6 +14,7 @@
     "test:web:watch": "npm run test:watch --workspace @curateds/web-tests",
     "test:e2e": "npm run test --workspace @curateds/e2e",
     "typecheck:mobile": "npm run typecheck --workspace @curateds/mobile",
-    "test:mobile": "npm run test --workspace @curateds/mobile"
+    "test:mobile": "npm run test --workspace @curateds/mobile",
+    "test:mobile:coverage": "npm run test:coverage --workspace @curateds/mobile"
   }
 }

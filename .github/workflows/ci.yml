@@ -17,11 +17,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Detect backend changes
         id: changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
         with:
           filters: |
             backend:
@@ -37,13 +37,13 @@ jobs:
 
       - name: Setup .NET
         if: steps.changes.outputs.backend == 'true'
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           global-json-file: global.json
 
       - name: Cache NuGet packages
         if: steps.changes.outputs.backend == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json') }}
@@ -68,7 +68,7 @@ jobs:
 
       - name: Upload backend coverage to Codecov
         if: steps.changes.outputs.backend == 'true'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/**/coverage.cobertura.xml
@@ -90,11 +90,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Detect frontend changes
         id: changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
         with:
           filters: |
             frontend:
@@ -106,7 +106,7 @@ jobs:
 
       - name: Setup Node
         if: steps.changes.outputs.frontend == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
@@ -129,7 +129,7 @@ jobs:
 
       - name: Upload frontend coverage to Codecov
         if: steps.changes.outputs.frontend == 'true'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: tests/Web.UnitTests/coverage/lcov.info
@@ -142,11 +142,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Detect mobile changes
         id: changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
         with:
           filters: |
             mobile:
@@ -157,7 +157,7 @@ jobs:
 
       - name: Setup Node
         if: steps.changes.outputs.mobile == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
@@ -170,6 +170,19 @@ jobs:
         if: steps.changes.outputs.mobile == 'true'
         run: npm run typecheck:mobile
 
+      - name: Audit npm dependencies
+        if: steps.changes.outputs.mobile == 'true'
+        run: npm audit --workspace @curateds/mobile --audit-level=high
+
       - name: Test mobile
         if: steps.changes.outputs.mobile == 'true'
-        run: npm run test:mobile
+        run: npm run test:mobile:coverage
+
+      - name: Upload mobile coverage to Codecov
+        if: steps.changes.outputs.mobile == 'true'
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/mobile/coverage/lcov.info
+          flags: mobile
+          fail_ci_if_error: false
