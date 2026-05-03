@@ -37,6 +37,13 @@ internal sealed class AttributeDefinitionConfiguration : IEntityTypeConfiguratio
         builder.Property(attributeDefinition => attributeDefinition.SortOrder)
             .IsRequired();
 
+        builder.Property(attributeDefinition => attributeDefinition.ItemTypeId);
+
+        builder.HasOne<ItemType>()
+            .WithMany()
+            .HasForeignKey(attributeDefinition => attributeDefinition.ItemTypeId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.Property(attributeDefinition => attributeDefinition.CreatedUtc)
             .IsRequired();
 

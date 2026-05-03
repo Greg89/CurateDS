@@ -29,4 +29,6 @@ public sealed class ListItemsRequest
     public bool? HasNoLocation { get; init; }
 
     public bool? HasNoTags { get; init; }
+
+    public Guid? ItemTypeId { get; init; }
 }

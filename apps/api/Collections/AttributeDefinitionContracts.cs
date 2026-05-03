@@ -6,7 +6,8 @@ public sealed record CreateAttributeDefinitionRequest(
     string Name,
     AttributeDataType DataType,
     bool IsRequired,
-    bool IsFilterable);
+    bool IsFilterable,
+    Guid? ItemTypeId = null);
 
 public sealed record AttributeDefinitionResponse(
     Guid Id,
@@ -17,4 +18,5 @@ public sealed record AttributeDefinitionResponse(
     bool IsRequired,
     bool IsFilterable,
     int SortOrder,
+    Guid? ItemTypeId,
     DateTime CreatedUtc);

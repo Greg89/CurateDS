@@ -57,6 +57,9 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsRequired")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("ItemTypeId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasMaxLength(60)
@@ -78,6 +81,8 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ItemTypeId");
 
                     b.HasIndex("CollectionId", "SortOrder");
 
@@ -153,6 +158,9 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<Guid?>("ItemTypeId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("LocationId")
                         .HasColumnType("uuid");
 
@@ -172,6 +180,8 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ItemTypeId");
 
                     b.HasIndex("LocationId");
 
@@ -266,6 +276,52 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                     b.HasKey("ItemId", "TagId");
 
                     b.ToTable("item_tags", (string)null);
+                });
+
+            modelBuilder.Entity("CurateDS.Domain.Collections.ItemType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("DeletedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectionId", "SortOrder");
+
+                    b.ToTable("item_types", (string)null);
                 });
 
             modelBuilder.Entity("CurateDS.Domain.Collections.Location", b =>
@@ -439,8 +495,21 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                     b.ToTable("tags", (string)null);
                 });
 
+            modelBuilder.Entity("CurateDS.Domain.Collections.AttributeDefinition", b =>
+                {
+                    b.HasOne("CurateDS.Domain.Collections.ItemType", null)
+                        .WithMany()
+                        .HasForeignKey("ItemTypeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
             modelBuilder.Entity("CurateDS.Domain.Collections.Item", b =>
                 {
+                    b.HasOne("CurateDS.Domain.Collections.ItemType", null)
+                        .WithMany()
+                        .HasForeignKey("ItemTypeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("CurateDS.Domain.Collections.Location", null)
                         .WithMany()
                         .HasForeignKey("LocationId")

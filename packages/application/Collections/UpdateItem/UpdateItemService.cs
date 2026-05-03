@@ -17,6 +17,7 @@ public sealed class UpdateItemService
     private readonly IItemRepository _itemRepository;
     private readonly ITagRepository _tagRepository;
     private readonly IItemEventRepository _itemEventRepository;
+    private readonly IItemTypeRepository _itemTypeRepository;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<UpdateItemCommand> _validator;
 
@@ -27,6 +28,7 @@ public sealed class UpdateItemService
         IItemRepository itemRepository,
         ITagRepository tagRepository,
         IItemEventRepository itemEventRepository,
+        IItemTypeRepository itemTypeRepository,
         ICurrentUserService currentUser,
         IValidator<UpdateItemCommand> validator)
     {
@@ -36,6 +38,7 @@ public sealed class UpdateItemService
         _itemRepository = itemRepository;
         _tagRepository = tagRepository;
         _itemEventRepository = itemEventRepository;
+        _itemTypeRepository = itemTypeRepository;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -63,6 +66,35 @@ public sealed class UpdateItemService
             throw new NotFoundException("Item was not found.");
         }
 
+        string? newItemTypeName = null;
+        if (command.ItemTypeId.HasValue)
+        {
+            var itemType = await _itemTypeRepository.GetByIdAndCollectionAsync(
+                command.ItemTypeId.Value,
+                command.CollectionId,
+                cancellationToken);
+
+            if (itemType is null)
+            {
+                throw new ValidationException([new ValidationFailure(
+                    nameof(UpdateItemCommand.ItemTypeId),
+                    "Item type was not found in this collection.")]);
+            }
+
+            newItemTypeName = itemType.Name;
+        }
+
+        string? oldItemTypeName = null;
+        if (item.ItemTypeId.HasValue && item.ItemTypeId != command.ItemTypeId)
+        {
+            var oldItemType = await _itemTypeRepository.GetByIdAndCollectionAsync(
+                item.ItemTypeId.Value,
+                command.CollectionId,
+                cancellationToken);
+
+            oldItemTypeName = oldItemType?.Name;
+        }
+
         var attributeDefinitions = await _attributeDefinitionRepository.ListByCollectionAsync(
             command.CollectionId,
             cancellationToken);
@@ -77,7 +109,7 @@ public sealed class UpdateItemService
             _tagRepository,
             cancellationToken);
 
-        ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup);
+        ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup, command.ItemTypeId);
 
         var attributeValues = command.AttributeValues
             .Select(attributeValue =>
@@ -90,10 +122,11 @@ public sealed class UpdateItemService
         var updatedUtc = DateTime.UtcNow;
         var actor = _currentUser.GetCurrentUser();
 
-        var changeNotes = BuildChangeNotes(item, command, organization);
+        var changeNotes = BuildChangeNotes(item, command, organization, oldItemTypeName, newItemTypeName);
 
         item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc, actor);
         item.AssignLocation(organization.Location?.Id, updatedUtc, actor);
+        item.AssignItemType(command.ItemTypeId, updatedUtc, actor);
         await _itemRepository.ReplaceAttributeValuesAsync(item.Id, attributeValues, cancellationToken);
         await _itemRepository.ReplaceTagsAsync(
             item.Id,
@@ -114,6 +147,7 @@ public sealed class UpdateItemService
             item.Quantity,
             organization.Location?.Id,
             organization.Location?.Name,
+            item.ItemTypeId,
             organization.Tags.Select(tag => new TagDto(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)).ToArray(),
             item.CreatedUtc,
             item.UpdatedUtc,
@@ -145,11 +179,19 @@ public sealed class UpdateItemService
     private static void ValidateAttributeValues(
         IReadOnlyList<CreateItemAttributeValueInput> attributeValues,
         IReadOnlyList<AttributeDefinition> attributeDefinitions,
-        IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup)
+        IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup,
+        Guid? itemTypeId)
     {
         var failures = new List<ValidationFailure>();
 
-        var requiredDefinitionIds = attributeDefinitions
+        // Valid definitions for this item: global (null ItemTypeId) OR matching the item's type
+        var validDefinitions = attributeDefinitions
+            .Where(d => d.ItemTypeId == null || d.ItemTypeId == itemTypeId)
+            .ToList();
+
+        var validDefinitionIds = validDefinitions.Select(d => d.Id).ToHashSet();
+
+        var requiredDefinitionIds = validDefinitions
             .Where(definition => definition.IsRequired)
             .Select(definition => definition.Id)
             .ToHashSet();
@@ -160,11 +202,11 @@ public sealed class UpdateItemService
 
         foreach (var attributeValue in attributeValues)
         {
-            if (!attributeDefinitionLookup.ContainsKey(attributeValue.AttributeDefinitionId))
+            if (!validDefinitionIds.Contains(attributeValue.AttributeDefinitionId))
             {
                 failures.Add(new ValidationFailure(
                     nameof(UpdateItemCommand.AttributeValues),
-                    "Attribute values must belong to the selected collection."));
+                    "Attribute values must belong to the selected collection and item type."));
             }
         }
 
@@ -186,7 +228,9 @@ public sealed class UpdateItemService
     private static string? BuildChangeNotes(
         Item item,
         UpdateItemCommand command,
-        (Location? Location, IReadOnlyList<Tag> Tags) organization)
+        (Location? Location, IReadOnlyList<Tag> Tags) organization,
+        string? oldItemTypeName,
+        string? newItemTypeName)
     {
         var changes = new List<string>();
 
@@ -210,6 +254,13 @@ public sealed class UpdateItemService
         {
             var newLocationName = organization.Location?.Name ?? "None";
             changes.Add($"Location → {newLocationName}");
+        }
+
+        if (item.ItemTypeId != command.ItemTypeId)
+        {
+            var from = oldItemTypeName ?? "None";
+            var to = newItemTypeName ?? "None";
+            changes.Add($"Item type: {from} → {to}");
         }
 
         var oldTagIds = item.ItemTags.Select(t => t.TagId).ToHashSet();

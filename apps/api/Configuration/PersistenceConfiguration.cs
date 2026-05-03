@@ -29,6 +29,7 @@ internal static class PersistenceConfiguration
         services.AddScoped<IAttributeDefinitionRepository, AttributeDefinitionRepository>();
         services.AddScoped<IItemRepository, ItemRepository>();
         services.AddScoped<IItemEventRepository, ItemEventRepository>();
+        services.AddScoped<IItemTypeRepository, ItemTypeRepository>();
         services.AddScoped<ILocationRepository, LocationRepository>();
         services.AddScoped<ISavedViewRepository, SavedViewRepository>();
         services.AddScoped<ITagRepository, TagRepository>();

@@ -1,4 +1,4 @@
-import { AttributeDefinition, ItemFilters, Location, Tag } from "../../api";
+import { AttributeDefinition, ItemFilters, ItemType, Location, Tag } from "../../api";
 import { SavedItemView } from "../types";
 import { describeSavedView } from "../utils";
 import { renderAttributeInput } from "./DynamicAttributeFields";
@@ -10,6 +10,8 @@ export function ItemFiltersPanel({
   disabled,
   locationId,
   locations,
+  itemTypes,
+  itemTypeId,
   savedViewName,
   savedViews,
   searchText,
@@ -28,6 +30,7 @@ export function ItemFiltersPanel({
   onClear,
   onDeleteSavedView,
   onLocationChange,
+  onItemTypeIdChange,
   onSavedViewNameChange,
   onSaveView,
   onSearchTextChange,
@@ -46,6 +49,8 @@ export function ItemFiltersPanel({
   disabled: boolean;
   locationId: string;
   locations: Location[];
+  itemTypes: ItemType[];
+  itemTypeId: string;
   savedViewName: string;
   savedViews: SavedItemView[];
   searchText: string;
@@ -64,6 +69,7 @@ export function ItemFiltersPanel({
   onClear: () => void;
   onDeleteSavedView: (viewId: string) => void;
   onLocationChange: (locationId: string) => void;
+  onItemTypeIdChange: (value: string) => void;
   onSavedViewNameChange: (name: string) => void;
   onSaveView: () => void;
   onSearchTextChange: (searchText: string) => void;
@@ -80,6 +86,7 @@ export function ItemFiltersPanel({
   const hasActiveFilters =
     searchText.trim().length > 0 ||
     locationId.length > 0 ||
+    itemTypeId.length > 0 ||
     selectedTagIds.length > 0 ||
     Object.values(attributeFilters).some((value) => value.trim().length > 0) ||
     sortBy !== "updatedUtc" ||
@@ -124,6 +131,24 @@ export function ItemFiltersPanel({
             ))}
           </select>
         </label>
+
+        {itemTypes.length > 0 && (
+          <label className="field">
+            <span>Item Type</span>
+            <select
+              value={itemTypeId}
+              onChange={(event) => onItemTypeIdChange(event.target.value)}
+              disabled={disabled}
+            >
+              <option value="">All types</option>
+              {itemTypes.map((itemType) => (
+                <option key={itemType.id} value={itemType.id}>
+                  {itemType.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <label className="field">
           <span>Sort By</span>

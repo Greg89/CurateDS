@@ -11,4 +11,5 @@ public sealed record AttributeDefinitionDto(
     bool IsRequired,
     bool IsFilterable,
     int SortOrder,
+    Guid? ItemTypeId,
     DateTime CreatedUtc);

@@ -8,6 +8,7 @@ public sealed record UpdateItemResult(
     int Quantity,
     Guid? LocationId,
     string? LocationName,
+    Guid? ItemTypeId,
     IReadOnlyList<TagDto> Tags,
     DateTime CreatedUtc,
     DateTime? UpdatedUtc,

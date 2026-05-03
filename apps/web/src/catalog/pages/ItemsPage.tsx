@@ -5,6 +5,7 @@ import {
   ItemDetail,
   ItemFilters,
   ItemSummary,
+  ItemType,
   Location,
   Tag
 } from "../../api";
@@ -27,7 +28,9 @@ export function ItemsPage({
   itemDetail,
   itemFilterLocationId,
   itemFilterTagIds,
+  itemFilterTypeId,
   itemLocationId,
+  itemTypeId,
   itemName,
   itemQuantity,
   itemSaveCount,
@@ -35,6 +38,7 @@ export function ItemsPage({
   itemSortBy,
   itemSortDirection,
   itemTagIds,
+  itemTypes,
   items,
   itemsError,
   isEditing,
@@ -61,6 +65,7 @@ export function ItemsPage({
   onEditItem,
   onItemDescriptionChange,
   onItemLocationChange,
+  onItemTypeIdChange,
   onItemNameChange,
   onItemQuantityChange,
   onItemSearchTextChange,
@@ -68,6 +73,7 @@ export function ItemsPage({
   onItemSortDirectionChange,
   onItemSubmit,
   onItemFilterLocationChange,
+  onItemFilterTypeIdChange,
   onResetItemForm,
   onSaveCurrentView,
   onSavedViewNameChange,
@@ -101,7 +107,9 @@ export function ItemsPage({
   itemDetail: ItemDetail | null;
   itemFilterLocationId: string;
   itemFilterTagIds: string[];
+  itemFilterTypeId: string;
   itemLocationId: string;
+  itemTypeId: string;
   itemName: string;
   itemQuantity: string;
   itemSaveCount: number;
@@ -109,6 +117,7 @@ export function ItemsPage({
   itemSortBy: ItemFilters["sortBy"];
   itemSortDirection: ItemFilters["sortDirection"];
   itemTagIds: string[];
+  itemTypes: ItemType[];
   items: ItemSummary[];
   itemsError: string | null;
   isEditing: boolean;
@@ -135,6 +144,7 @@ export function ItemsPage({
   onEditItem: () => void;
   onItemDescriptionChange: (value: string) => void;
   onItemLocationChange: (value: string) => void;
+  onItemTypeIdChange: (value: string) => void;
   onItemNameChange: (value: string) => void;
   onItemQuantityChange: (value: string) => void;
   onItemSearchTextChange: (value: string) => void;
@@ -142,6 +152,7 @@ export function ItemsPage({
   onItemSortDirectionChange: (value: ItemFilters["sortDirection"]) => void;
   onItemSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onItemFilterLocationChange: (value: string) => void;
+  onItemFilterTypeIdChange: (value: string) => void;
   onResetItemForm: () => void;
   onSaveCurrentView: () => void;
   onSavedViewNameChange: (value: string) => void;
@@ -177,6 +188,7 @@ export function ItemsPage({
     (itemSearchText.trim().length > 0 ? 1 : 0) +
     (itemFilterLocationId.length > 0 ? 1 : 0) +
     (itemFilterTagIds.length > 0 ? 1 : 0) +
+    (itemFilterTypeId.length > 0 ? 1 : 0) +
     Object.values(itemAttributeFilters).filter((v) => v.trim().length > 0).length +
     (itemSortBy !== "updatedUtc" || itemSortDirection !== "desc" ? 1 : 0) +
     (itemFilterMinQuantity != null ? 1 : 0) +
@@ -300,6 +312,8 @@ export function ItemsPage({
             sortBy={itemSortBy}
             sortDirection={itemSortDirection}
             tags={tags}
+            itemTypes={itemTypes}
+            itemTypeId={itemFilterTypeId}
             minQuantity={itemFilterMinQuantity}
             maxQuantity={itemFilterMaxQuantity}
             createdAfter={itemFilterCreatedAfter}
@@ -311,6 +325,7 @@ export function ItemsPage({
             onClear={onClearItemFilters}
             onDeleteSavedView={onDeleteSavedView}
             onLocationChange={onItemFilterLocationChange}
+            onItemTypeIdChange={onItemFilterTypeIdChange}
             onSavedViewNameChange={onSavedViewNameChange}
             onSaveView={onSaveCurrentView}
             onSearchTextChange={onItemSearchTextChange}
@@ -497,6 +512,23 @@ export function ItemsPage({
             </select>
           </label>
 
+          {itemTypes.length > 0 && (
+            <label className="field">
+              <span>Item Type</span>
+              <select
+                value={itemTypeId}
+                onChange={(event) => onItemTypeIdChange(event.target.value)}
+              >
+                <option value="">No type</option>
+                {itemTypes.map((itemType) => (
+                  <option key={itemType.id} value={itemType.id}>
+                    {itemType.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
           <TagSelector
             disabled={false}
             selectedTagIds={itemTagIds}
@@ -505,7 +537,9 @@ export function ItemsPage({
           />
 
           <DynamicAttributeFields
-            attributeDefinitions={attributeDefinitions}
+            attributeDefinitions={attributeDefinitions.filter(
+              (d) => d.itemTypeId === null || d.itemTypeId === (itemTypeId || null)
+            )}
             disabled={false}
             values={itemAttributeValues}
             onChange={onAttributeValueChange}
