@@ -174,6 +174,9 @@ export const server = setupServer(
     );
   }),
   http.get(`${apiBaseUrl}/locations`, () => HttpResponse.json([])),
+  http.get(`${apiBaseUrl}/collections/:collectionId/item-types`, () =>
+    HttpResponse.json([])
+  ),
   http.post(`${apiBaseUrl}/locations`, async ({ request }) => {
     const body = (await request.json()) as {
       name?: string;

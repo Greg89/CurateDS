@@ -21,12 +21,14 @@ export function useItemFilters(selectedCollectionId: string) {
   const [itemFilterCreatedBefore, setItemFilterCreatedBefore] = useState("");
   const [itemFilterHasNoLocation, setItemFilterHasNoLocation] = useState(false);
   const [itemFilterHasNoTags, setItemFilterHasNoTags] = useState(false);
+  const [itemFilterTypeId, setItemFilterTypeId] = useState("");
 
   const normalizedItemFilterTagIds = normalizeTagIds(itemFilterTagIds);
 
   const itemFilters: ItemFilters = {
     searchText: itemSearchText,
     locationId: itemFilterLocationId,
+    itemTypeId: itemFilterTypeId || undefined,
     tagIds: normalizedItemFilterTagIds,
     attributeFilters: itemAttributeFilters,
     sortBy: itemSortBy,
@@ -58,6 +60,7 @@ export function useItemFilters(selectedCollectionId: string) {
     setItemFilterCreatedBefore("");
     setItemFilterHasNoLocation(false);
     setItemFilterHasNoTags(false);
+    setItemFilterTypeId("");
   }
 
   function toggleFilterTag(tagId: string) {
@@ -122,6 +125,8 @@ export function useItemFilters(selectedCollectionId: string) {
     setItemFilterHasNoLocation,
     itemFilterHasNoTags,
     setItemFilterHasNoTags,
+    itemFilterTypeId,
+    setItemFilterTypeId,
     clearItemFilters,
     toggleFilterTag,
     handleAttributeFilterChange,

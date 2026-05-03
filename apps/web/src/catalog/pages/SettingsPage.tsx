@@ -4,6 +4,7 @@ import {
   AttributeDefinition,
   Collection,
   ItemSummary,
+  ItemType,
   Location,
   Tag,
   downloadCollectionExport
@@ -27,12 +28,18 @@ export function SettingsPage({
   attributeIsFilterable,
   attributeIsRequired,
   attributeName,
+  attributeItemTypeId,
   createAttributeDefinitionError,
   createLocationError,
   createTagError,
+  createItemTypeError,
   isCreateAttributePending,
   isCreateLocationPending,
   isCreateTagPending,
+  isCreateItemTypePending,
+  itemTypeName,
+  itemTypes,
+  isDeleteItemTypePending,
   items,
   locationDescription,
   locationName,
@@ -44,6 +51,7 @@ export function SettingsPage({
   onAttributeIsFilterableChange,
   onAttributeIsRequiredChange,
   onAttributeNameChange,
+  onAttributeItemTypeIdChange,
   onAttributeSubmit,
   onLocationDescriptionChange,
   onLocationNameChange,
@@ -57,19 +65,28 @@ export function SettingsPage({
   isDeleteTagPending,
   onDeleteTag,
   isDeleteLocationPending,
-  onDeleteLocation
+  onDeleteLocation,
+  onItemTypeNameChange,
+  onItemTypeSubmit,
+  onDeleteItemType
 }: Readonly<{
   attributeDataType: AttributeDataType;
   attributeDefinitions: AttributeDefinition[];
   attributeIsFilterable: boolean;
   attributeIsRequired: boolean;
   attributeName: string;
+  attributeItemTypeId: string;
   createAttributeDefinitionError: string | null;
   createLocationError: string | null;
   createTagError: string | null;
+  createItemTypeError: string | null;
   isCreateAttributePending: boolean;
   isCreateLocationPending: boolean;
   isCreateTagPending: boolean;
+  isCreateItemTypePending: boolean;
+  itemTypeName: string;
+  itemTypes: ItemType[];
+  isDeleteItemTypePending: boolean;
   items: ItemSummary[];
   locationDescription: string;
   locationName: string;
@@ -81,6 +98,7 @@ export function SettingsPage({
   onAttributeIsFilterableChange: (value: boolean) => void;
   onAttributeIsRequiredChange: (value: boolean) => void;
   onAttributeNameChange: (value: string) => void;
+  onAttributeItemTypeIdChange: (value: string) => void;
   onAttributeSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onLocationDescriptionChange: (value: string) => void;
   onLocationNameChange: (value: string) => void;
@@ -95,6 +113,9 @@ export function SettingsPage({
   onDeleteTag: (id: string) => void;
   isDeleteLocationPending: boolean;
   onDeleteLocation: (id: string) => void;
+  onItemTypeNameChange: (value: string) => void;
+  onItemTypeSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onDeleteItemType: (id: string) => void;
 }>) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   return (
@@ -150,6 +171,21 @@ export function SettingsPage({
             <span>Filterable in list views</span>
           </label>
 
+          <label className="field">
+            <span>Applies to</span>
+            <select
+              value={attributeItemTypeId}
+              onChange={(event) => onAttributeItemTypeIdChange(event.target.value)}
+            >
+              <option value="">All item types</option>
+              {itemTypes.map((itemType) => (
+                <option key={itemType.id} value={itemType.id}>
+                  {itemType.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <button className="primary-button" disabled={isCreateAttributePending} type="submit">
             {isCreateAttributePending ? "Saving..." : "Add Attribute"}
           </button>
@@ -165,6 +201,46 @@ export function SettingsPage({
           isDeletePending={isDeleteAttributeDefinitionPending}
           onDelete={onDeleteAttributeDefinition}
         />
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <h3>Item Types</h3>
+          <p>Define named types for items in {selectedCollection.name} (e.g. Machine, Part).</p>
+        </div>
+
+        <form className="collection-form" onSubmit={onItemTypeSubmit}>
+          <label className="field">
+            <span>Name</span>
+            <input
+              value={itemTypeName}
+              onChange={(event) => onItemTypeNameChange(event.target.value)}
+              placeholder="Machine"
+              maxLength={50}
+            />
+          </label>
+
+          <button className="primary-button" disabled={isCreateItemTypePending} type="submit">
+            {isCreateItemTypePending ? "Saving..." : "Add Item Type"}
+          </button>
+
+          {createItemTypeError ? (
+            <p className="message error">{createItemTypeError}</p>
+          ) : null}
+        </form>
+
+        {itemTypes.length > 0 ? (
+          <ItemTypeList
+            itemTypes={itemTypes}
+            isDeletePending={isDeleteItemTypePending}
+            onDelete={onDeleteItemType}
+          />
+        ) : (
+          <div className="empty-state">
+            <p>No item types yet.</p>
+            <p>Add a type to differentiate items within this collection.</p>
+          </div>
+        )}
       </section>
 
       <section className="panel">
@@ -271,5 +347,52 @@ export function SettingsPage({
         />
       ) : null}
     </section>
+  );
+}
+
+function ItemTypeList({
+  itemTypes,
+  isDeletePending,
+  onDelete
+}: Readonly<{
+  itemTypes: ItemType[];
+  isDeletePending: boolean;
+  onDelete: (id: string) => void;
+}>) {
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const confirmingType = itemTypes.find((it) => it.id === confirmDeleteId) ?? null;
+
+  return (
+    <>
+      <ul className="attribute-list">
+        {itemTypes.map((itemType) => (
+          <li className="attribute-card" key={itemType.id}>
+            <div className="attribute-card-header">
+              <h3>{itemType.name}</h3>
+            </div>
+            <button
+              className="danger-button"
+              onClick={() => setConfirmDeleteId(itemType.id)}
+              type="button"
+            >
+              Delete
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {confirmingType ? (
+        <ConfirmDialog
+          title={`Delete "${confirmingType.name}"?`}
+          message="Items assigned this type will become untyped. Attribute definitions scoped to this type will become global. This action cannot be undone."
+          isPending={isDeletePending}
+          onConfirm={() => {
+            onDelete(confirmingType.id);
+            setConfirmDeleteId(null);
+          }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      ) : null}
+    </>
   );
 }

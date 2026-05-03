@@ -6,17 +6,20 @@ import {
   createAttributeDefinition,
   createCollection,
   createItem,
+  createItemType,
   createLocation,
   createTag,
   deleteAttributeDefinition,
   deleteCollection,
   deleteItem,
+  deleteItemType,
   deleteLocation,
   deleteTag,
   getItemDetail,
   listAttributeDefinitions,
   listCollections,
   listItems,
+  listItemTypes,
   listLocations,
   listTags,
   updateItem,
@@ -52,6 +55,8 @@ export function CatalogApp({
     useState<AttributeDataType>("Text");
   const [attributeIsRequired, setAttributeIsRequired] = useState(false);
   const [attributeIsFilterable, setAttributeIsFilterable] = useState(true);
+  const [attributeItemTypeId, setAttributeItemTypeId] = useState("");
+  const [itemTypeName, setItemTypeName] = useState("");
   const [tagName, setTagName] = useState("");
   const [locationName, setLocationName] = useState("");
   const [locationDescription, setLocationDescription] = useState("");
@@ -87,6 +92,8 @@ export function CatalogApp({
     setItemFilterHasNoLocation,
     itemFilterHasNoTags,
     setItemFilterHasNoTags,
+    itemFilterTypeId,
+    setItemFilterTypeId,
     clearItemFilters,
     toggleFilterTag,
     handleAttributeFilterChange,
@@ -102,6 +109,8 @@ export function CatalogApp({
     setItemQuantity,
     itemLocationId,
     setItemLocationId,
+    itemTypeId,
+    setItemTypeId,
     itemTagIds,
     itemAttributeValues,
     selectedItemId,
@@ -147,6 +156,7 @@ export function CatalogApp({
       itemPage,
       itemSearchText,
       itemFilterLocationId,
+      itemFilterTypeId,
       itemSortBy,
       itemSortDirection,
       JSON.stringify(itemAttributeFilters),
@@ -164,6 +174,12 @@ export function CatalogApp({
   const locationsQuery = useQuery({
     queryKey: ["locations"],
     queryFn: listLocations
+  });
+
+  const itemTypesQuery = useQuery({
+    queryKey: ["item-types", selectedCollectionId],
+    queryFn: () => listItemTypes(selectedCollectionId),
+    enabled: hasSelectedCollection
   });
 
   const itemDetailQuery = useQuery({
@@ -278,6 +294,23 @@ export function CatalogApp({
     }
   });
 
+  const createItemTypeMutation = useMutation({
+    mutationFn: createItemType,
+    onSuccess: async () => {
+      setItemTypeName("");
+      await queryClient.invalidateQueries({ queryKey: ["item-types", selectedCollectionId] });
+    }
+  });
+
+  const deleteItemTypeMutation = useMutation({
+    mutationFn: deleteItemType,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["item-types", selectedCollectionId] });
+      await queryClient.invalidateQueries({ queryKey: ["attribute-definitions", selectedCollectionId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", selectedCollectionId] });
+    }
+  });
+
   const uploadItemMediaMutation = useMutation({
     mutationFn: uploadItemMedia,
     onSuccess: async (_asset, variables) => {
@@ -326,7 +359,8 @@ export function CatalogApp({
       name: attributeName,
       dataType: attributeDataType,
       isRequired: attributeIsRequired,
-      isFilterable: attributeIsFilterable
+      isFilterable: attributeIsFilterable,
+      itemTypeId: attributeItemTypeId || null
     });
   }
 
@@ -352,6 +386,7 @@ export function CatalogApp({
         description: itemDescription,
         quantity: Number(itemQuantity),
         locationId: itemLocationId || null,
+        itemTypeId: itemTypeId || null,
         tagIds: itemTagIds,
         attributeValues
       });
@@ -365,6 +400,7 @@ export function CatalogApp({
       description: itemDescription,
       quantity: Number(itemQuantity),
       locationId: itemLocationId || null,
+      itemTypeId: itemTypeId || null,
       tagIds: itemTagIds,
       attributeValues
     });
@@ -373,6 +409,11 @@ export function CatalogApp({
   function handleTagSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     createTagMutation.mutate(tagName);
+  }
+
+  function handleItemTypeSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    createItemTypeMutation.mutate({ collectionId: selectedCollectionId, name: itemTypeName });
   }
 
   function handleLocationSubmit(event: FormEvent<HTMLFormElement>) {
@@ -734,6 +775,11 @@ export function CatalogApp({
                 })
               }
               isUploadMediaPending={uploadItemMediaMutation.isPending}
+              itemTypes={itemTypesQuery.data ?? []}
+              itemTypeId={itemTypeId}
+              itemFilterTypeId={itemFilterTypeId}
+              onItemTypeIdChange={setItemTypeId}
+              onItemFilterTypeIdChange={(v) => { setItemPage(1); setItemFilterTypeId(v); }}
             />
           ) : section === "reports" ? (
             <ReportsPage selectedCollection={selectedCollection} />
@@ -782,6 +828,16 @@ export function CatalogApp({
               onDeleteTag={(id) => deleteTagMutation.mutate(id)}
               isDeleteLocationPending={deleteLocationMutation.isPending}
               onDeleteLocation={(id) => deleteLocationMutation.mutate(id)}
+              attributeItemTypeId={attributeItemTypeId}
+              createItemTypeError={createItemTypeMutation.error?.message ?? null}
+              isCreateItemTypePending={createItemTypeMutation.isPending}
+              itemTypeName={itemTypeName}
+              itemTypes={itemTypesQuery.data ?? []}
+              isDeleteItemTypePending={deleteItemTypeMutation.isPending}
+              onAttributeItemTypeIdChange={setAttributeItemTypeId}
+              onItemTypeNameChange={setItemTypeName}
+              onItemTypeSubmit={handleItemTypeSubmit}
+              onDeleteItemType={(id) => deleteItemTypeMutation.mutate({ collectionId: selectedCollectionId, itemTypeId: id })}
             />
           )}
         </section>
