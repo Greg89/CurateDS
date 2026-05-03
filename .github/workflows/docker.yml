@@ -62,7 +62,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan API image with Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/greg89/curateds-api:sha-${{ github.sha }}
           format: sarif
@@ -137,7 +137,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan web image with Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/greg89/curateds-web:sha-${{ github.sha }}
           format: sarif
