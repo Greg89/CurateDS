@@ -5,6 +5,7 @@ using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
 using FluentAssertions;
+using FluentValidation;
 
 namespace CurateDS.Application.UnitTests.Collections;
 
@@ -24,6 +25,7 @@ public sealed class CreateAttributeDefinitionServiceTests
         var service = new CreateAttributeDefinitionService(
             collectionRepository,
             attributeDefinitionRepository,
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new CreateAttributeDefinitionCommandValidator());
 
@@ -44,11 +46,40 @@ public sealed class CreateAttributeDefinitionServiceTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_ShouldThrowValidationException_WhenItemTypeIdDoesNotBelongToCollection()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Board Games", DateTime.UtcNow, "system");
+        var unknownItemTypeId = Guid.NewGuid();
+
+        var service = new CreateAttributeDefinitionService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(),
+            new FakeItemTypeRepository(), // empty — unknown type won't be found
+            new FakeCurrentUserService(),
+            new CreateAttributeDefinitionCommandValidator());
+
+        var act = () => service.ExecuteAsync(
+            new CreateAttributeDefinitionCommand(
+                collection.OwnerId,
+                collection.Id,
+                "Publisher",
+                AttributeDataType.Text,
+                false,
+                false,
+                unknownItemTypeId),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*Item type was not found in this collection*");
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenCollectionDoesNotExist()
     {
         var service = new CreateAttributeDefinitionService(
             new FakeCollectionRepository(),
             new FakeAttributeDefinitionRepository(),
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new CreateAttributeDefinitionCommandValidator());
 
@@ -124,6 +155,34 @@ public sealed class CreateAttributeDefinitionServiceTests
         }
 
         public Task<bool> SoftDeleteAsync(Guid attributeDefinitionId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+    }
+
+    private sealed class FakeItemTypeRepository : IItemTypeRepository
+    {
+        private readonly List<ItemType> _itemTypes;
+
+        public FakeItemTypeRepository(params ItemType[] itemTypes)
+        {
+            _itemTypes = itemTypes.ToList();
+        }
+
+        public Task AddAsync(ItemType itemType, CancellationToken cancellationToken)
+        {
+            _itemTypes.Add(itemType);
+            return Task.CompletedTask;
+        }
+
+        public Task<int> GetNextSortOrderAsync(Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult(_itemTypes.Count(it => it.CollectionId == collectionId));
+
+        public Task<ItemType?> GetByIdAndCollectionAsync(Guid itemTypeId, Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult(_itemTypes.SingleOrDefault(it => it.Id == itemTypeId && it.CollectionId == collectionId));
+
+        public Task<IReadOnlyList<ItemType>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<ItemType>>(_itemTypes.Where(it => it.CollectionId == collectionId).ToArray());
+
+        public Task<bool> SoftDeleteAsync(Guid itemTypeId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
     }
 }

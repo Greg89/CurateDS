@@ -17,6 +17,7 @@ public sealed class UpdateItemService
     private readonly IItemRepository _itemRepository;
     private readonly ITagRepository _tagRepository;
     private readonly IItemEventRepository _itemEventRepository;
+    private readonly IItemTypeRepository _itemTypeRepository;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<UpdateItemCommand> _validator;
 
@@ -27,6 +28,7 @@ public sealed class UpdateItemService
         IItemRepository itemRepository,
         ITagRepository tagRepository,
         IItemEventRepository itemEventRepository,
+        IItemTypeRepository itemTypeRepository,
         ICurrentUserService currentUser,
         IValidator<UpdateItemCommand> validator)
     {
@@ -36,6 +38,7 @@ public sealed class UpdateItemService
         _itemRepository = itemRepository;
         _tagRepository = tagRepository;
         _itemEventRepository = itemEventRepository;
+        _itemTypeRepository = itemTypeRepository;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -61,6 +64,35 @@ public sealed class UpdateItemService
         if (item is null)
         {
             throw new NotFoundException("Item was not found.");
+        }
+
+        string? newItemTypeName = null;
+        if (command.ItemTypeId.HasValue)
+        {
+            var itemType = await _itemTypeRepository.GetByIdAndCollectionAsync(
+                command.ItemTypeId.Value,
+                command.CollectionId,
+                cancellationToken);
+
+            if (itemType is null)
+            {
+                throw new ValidationException([new ValidationFailure(
+                    nameof(UpdateItemCommand.ItemTypeId),
+                    "Item type was not found in this collection.")]);
+            }
+
+            newItemTypeName = itemType.Name;
+        }
+
+        string? oldItemTypeName = null;
+        if (item.ItemTypeId.HasValue && item.ItemTypeId != command.ItemTypeId)
+        {
+            var oldItemType = await _itemTypeRepository.GetByIdAndCollectionAsync(
+                item.ItemTypeId.Value,
+                command.CollectionId,
+                cancellationToken);
+
+            oldItemTypeName = oldItemType?.Name;
         }
 
         var attributeDefinitions = await _attributeDefinitionRepository.ListByCollectionAsync(
@@ -90,7 +122,7 @@ public sealed class UpdateItemService
         var updatedUtc = DateTime.UtcNow;
         var actor = _currentUser.GetCurrentUser();
 
-        var changeNotes = BuildChangeNotes(item, command, organization);
+        var changeNotes = BuildChangeNotes(item, command, organization, oldItemTypeName, newItemTypeName);
 
         item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc, actor);
         item.AssignLocation(organization.Location?.Id, updatedUtc, actor);
@@ -196,7 +228,9 @@ public sealed class UpdateItemService
     private static string? BuildChangeNotes(
         Item item,
         UpdateItemCommand command,
-        (Location? Location, IReadOnlyList<Tag> Tags) organization)
+        (Location? Location, IReadOnlyList<Tag> Tags) organization,
+        string? oldItemTypeName,
+        string? newItemTypeName)
     {
         var changes = new List<string>();
 
@@ -220,6 +254,13 @@ public sealed class UpdateItemService
         {
             var newLocationName = organization.Location?.Name ?? "None";
             changes.Add($"Location → {newLocationName}");
+        }
+
+        if (item.ItemTypeId != command.ItemTypeId)
+        {
+            var from = oldItemTypeName ?? "None";
+            var to = newItemTypeName ?? "None";
+            changes.Add($"Item type: {from} → {to}");
         }
 
         var oldTagIds = item.ItemTags.Select(t => t.TagId).ToHashSet();

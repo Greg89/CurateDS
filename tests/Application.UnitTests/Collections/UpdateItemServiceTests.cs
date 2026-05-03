@@ -55,6 +55,7 @@ public sealed class UpdateItemServiceTests
             itemRepository,
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -103,6 +104,7 @@ public sealed class UpdateItemServiceTests
             new FakeItemRepository(item),
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -127,8 +129,8 @@ public sealed class UpdateItemServiceTests
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenAttributeValueBelongsToDifferentItemType()
     {
         var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
-        var typeA = Guid.NewGuid();
-        var typeB = Guid.NewGuid();
+        var itemTypeA = ItemType.Create(collection.Id, "Type A", 0, DateTime.UtcNow, "system");
+        var itemTypeB = ItemType.Create(collection.Id, "Type B", 1, DateTime.UtcNow, "system");
 
         var typeADefinition = AttributeDefinition.Create(
             collection.Id,
@@ -139,7 +141,7 @@ public sealed class UpdateItemServiceTests
             sortOrder: 0,
             createdUtc: DateTime.UtcNow,
             createdBy: "system",
-            itemTypeId: typeA);
+            itemTypeId: itemTypeA.Id);
 
         var item = Item.Create(collection.Id, "Original Card", null, 1, DateTime.UtcNow, "system");
 
@@ -150,6 +152,7 @@ public sealed class UpdateItemServiceTests
             new FakeItemRepository(item),
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(itemTypeA, itemTypeB),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -162,7 +165,7 @@ public sealed class UpdateItemServiceTests
                 null,
                 1,
                 null,
-                typeB,
+                itemTypeB.Id,
                 [],
                 [new CreateItemAttributeValueInput(typeADefinition.Id, "Rare")]),
             CancellationToken.None);
@@ -175,8 +178,8 @@ public sealed class UpdateItemServiceTests
     public async Task ExecuteAsync_ShouldNotRequireTypeSpecificAttribute_WhenDifferentItemTypeSelected()
     {
         var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
-        var typeA = Guid.NewGuid();
-        var typeB = Guid.NewGuid();
+        var itemTypeA = ItemType.Create(collection.Id, "Type A", 0, DateTime.UtcNow, "system");
+        var itemTypeB = ItemType.Create(collection.Id, "Type B", 1, DateTime.UtcNow, "system");
 
         var typeARequired = AttributeDefinition.Create(
             collection.Id,
@@ -187,7 +190,7 @@ public sealed class UpdateItemServiceTests
             sortOrder: 0,
             createdUtc: DateTime.UtcNow,
             createdBy: "system",
-            itemTypeId: typeA);
+            itemTypeId: itemTypeA.Id);
 
         var item = Item.Create(collection.Id, "Dark Magician", null, 1, DateTime.UtcNow, "system");
         var itemRepository = new FakeItemRepository(item);
@@ -199,6 +202,7 @@ public sealed class UpdateItemServiceTests
             itemRepository,
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(itemTypeA, itemTypeB),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -212,7 +216,7 @@ public sealed class UpdateItemServiceTests
                 null,
                 1,
                 null,
-                typeB,
+                itemTypeB.Id,
                 [],
                 []),
             CancellationToken.None);
@@ -233,6 +237,7 @@ public sealed class UpdateItemServiceTests
             new FakeItemRepository(),
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -281,6 +286,7 @@ public sealed class UpdateItemServiceTests
             itemRepository,
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -319,6 +325,7 @@ public sealed class UpdateItemServiceTests
             new FakeItemRepository(item),
             new FakeTagRepository(),
             eventRepository,
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -344,6 +351,7 @@ public sealed class UpdateItemServiceTests
             new FakeItemRepository(item),
             new FakeTagRepository(),
             eventRepository,
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -369,6 +377,7 @@ public sealed class UpdateItemServiceTests
             new FakeItemRepository(item),
             new FakeTagRepository(),
             eventRepository,
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -394,6 +403,7 @@ public sealed class UpdateItemServiceTests
             new FakeItemRepository(item),
             new FakeTagRepository(),
             eventRepository,
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -405,6 +415,62 @@ public sealed class UpdateItemServiceTests
         notes.Should().Contain("Original").And.Contain("Updated");  // name change
         notes.Should().Contain("Quantity").And.Contain("1").And.Contain("3");  // quantity change
         notes.Should().Contain("Description removed");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrowValidationException_WhenItemTypeIdDoesNotBelongToCollection()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Cards", DateTime.UtcNow, "system");
+        var item = Item.Create(collection.Id, "Card", null, 1, DateTime.UtcNow, "system");
+        var unknownItemTypeId = Guid.NewGuid();
+
+        var service = new UpdateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(),
+            new FakeLocationRepository(),
+            new FakeItemRepository(item),
+            new FakeTagRepository(),
+            new FakeItemEventRepository(),
+            new FakeItemTypeRepository(), // empty — unknown type won't be found
+            new FakeCurrentUserService(),
+            new UpdateItemCommandValidator());
+
+        var act = () => service.ExecuteAsync(
+            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Card", null, 1, null, unknownItemTypeId, [], []),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*Item type was not found in this collection*");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRecordItemTypeChangeInNotes_WhenItemTypeChanges()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Stamps", DateTime.UtcNow, "system");
+        var oldType = ItemType.Create(collection.Id, "Definitive", 0, DateTime.UtcNow, "system");
+        var newType = ItemType.Create(collection.Id, "Commemorative", 1, DateTime.UtcNow, "system");
+        var item = Item.Create(collection.Id, "Penny Black", null, 1, DateTime.UtcNow, "system");
+        item.AssignItemType(oldType.Id, DateTime.UtcNow, "system");
+
+        var eventRepository = new FakeItemEventRepository();
+
+        var service = new UpdateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(),
+            new FakeLocationRepository(),
+            new FakeItemRepository(item),
+            new FakeTagRepository(),
+            eventRepository,
+            new FakeItemTypeRepository(oldType, newType),
+            new FakeCurrentUserService(),
+            new UpdateItemCommandValidator());
+
+        await service.ExecuteAsync(
+            new UpdateItemCommand(collection.OwnerId, collection.Id, item.Id, "Penny Black", null, 1, null, newType.Id, [], []),
+            CancellationToken.None);
+
+        eventRepository.Recorded.Should().ContainSingle();
+        eventRepository.Recorded[0].Notes.Should().Contain("Definitive").And.Contain("Commemorative");
     }
 
     private sealed class FakeCollectionRepository : ICollectionRepository
@@ -586,6 +652,34 @@ public sealed class UpdateItemServiceTests
             => Task.FromResult<IReadOnlyList<Tag>>([]);
 
         public Task<bool> SoftDeleteAsync(Guid tagId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+    }
+
+    private sealed class FakeItemTypeRepository : IItemTypeRepository
+    {
+        private readonly List<ItemType> _itemTypes;
+
+        public FakeItemTypeRepository(params ItemType[] itemTypes)
+        {
+            _itemTypes = itemTypes.ToList();
+        }
+
+        public Task AddAsync(ItemType itemType, CancellationToken cancellationToken)
+        {
+            _itemTypes.Add(itemType);
+            return Task.CompletedTask;
+        }
+
+        public Task<int> GetNextSortOrderAsync(Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult(_itemTypes.Count(it => it.CollectionId == collectionId));
+
+        public Task<ItemType?> GetByIdAndCollectionAsync(Guid itemTypeId, Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult(_itemTypes.SingleOrDefault(it => it.Id == itemTypeId && it.CollectionId == collectionId));
+
+        public Task<IReadOnlyList<ItemType>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<ItemType>>(_itemTypes.Where(it => it.CollectionId == collectionId).ToArray());
+
+        public Task<bool> SoftDeleteAsync(Guid itemTypeId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
     }
 }

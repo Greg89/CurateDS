@@ -47,6 +47,7 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<IValidator<CreateAttributeDefinitionCommand>, CreateAttributeDefinitionCommandValidator>();
         services.AddScoped<IValidator<CreateCollectionCommand>, CreateCollectionCommandValidator>();
         services.AddScoped<IValidator<CreateItemCommand>, CreateItemCommandValidator>();
+        services.AddScoped<IValidator<CreateItemTypeCommand>, CreateItemTypeCommandValidator>();
         services.AddScoped<IValidator<CreateLocationCommand>, CreateLocationCommandValidator>();
         services.AddScoped<IValidator<CreateTagCommand>, CreateTagCommandValidator>();
         services.AddScoped<IValidator<UpdateItemCommand>, UpdateItemCommandValidator>();

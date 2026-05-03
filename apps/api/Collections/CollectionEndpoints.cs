@@ -503,6 +503,10 @@ public static class CollectionEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
+            catch (ValidationException exception)
+            {
+                return ApiResponses.Validation(exception);
+            }
         }).RequireAuthorization();
 
         group.MapDelete("/{collectionId:guid}/item-types/{itemTypeId:guid}", async (
@@ -553,7 +557,8 @@ public static class CollectionEndpoints
                         CreatedAfter: request.CreatedAfter,
                         CreatedBefore: request.CreatedBefore,
                         HasNoLocation: request.HasNoLocation ?? false,
-                        HasNoTags: request.HasNoTags ?? false),
+                        HasNoTags: request.HasNoTags ?? false,
+                        ItemTypeId: request.ItemTypeId),
                     cancellationToken);
 
                 return Results.Ok(new PagedItemsResponse(

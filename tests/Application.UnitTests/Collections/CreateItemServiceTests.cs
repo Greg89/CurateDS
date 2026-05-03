@@ -48,6 +48,7 @@ public sealed class CreateItemServiceTests
             itemRepository,
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -93,6 +94,7 @@ public sealed class CreateItemServiceTests
             new FakeItemRepository(),
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -116,8 +118,8 @@ public sealed class CreateItemServiceTests
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenAttributeValueBelongsToDifferentItemType()
     {
         var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
-        var typeA = Guid.NewGuid();
-        var typeB = Guid.NewGuid();
+        var itemTypeA = ItemType.Create(collection.Id, "Type A", 0, DateTime.UtcNow, "system");
+        var itemTypeB = ItemType.Create(collection.Id, "Type B", 1, DateTime.UtcNow, "system");
 
         var typeADefinition = AttributeDefinition.Create(
             collection.Id,
@@ -128,7 +130,7 @@ public sealed class CreateItemServiceTests
             sortOrder: 0,
             createdUtc: DateTime.UtcNow,
             createdBy: "system",
-            itemTypeId: typeA);
+            itemTypeId: itemTypeA.Id);
 
         var service = new CreateItemService(
             new FakeCollectionRepository(collection),
@@ -137,6 +139,7 @@ public sealed class CreateItemServiceTests
             new FakeItemRepository(),
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(itemTypeA, itemTypeB),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -148,7 +151,7 @@ public sealed class CreateItemServiceTests
                 null,
                 1,
                 null,
-                typeB,
+                itemTypeB.Id,
                 [],
                 [new CreateItemAttributeValueInput(typeADefinition.Id, "Rare")]),
             CancellationToken.None);
@@ -161,8 +164,8 @@ public sealed class CreateItemServiceTests
     public async Task ExecuteAsync_ShouldNotRequireTypeSpecificAttribute_WhenDifferentItemTypeSelected()
     {
         var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
-        var typeA = Guid.NewGuid();
-        var typeB = Guid.NewGuid();
+        var itemTypeA = ItemType.Create(collection.Id, "Type A", 0, DateTime.UtcNow, "system");
+        var itemTypeB = ItemType.Create(collection.Id, "Type B", 1, DateTime.UtcNow, "system");
 
         var typeARequired = AttributeDefinition.Create(
             collection.Id,
@@ -173,7 +176,7 @@ public sealed class CreateItemServiceTests
             sortOrder: 0,
             createdUtc: DateTime.UtcNow,
             createdBy: "system",
-            itemTypeId: typeA);
+            itemTypeId: itemTypeA.Id);
 
         var itemRepository = new FakeItemRepository();
         var service = new CreateItemService(
@@ -183,6 +186,7 @@ public sealed class CreateItemServiceTests
             itemRepository,
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(itemTypeA, itemTypeB),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -195,7 +199,7 @@ public sealed class CreateItemServiceTests
                 null,
                 1,
                 null,
-                typeB,
+                itemTypeB.Id,
                 [],
                 []),
             CancellationToken.None);
@@ -208,7 +212,7 @@ public sealed class CreateItemServiceTests
     public async Task ExecuteAsync_ShouldRequireGlobalAttribute_EvenWhenItemTypeIsSelected()
     {
         var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
-        var typeA = Guid.NewGuid();
+        var itemTypeA = ItemType.Create(collection.Id, "Type A", 0, DateTime.UtcNow, "system");
 
         var globalRequired = AttributeDefinition.Create(
             collection.Id,
@@ -228,6 +232,7 @@ public sealed class CreateItemServiceTests
             new FakeItemRepository(),
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(itemTypeA),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -239,13 +244,47 @@ public sealed class CreateItemServiceTests
                 null,
                 1,
                 null,
-                typeA,
+                itemTypeA.Id,
                 [],
                 []),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>()
             .WithMessage("*Condition*required*");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrowValidationException_WhenItemTypeIdDoesNotBelongToCollection()
+    {
+        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
+        var unknownItemTypeId = Guid.NewGuid();
+
+        var service = new CreateItemService(
+            new FakeCollectionRepository(collection),
+            new FakeAttributeDefinitionRepository(),
+            new FakeLocationRepository(),
+            new FakeItemRepository(),
+            new FakeTagRepository(),
+            new FakeItemEventRepository(),
+            new FakeItemTypeRepository(), // empty — unknown type won't be found
+            new FakeCurrentUserService(),
+            new CreateItemCommandValidator());
+
+        var act = () => service.ExecuteAsync(
+            new CreateItemCommand(
+                collection.OwnerId,
+                collection.Id,
+                "Blue-Eyes White Dragon",
+                null,
+                1,
+                null,
+                unknownItemTypeId,
+                [],
+                []),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*Item type was not found in this collection*");
     }
 
     [Fact]
@@ -258,6 +297,7 @@ public sealed class CreateItemServiceTests
             new FakeItemRepository(),
             new FakeTagRepository(),
             new FakeItemEventRepository(),
+            new FakeItemTypeRepository(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -442,6 +482,34 @@ public sealed class CreateItemServiceTests
             => Task.FromResult<IReadOnlyList<Tag>>([]);
 
         public Task<bool> SoftDeleteAsync(Guid tagId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+    }
+
+    private sealed class FakeItemTypeRepository : IItemTypeRepository
+    {
+        private readonly List<ItemType> _itemTypes;
+
+        public FakeItemTypeRepository(params ItemType[] itemTypes)
+        {
+            _itemTypes = itemTypes.ToList();
+        }
+
+        public Task AddAsync(ItemType itemType, CancellationToken cancellationToken)
+        {
+            _itemTypes.Add(itemType);
+            return Task.CompletedTask;
+        }
+
+        public Task<int> GetNextSortOrderAsync(Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult(_itemTypes.Count(it => it.CollectionId == collectionId));
+
+        public Task<ItemType?> GetByIdAndCollectionAsync(Guid itemTypeId, Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult(_itemTypes.SingleOrDefault(it => it.Id == itemTypeId && it.CollectionId == collectionId));
+
+        public Task<IReadOnlyList<ItemType>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<ItemType>>(_itemTypes.Where(it => it.CollectionId == collectionId).ToArray());
+
+        public Task<bool> SoftDeleteAsync(Guid itemTypeId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
     }
 }

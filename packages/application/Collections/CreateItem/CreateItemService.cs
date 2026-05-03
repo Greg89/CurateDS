@@ -16,6 +16,7 @@ public sealed class CreateItemService
     private readonly IItemRepository _itemRepository;
     private readonly ITagRepository _tagRepository;
     private readonly IItemEventRepository _itemEventRepository;
+    private readonly IItemTypeRepository _itemTypeRepository;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<CreateItemCommand> _validator;
 
@@ -26,6 +27,7 @@ public sealed class CreateItemService
         IItemRepository itemRepository,
         ITagRepository tagRepository,
         IItemEventRepository itemEventRepository,
+        IItemTypeRepository itemTypeRepository,
         ICurrentUserService currentUser,
         IValidator<CreateItemCommand> validator)
     {
@@ -35,6 +37,7 @@ public sealed class CreateItemService
         _itemRepository = itemRepository;
         _tagRepository = tagRepository;
         _itemEventRepository = itemEventRepository;
+        _itemTypeRepository = itemTypeRepository;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -53,6 +56,21 @@ public sealed class CreateItemService
         if (collection is null)
         {
             throw new NotFoundException("Collection was not found.");
+        }
+
+        if (command.ItemTypeId.HasValue)
+        {
+            var itemType = await _itemTypeRepository.GetByIdAndCollectionAsync(
+                command.ItemTypeId.Value,
+                command.CollectionId,
+                cancellationToken);
+
+            if (itemType is null)
+            {
+                throw new ValidationException([new ValidationFailure(
+                    nameof(CreateItemCommand.ItemTypeId),
+                    "Item type was not found in this collection.")]);
+            }
         }
 
         var attributeDefinitions = await _attributeDefinitionRepository.ListByCollectionAsync(

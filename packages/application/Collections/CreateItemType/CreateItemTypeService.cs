@@ -2,6 +2,7 @@ using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
+using FluentValidation;
 
 namespace CurateDS.Application.Collections.CreateItemType;
 
@@ -10,21 +11,26 @@ public sealed class CreateItemTypeService
     private readonly ICollectionRepository _collectionRepository;
     private readonly IItemTypeRepository _itemTypeRepository;
     private readonly ICurrentUserService _currentUser;
+    private readonly IValidator<CreateItemTypeCommand> _validator;
 
     public CreateItemTypeService(
         ICollectionRepository collectionRepository,
         IItemTypeRepository itemTypeRepository,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IValidator<CreateItemTypeCommand> validator)
     {
         _collectionRepository = collectionRepository;
         _itemTypeRepository = itemTypeRepository;
         _currentUser = currentUser;
+        _validator = validator;
     }
 
     public async Task<CreateItemTypeResult> ExecuteAsync(
         CreateItemTypeCommand command,
         CancellationToken cancellationToken)
     {
+        await _validator.ValidateAndThrowAsync(command, cancellationToken);
+
         var collection = await _collectionRepository.GetByIdAndOwnerAsync(
             command.CollectionId,
             command.OwnerId,

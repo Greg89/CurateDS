@@ -1268,4 +1268,46 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         created!.ItemTypeId.Should().Be(itemType.Id);
     }
 
+    [Fact]
+    public async Task PostItemTypes_ShouldReturnBadRequest_WhenNameIsTooShort()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("ItemTypesValidation"));
+
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/item-types",
+            new { name = "X" }); // 1 character — below the 2-character minimum
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldFilterByItemType()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("ItemTypeFilter"));
+
+        var typeAResponse = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/item-types", new { name = "Type A" });
+        var typeA = await typeAResponse.Content.ReadFromJsonAsync<ItemTypeResponse>(JsonOptions);
+
+        var typeBResponse = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/item-types", new { name = "Type B" });
+        var typeB = await typeBResponse.Content.ReadFromJsonAsync<ItemTypeResponse>(JsonOptions);
+
+        await _client.PostAsJsonAsync($"/collections/{collection.Id}/items",
+            new { name = "Item A1", quantity = 1, itemTypeId = typeA!.Id });
+        await _client.PostAsJsonAsync($"/collections/{collection.Id}/items",
+            new { name = "Item A2", quantity = 1, itemTypeId = typeA.Id });
+        await _client.PostAsJsonAsync($"/collections/{collection.Id}/items",
+            new { name = "Item B1", quantity = 1, itemTypeId = typeB!.Id });
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?itemTypeId={typeA.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Should().HaveCount(2);
+        result.Items.Select(i => i.Name).Should().BeEquivalentTo(["Item A1", "Item A2"]);
+    }
+
 }
