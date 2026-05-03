@@ -64,7 +64,16 @@ jobs:
 
       - name: Test
         if: steps.changes.outputs.backend == 'true'
-        run: dotnet test CurateDS.sln --no-build --verbosity normal
+        run: dotnet test CurateDS.sln --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory coverage
+
+      - name: Upload backend coverage to Codecov
+        if: steps.changes.outputs.backend == 'true'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/**/coverage.cobertura.xml
+          flags: backend
+          fail_ci_if_error: true
 
       - name: Scan NuGet packages for vulnerabilities
         if: steps.changes.outputs.backend == 'true'
@@ -111,7 +120,16 @@ jobs:
 
       - name: Test web
         if: steps.changes.outputs.frontend == 'true'
-        run: npm run test:web
+        run: npm run test:web:coverage
+
+      - name: Upload frontend coverage to Codecov
+        if: steps.changes.outputs.frontend == 'true'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: tests/Web.UnitTests/coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: true
 
   mobile:
     name: mobile
