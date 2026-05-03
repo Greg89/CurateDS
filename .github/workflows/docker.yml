@@ -22,6 +22,7 @@ jobs:
     permissions:
       contents: read
       packages: write  # required to push to ghcr.io
+      security-events: write  # required to upload SARIF results
 
     steps:
       - name: Checkout
