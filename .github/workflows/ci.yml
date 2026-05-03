@@ -77,7 +77,12 @@ jobs:
 
       - name: Scan NuGet packages for vulnerabilities
         if: steps.changes.outputs.backend == 'true'
-        run: dotnet list package --vulnerable --include-transitive
+        run: |
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee /tmp/nuget-vulns.txt
+          if grep -q "has the following vulnerable packages" /tmp/nuget-vulns.txt; then
+            echo "Vulnerable NuGet packages found — failing build"
+            exit 1
+          fi
 
   frontend:
     name: frontend
