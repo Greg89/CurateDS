@@ -14,6 +14,7 @@ export function OverviewPage({
   });
 
   const summary = summaryQuery.data;
+  const isEmpty = summary !== undefined && summary.totalItems === 0;
 
   return (
     <section className="overview-shell">
@@ -23,15 +24,35 @@ export function OverviewPage({
           <p>A snapshot of what's in this collection right now.</p>
         </div>
 
-        <div className="metric-grid">
-          <MetricCard label="Items" value={summary?.totalItems.toString() ?? "—"} />
-          <MetricCard label="Attributes" value={summary?.totalAttributeDefinitions.toString() ?? "—"} />
-          <MetricCard label="Tags in use" value={summary?.tagsUsed.toString() ?? "—"} />
-          <MetricCard label="Locations in use" value={summary?.locationsUsed.toString() ?? "—"} />
-          <MetricCard label="No location" value={summary?.itemsWithNoLocation.toString() ?? "—"} />
-          <MetricCard label="No tags" value={summary?.itemsWithNoTags.toString() ?? "—"} />
-          <MetricCard label="Media assets" value={summary?.totalMediaAssets.toString() ?? "—"} />
-        </div>
+        {isEmpty ? (
+          <div className="empty-state">
+            <p><strong>This collection is empty — here's how to get started:</strong></p>
+            <ol style={{ paddingLeft: "1.25rem", marginTop: "0.5rem", display: "grid", gap: "0.35rem" }}>
+              <li>
+                <Link to={`/collections/${selectedCollection.id}/settings`}>Configure attributes</Link>
+                {" "}— define the fields that describe items in this collection.
+              </li>
+              <li>
+                <Link to={`/collections/${selectedCollection.id}/settings`}>Add tags and locations</Link>
+                {" "}— set up organisation options (optional).
+              </li>
+              <li>
+                <Link to={`/collections/${selectedCollection.id}/items`}>Add your first item</Link>
+                {" "}— start cataloguing.
+              </li>
+            </ol>
+          </div>
+        ) : (
+          <div className="metric-grid">
+            <MetricCard label="Items" value={summary?.totalItems.toString() ?? "—"} />
+            <MetricCard label="Attributes" value={summary?.totalAttributeDefinitions.toString() ?? "—"} />
+            <MetricCard label="Tags in use" value={summary?.tagsUsed.toString() ?? "—"} />
+            <MetricCard label="Locations in use" value={summary?.locationsUsed.toString() ?? "—"} />
+            <MetricCard label="No location" value={summary?.itemsWithNoLocation.toString() ?? "—"} />
+            <MetricCard label="No tags" value={summary?.itemsWithNoTags.toString() ?? "—"} />
+            <MetricCard label="Media assets" value={summary?.totalMediaAssets.toString() ?? "—"} />
+          </div>
+        )}
       </section>
 
       <div className="overview-actions">
