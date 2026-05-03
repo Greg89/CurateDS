@@ -17,21 +17,72 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Detect backend changes
+        id: changes
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        with:
+          filters: |
+            backend:
+              - 'apps/api/**'
+              - 'packages/**'
+              - 'tests/**'
+              - '!tests/Web.UnitTests/**'
+              - '!tests/EndToEndTests/**'
+              - 'CurateDS.sln'
+              - 'Directory.Build.props'
+              - 'global.json'
+              - '.github/workflows/ci.yml'
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        if: steps.changes.outputs.backend == 'true'
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           global-json-file: global.json
 
+      - name: Cache NuGet packages
+        if: steps.changes.outputs.backend == 'true'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Restore
+        if: steps.changes.outputs.backend == 'true'
         run: dotnet restore CurateDS.sln
 
+      - name: Format check
+        if: steps.changes.outputs.backend == 'true'
+        run: dotnet format CurateDS.sln --verify-no-changes
+
       - name: Build
+        if: steps.changes.outputs.backend == 'true'
         run: dotnet build CurateDS.sln --no-restore
 
       - name: Test
-        run: dotnet test CurateDS.sln --no-build --verbosity normal
+        if: steps.changes.outputs.backend == 'true'
+        run: dotnet test CurateDS.sln --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory coverage
+
+      - name: Upload backend coverage to Codecov
+        if: steps.changes.outputs.backend == 'true'
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/**/coverage.cobertura.xml
+          flags: backend
+          fail_ci_if_error: false
+
+      - name: Scan NuGet packages for vulnerabilities
+        if: steps.changes.outputs.backend == 'true'
+        run: |
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee /tmp/nuget-vulns.txt
+          if grep -q "has the following vulnerable packages" /tmp/nuget-vulns.txt; then
+            echo "Vulnerable NuGet packages found — failing build"
+            exit 1
+          fi
 
   frontend:
     name: frontend
@@ -39,22 +90,51 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Detect frontend changes
+        id: changes
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        with:
+          filters: |
+            frontend:
+              - 'apps/web/**'
+              - 'tests/Web.UnitTests/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/ci.yml'
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        if: steps.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
 
       - name: Install dependencies
+        if: steps.changes.outputs.frontend == 'true'
         run: npm ci
 
+      - name: Audit npm dependencies
+        if: steps.changes.outputs.frontend == 'true'
+        run: npm audit --workspace @curateds/web --workspace @curateds/web-tests --audit-level=high
+
       - name: Build web
+        if: steps.changes.outputs.frontend == 'true'
         run: npm run build:web
 
       - name: Test web
-        run: npm run test:web
+        if: steps.changes.outputs.frontend == 'true'
+        run: npm run test:web:coverage
+
+      - name: Upload frontend coverage to Codecov
+        if: steps.changes.outputs.frontend == 'true'
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: tests/Web.UnitTests/coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: false
 
   mobile:
     name: mobile
@@ -62,11 +142,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Detect mobile changes
         id: changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
         with:
           filters: |
             mobile:
@@ -77,7 +157,7 @@ jobs:
 
       - name: Setup Node
         if: steps.changes.outputs.mobile == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
@@ -90,6 +170,22 @@ jobs:
         if: steps.changes.outputs.mobile == 'true'
         run: npm run typecheck:mobile
 
+      - name: Audit npm dependencies
+        if: steps.changes.outputs.mobile == 'true'
+        # HIGH vulns are in Expo's build toolchain (jest-expo, expo-constants/plist)
+        # and have no non-breaking fix until the next Expo SDK upgrade.
+        # Gate on critical only until mobile is actively maintained again.
+        run: npm audit --workspace @curateds/mobile --audit-level=critical
+
       - name: Test mobile
         if: steps.changes.outputs.mobile == 'true'
-        run: npm run test:mobile
+        run: npm run test:mobile:coverage
+
+      - name: Upload mobile coverage to Codecov
+        if: steps.changes.outputs.mobile == 'true'
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/mobile/coverage/lcov.info
+          flags: mobile
+          fail_ci_if_error: false
