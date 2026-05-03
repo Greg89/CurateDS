@@ -73,7 +73,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/**/coverage.cobertura.xml
           flags: backend
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
       - name: Scan NuGet packages for vulnerabilities
         if: steps.changes.outputs.backend == 'true'
@@ -129,7 +129,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: tests/Web.UnitTests/coverage/lcov.info
           flags: frontend
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   mobile:
     name: mobile

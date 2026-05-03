@@ -12,12 +12,12 @@ on:
       - main
       - develop
 
-# Only run if triggered by a push, or if the CI workflow succeeded
+# Only run when the CI workflow completes successfully
 jobs:
   build-api:
     name: build & push api
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
       contents: read
@@ -34,7 +34,7 @@ jobs:
         with:
           images: ghcr.io/greg89/curateds-api
           tags: |
-            type=sha,prefix=sha-,format=short
+            type=sha,prefix=sha-,format=long
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -92,11 +92,12 @@ jobs:
   build-web:
     name: build & push web
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
       contents: read
       packages: write
+      security-events: write  # required to upload SARIF results
 
     steps:
       - name: Checkout
@@ -108,7 +109,7 @@ jobs:
         with:
           images: ghcr.io/greg89/curateds-web
           tags: |
-            type=sha,prefix=sha-,format=short
+            type=sha,prefix=sha-,format=long
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
