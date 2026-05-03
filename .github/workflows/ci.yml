@@ -19,19 +19,56 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect backend changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'apps/api/**'
+              - 'packages/**'
+              - 'tests/**'
+              - '!tests/Web.UnitTests/**'
+              - '!tests/EndToEndTests/**'
+              - 'CurateDS.sln'
+              - 'Directory.Build.props'
+              - 'global.json'
+              - '.github/workflows/ci.yml'
+
       - name: Setup .NET
+        if: steps.changes.outputs.backend == 'true'
         uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
 
+      - name: Cache NuGet packages
+        if: steps.changes.outputs.backend == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Restore
+        if: steps.changes.outputs.backend == 'true'
         run: dotnet restore CurateDS.sln
 
+      - name: Format check
+        if: steps.changes.outputs.backend == 'true'
+        run: dotnet format CurateDS.sln --verify-no-changes
+
       - name: Build
+        if: steps.changes.outputs.backend == 'true'
         run: dotnet build CurateDS.sln --no-restore
 
       - name: Test
+        if: steps.changes.outputs.backend == 'true'
         run: dotnet test CurateDS.sln --no-build --verbosity normal
+
+      - name: Scan NuGet packages for vulnerabilities
+        if: steps.changes.outputs.backend == 'true'
+        run: dotnet list package --vulnerable --include-transitive
 
   frontend:
     name: frontend
@@ -41,19 +78,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect frontend changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'apps/web/**'
+              - 'tests/Web.UnitTests/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/ci.yml'
+
       - name: Setup Node
+        if: steps.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
 
       - name: Install dependencies
+        if: steps.changes.outputs.frontend == 'true'
         run: npm ci
 
+      - name: Audit npm dependencies
+        if: steps.changes.outputs.frontend == 'true'
+        run: npm audit --audit-level=high
+
       - name: Build web
+        if: steps.changes.outputs.frontend == 'true'
         run: npm run build:web
 
       - name: Test web
+        if: steps.changes.outputs.frontend == 'true'
         run: npm run test:web
 
   mobile:
