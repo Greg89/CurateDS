@@ -48,8 +48,8 @@ public sealed class Item : AuditableEntity
         Description = description;
         Quantity = quantity;
         LocationId = locationId;
-        AttributeValues = [..attributeValues];
-        ItemTags = [..tags];
+        AttributeValues = [.. attributeValues];
+        ItemTags = [.. tags];
         MediaAssets = [];
         SetAuditOnCreate(createdUtc, createdBy);
     }
