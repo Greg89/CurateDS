@@ -57,15 +57,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Scan API image with Trivy
+      - name: Scan API image with Trivy (SARIF report)
+        if: always()
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ghcr.io/greg89/curateds-api:sha-${{ github.sha }}
           format: sarif
           output: trivy-api.sarif
           severity: CRITICAL,HIGH
-          exit-code: "1"
-          ignore-unfixed: true
+          exit-code: "0"
 
       - name: Upload Trivy API scan results
         if: always()
@@ -73,6 +73,15 @@ jobs:
         with:
           sarif_file: trivy-api.sarif
           category: trivy-api
+
+      - name: Gate on API image vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ghcr.io/greg89/curateds-api:sha-${{ github.sha }}
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
 
       - name: Push API image to GHCR
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
@@ -132,15 +141,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Scan web image with Trivy
+      - name: Scan web image with Trivy (SARIF report)
+        if: always()
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ghcr.io/greg89/curateds-web:sha-${{ github.sha }}
           format: sarif
           output: trivy-web.sarif
           severity: CRITICAL,HIGH
-          exit-code: "1"
-          ignore-unfixed: true
+          exit-code: "0"
 
       - name: Upload Trivy web scan results
         if: always()
@@ -148,6 +157,15 @@ jobs:
         with:
           sarif_file: trivy-web.sarif
           category: trivy-web
+
+      - name: Gate on web image vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ghcr.io/greg89/curateds-web:sha-${{ github.sha }}
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
 
       - name: Push web image to GHCR
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
