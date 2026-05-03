@@ -23,6 +23,11 @@ updates:
       - dependencies
       - dotnet
     groups:
+      efcore:
+        patterns:
+          - "Microsoft.EntityFrameworkCore*"
+          - "Npgsql.EntityFrameworkCore*"
+          - "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore"
       dotnet-test:
         patterns:
           - "coverlet.*"
