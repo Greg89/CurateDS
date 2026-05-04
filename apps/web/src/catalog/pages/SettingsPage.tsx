@@ -306,7 +306,7 @@ export function SettingsPage({
         />
       </section>
 
-      <section className="panel">
+      <section className="panel panel-fit">
         <div className="panel-header">
           <h3>Export Data</h3>
           <p>Download all items and attribute definitions as CSV files in a ZIP archive.</p>
@@ -324,7 +324,7 @@ export function SettingsPage({
         </button>
       </section>
 
-      <section className="panel panel-danger">
+      <section className="panel panel-danger panel-fit">
         <div className="panel-header">
           <h3>Danger Zone</h3>
           <p>Permanently remove this collection and all its data.</p>
