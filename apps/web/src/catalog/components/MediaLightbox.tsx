@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { MediaAsset } from "../../api";
 
 export function MediaLightbox({
@@ -33,7 +34,7 @@ export function MediaLightbox({
 
   if (!asset) return null;
 
-  return (
+  return createPortal(
     <div
       aria-label="Image lightbox"
       aria-modal="true"
@@ -111,6 +112,7 @@ export function MediaLightbox({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
