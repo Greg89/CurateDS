@@ -24,4 +24,7 @@ EXPOSE 8080
 
 COPY --from=build /app/publish .
 
+RUN adduser --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
+
 ENTRYPOINT ["dotnet", "CurateDS.Api.dll"]
