@@ -19,8 +19,5 @@
   },
   "overrides": {
     "react-test-renderer": "19.2.5"
-  },
-  "dependencies": {
-    "react-test-renderer": "^19.2.5"
   }
 }
