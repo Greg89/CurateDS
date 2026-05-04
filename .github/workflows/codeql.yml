@@ -13,6 +13,8 @@ on:
     # Weekly deep scan every Monday at 08:00 UTC, independent of pushes
     - cron: "0 8 * * 1"
 
+permissions: {}
+
 jobs:
   analyze:
     name: analyze (${{ matrix.language }})
