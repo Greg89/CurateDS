@@ -16,5 +16,11 @@
     "typecheck:mobile": "npm run typecheck --workspace @curateds/mobile",
     "test:mobile": "npm run test --workspace @curateds/mobile",
     "test:mobile:coverage": "npm run test:coverage --workspace @curateds/mobile"
+  },
+  "overrides": {
+    "react-test-renderer": "19.2.5"
+  },
+  "dependencies": {
+    "react-test-renderer": "^19.2.5"
   }
 }
