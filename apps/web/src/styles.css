@@ -255,6 +255,10 @@ textarea {
   grid-column: 1 / -1;
 }
 
+.panel-fit {
+  align-self: start;
+}
+
 /* --- Typography ----------------------------------------------------------- */
 .eyebrow {
   margin: 0 0 0.75rem;
@@ -509,8 +513,8 @@ h1 {
   border-radius: 999px;
   border: 0;
   padding: 0;
-  background: oklch(1 0 0 / 0.15);
-  color: oklch(0.95 0 0);
+  background: oklch(0.15 0 0 / 0.65);
+  color: oklch(1 0 0);
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
@@ -518,10 +522,11 @@ h1 {
   align-items: center;
   justify-content: center;
   transition: background 120ms;
+  box-shadow: 0 2px 8px oklch(0 0 0 / 0.4);
 }
 
 .media-lightbox-close:hover {
-  background: oklch(1 0 0 / 0.28);
+  background: oklch(0.15 0 0 / 0.85);
 }
 
 .media-lightbox-stage {
@@ -551,8 +556,8 @@ h1 {
   border-radius: 999px;
   border: 0;
   padding: 0;
-  background: oklch(1 0 0 / 0.15);
-  color: oklch(0.95 0 0);
+  background: oklch(0.15 0 0 / 0.65);
+  color: oklch(1 0 0);
   font-size: 2rem;
   line-height: 1;
   cursor: pointer;
@@ -560,10 +565,11 @@ h1 {
   align-items: center;
   justify-content: center;
   transition: background 120ms;
+  box-shadow: 0 2px 8px oklch(0 0 0 / 0.4);
 }
 
 .media-lightbox-nav:hover {
-  background: oklch(1 0 0 / 0.28);
+  background: oklch(0.15 0 0 / 0.85);
 }
 
 .media-lightbox-nav.prev { left: 0.75rem; }
@@ -624,18 +630,18 @@ h1 {
 }
 
 .media-lightbox-remove {
-  border: 1px solid oklch(0.65 0.18 22 / 0.5);
+  border: 1px solid oklch(0.65 0.18 22 / 0.7);
   border-radius: 8px;
   padding: 0.5rem 0.9rem;
-  background: oklch(0.65 0.18 22 / 0.15);
-  color: oklch(0.82 0.1 22);
+  background: oklch(0.65 0.18 22 / 0.25);
+  color: oklch(0.88 0.12 22);
   font-size: 0.88rem;
   cursor: pointer;
   transition: background 120ms;
 }
 
 .media-lightbox-remove:hover {
-  background: oklch(0.65 0.18 22 / 0.3);
+  background: oklch(0.65 0.18 22 / 0.45);
 }
 
 
