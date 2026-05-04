@@ -9,6 +9,8 @@ on:
       - develop
 
 # Only run when the CI workflow completes successfully
+permissions: {}
+
 jobs:
   build-api:
     name: build & push api
@@ -136,11 +138,11 @@ jobs:
           file: apps/web/Dockerfile
           push: false
           load: true
+          pull: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          no-cache-filter: final
 
       - name: Scan web image with Trivy (SARIF report)
         if: always()
