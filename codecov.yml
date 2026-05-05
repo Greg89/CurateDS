@@ -1,0 +1,7 @@
+coverage:
+  ignore:
+    - "packages/infrastructure/Persistence/Migrations/**"
+    - "packages/infrastructure/Persistence/CatalogDbContextFactory.cs"
+    - "apps/api/Program.cs"
+    - "apps/web/src/main.tsx"
+    - "apps/web/src/vite-env.d.ts"
