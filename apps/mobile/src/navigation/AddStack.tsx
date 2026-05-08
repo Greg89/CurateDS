@@ -29,7 +29,7 @@ export default function AddStack() {
       >
         {(props: NativeStackScreenProps<AddStackParamList, 'PickCollection'>) => (
           <CollectionsScreen
-            {...(props as never)}
+            {...(props as any)}
             onSelectCollection={(col) =>
               props.navigation.navigate('Camera', {
                 collectionId: col.id,

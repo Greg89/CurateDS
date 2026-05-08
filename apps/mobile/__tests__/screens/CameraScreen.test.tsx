@@ -32,7 +32,7 @@ jest.mock('expo-image-picker', () => ({
 import * as ExpoCamera from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 const mockUseCameraPermissions = ExpoCamera.useCameraPermissions as jest.MockedFunction<
-  typeof ExpoCamera.useCameraPermissions
+  () => any
 >;
 const mockLaunchGallery = ImagePicker.launchImageLibraryAsync as jest.MockedFunction<
   typeof ImagePicker.launchImageLibraryAsync
@@ -155,7 +155,7 @@ describe('CameraScreen', () => {
       mockRequestPermission,
       jest.fn(),
     ]);
-    mockLaunchGallery.mockResolvedValueOnce({ canceled: true, assets: [] });
+    mockLaunchGallery.mockResolvedValueOnce({ canceled: true, assets: null });
     const { getByTestId } = renderCamera();
     fireEvent.press(getByTestId('gallery-fallback-button'));
     await waitFor(() => expect(mockLaunchGallery).toHaveBeenCalled());
