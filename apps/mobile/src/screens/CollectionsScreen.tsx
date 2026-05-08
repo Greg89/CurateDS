@@ -12,9 +12,11 @@ import {
 import { listCollections, type Collection } from '../api/collections';
 import type { CollectionsStackParamList } from '../navigation/CollectionsStack';
 
-type Props = NativeStackScreenProps<CollectionsStackParamList, 'CollectionsList'>;
+type Props = NativeStackScreenProps<CollectionsStackParamList, 'CollectionsList'> & {
+  onSelectCollection?: (collection: Collection) => void;
+};
 
-export default function CollectionsScreen({ navigation }: Props) {
+export default function CollectionsScreen({ navigation, onSelectCollection }: Props) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['collections'],
     queryFn: listCollections,
@@ -58,10 +60,12 @@ export default function CollectionsScreen({ navigation }: Props) {
         <Pressable
           style={styles.row}
           onPress={() =>
-            navigation.navigate('CollectionDetail', {
-              collectionId: item.id,
-              collectionName: item.name,
-            })
+            onSelectCollection
+              ? onSelectCollection(item)
+              : navigation.navigate('CollectionDetail', {
+                  collectionId: item.id,
+                  collectionName: item.name,
+                })
           }
         >
           <Text style={styles.name}>{item.name}</Text>

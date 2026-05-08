@@ -83,3 +83,40 @@ export async function getItemDetail(
   const raw = await apiFetch<unknown>(`/collections/${collectionId}/items/${itemId}`);
   return ItemDetailSchema.parse(raw);
 }
+
+export interface CreateItemInput {
+  name: string;
+  description: string;
+  quantity: number;
+  locationId: string | null;
+  tagIds: string[];
+  attributeValues: Array<{ attributeDefinitionId: string; value: string }>;
+}
+
+export async function createItem(
+  collectionId: string,
+  input: CreateItemInput,
+): Promise<ItemDetail> {
+  const raw = await apiFetch<unknown>(`/collections/${collectionId}/items`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  return ItemDetailSchema.parse(raw);
+}
+
+export async function uploadItemMedia(
+  collectionId: string,
+  itemId: string,
+  uri: string,
+  fileName: string,
+  contentType: string,
+): Promise<MediaAsset> {
+  const body = new FormData();
+  body.append('file', { uri, name: fileName, type: contentType } as unknown as Blob);
+
+  const raw = await apiFetch<unknown>(
+    `/collections/${collectionId}/items/${itemId}/media`,
+    { method: 'POST', body, headers: { Accept: 'application/json' } },
+  );
+  return MediaAssetSchema.parse(raw);
+}

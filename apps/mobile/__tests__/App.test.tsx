@@ -24,6 +24,12 @@ jest.mock('../src/navigation/CollectionsStack', () => {
     return <Text>Collections</Text>;
   };
 });
+jest.mock('../src/navigation/AddStack', () => {
+  const { Text } = require('react-native');
+  return function AddStack() {
+    return <Text>Add</Text>;
+  };
+});
 jest.mock('@tanstack/react-query', () => {
   const actual = jest.requireActual('@tanstack/react-query');
   return { ...actual, useQuery: () => ({ data: [], isLoading: false, isError: false }) };

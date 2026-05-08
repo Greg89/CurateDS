@@ -1,12 +1,14 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
 
+import AddStack from './AddStack';
 import CollectionsStack from './CollectionsStack';
 import ProfileScreen from '../screens/ProfileScreen';
 import SearchScreen from '../screens/SearchScreen';
 
 export type RootTabParamList = {
   Collections: undefined;
+  Add: undefined;
   Search: undefined;
   Profile: undefined;
 };
@@ -25,6 +27,11 @@ export default function RootTabs() {
         name="Collections"
         component={CollectionsStack}
         options={{ tabBarIcon: () => <Text>📚</Text> }}
+      />
+      <Tab.Screen
+        name="Add"
+        component={AddStack}
+        options={{ tabBarIcon: () => <Text>➕</Text> }}
       />
       <Tab.Screen
         name="Search"
