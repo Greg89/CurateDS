@@ -7,6 +7,43 @@ import type { StoredTokens } from '../src/auth/authStorage';
 
 jest.mock('../src/auth/authStorage');
 jest.mock('../src/auth/auth0Client');
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native');
+  return { ...actual, NavigationContainer: ({ children }: { children: React.ReactNode }) => children };
+});
+jest.mock('@react-navigation/bottom-tabs', () => ({
+  createBottomTabNavigator: () => ({
+    Navigator: ({ children }: { children: React.ReactNode }) => children,
+    Screen: ({ component: Component }: { component: React.ComponentType }) => <Component />,
+  }),
+}));
+// Mock the whole stack so CollectionDetailScreen (which needs route params) is never rendered
+jest.mock('../src/navigation/CollectionsStack', () => {
+  const { Text } = require('react-native');
+  return function CollectionsStack() {
+    return <Text>Collections</Text>;
+  };
+});
+jest.mock('../src/navigation/AddStack', () => {
+  const { Text } = require('react-native');
+  return function AddStack() {
+    return <Text>Add</Text>;
+  };
+});
+jest.mock('@tanstack/react-query', () => {
+  const actual = jest.requireActual('@tanstack/react-query');
+  return { ...actual, useQuery: () => ({ data: [], isLoading: false, isError: false }) };
+});
+jest.mock('@tanstack/react-query-persist-client', () => ({
+  PersistQueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+jest.mock('../src/api/queryClient', () => ({
+  queryClient: { getQueryCache: () => ({ subscribe: () => () => {} }) },
+  asyncStoragePersister: {},
+}));
+jest.mock('@react-native-community/netinfo', () => ({
+  addEventListener: () => () => {},
+}));
 
 const mockedStorage = authStorage as jest.Mocked<typeof authStorage>;
 const mockedClient = auth0Client as jest.Mocked<typeof auth0Client>;
@@ -39,7 +76,7 @@ describe('App', () => {
     expect(await findByText('Sign in')).toBeTruthy();
   });
 
-  it('shows the home screen with the profile claim once signed in', async () => {
+  it('shows the profile tab with user claim once signed in', async () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(validTokens);
 
     const { findByText } = render(<App />);
@@ -48,7 +85,7 @@ describe('App', () => {
     expect(await findByText('ada@example.com')).toBeTruthy();
   });
 
-  it('moves from sign-in to home after a successful login', async () => {
+  it('moves from sign-in to the app after a successful login', async () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(null);
     mockedClient.login.mockResolvedValueOnce(validTokens);
 

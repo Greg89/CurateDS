@@ -19,6 +19,7 @@
   },
   "overrides": {
     "react-test-renderer": "19.2.5",
+    "@react-native-async-storage/async-storage": "^1.24.0",
     "uuid": "^14.0.0",
     "xcode": {
       "uuid": "^14.0.0"

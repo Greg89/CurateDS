@@ -40,6 +40,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# generated native folders
+# generated native folders (committed for bare workflow — local.properties stays excluded)
 /ios
-/android
+# /android — committed, see android/.gitignore for exclusions
