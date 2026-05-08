@@ -1,12 +1,13 @@
 import { NavigationContainer } from '@react-navigation/native';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { setTokenProvider } from './src/api/client';
-import { queryClient } from './src/api/queryClient';
+import { asyncStoragePersister, queryClient } from './src/api/queryClient';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
+import OfflineBanner from './src/components/OfflineBanner';
 import RootTabs from './src/navigation/RootTabs';
 import SignInScreen from './src/screens/SignInScreen';
 
@@ -31,6 +32,7 @@ function RootRouter() {
 
   return (
     <NavigationContainer>
+      <OfflineBanner />
       <RootTabs />
     </NavigationContainer>
   );
@@ -38,12 +40,15 @@ function RootRouter() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: asyncStoragePersister }}
+    >
       <AuthProvider>
         <RootRouter />
         <StatusBar style="auto" />
       </AuthProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 
@@ -55,3 +60,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+

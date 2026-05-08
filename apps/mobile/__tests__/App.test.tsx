@@ -28,6 +28,16 @@ jest.mock('@tanstack/react-query', () => {
   const actual = jest.requireActual('@tanstack/react-query');
   return { ...actual, useQuery: () => ({ data: [], isLoading: false, isError: false }) };
 });
+jest.mock('@tanstack/react-query-persist-client', () => ({
+  PersistQueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+jest.mock('../src/api/queryClient', () => ({
+  queryClient: { getQueryCache: () => ({ subscribe: () => () => {} }) },
+  asyncStoragePersister: {},
+}));
+jest.mock('@react-native-community/netinfo', () => ({
+  addEventListener: () => () => {},
+}));
 
 const mockedStorage = authStorage as jest.Mocked<typeof authStorage>;
 const mockedClient = auth0Client as jest.Mocked<typeof auth0Client>;

@@ -1,4 +1,4 @@
-import { listItems } from '../../src/api/items';
+import { getItemDetail, listItems } from '../../src/api/items';
 import * as client from '../../src/api/client';
 
 jest.mock('../../src/api/client');
@@ -53,5 +53,45 @@ describe('listItems', () => {
     mockedApiFetch.mockResolvedValueOnce({ notAPagedResponse: true });
 
     await expect(listItems('22222222-2222-2222-2222-222222222222')).rejects.toThrow();
+  });
+});
+
+const rawDetail = {
+  id: '11111111-1111-1111-1111-111111111111',
+  collectionId: '22222222-2222-2222-2222-222222222222',
+  name: 'Canon AE-1',
+  description: null,
+  quantity: 1,
+  locationId: null,
+  locationName: null,
+  itemTypeId: null,
+  tags: [{ id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', name: 'film' }],
+  createdUtc: '2024-01-01T00:00:00Z',
+  updatedUtc: null,
+  attributeValues: [],
+  mediaAssets: [],
+};
+
+describe('getItemDetail', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('calls the correct endpoint and returns parsed detail', async () => {
+    mockedApiFetch.mockResolvedValueOnce(rawDetail);
+
+    const item = await getItemDetail('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111');
+
+    expect(mockedApiFetch).toHaveBeenCalledWith(
+      '/collections/22222222-2222-2222-2222-222222222222/items/11111111-1111-1111-1111-111111111111',
+    );
+    expect(item.name).toBe('Canon AE-1');
+    expect(item.tags[0].name).toBe('film');
+  });
+
+  it('throws when the response shape is invalid', async () => {
+    mockedApiFetch.mockResolvedValueOnce({ notAnItem: true });
+
+    await expect(
+      getItemDetail('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111'),
+    ).rejects.toThrow();
   });
 });

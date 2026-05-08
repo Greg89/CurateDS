@@ -14,7 +14,7 @@ import type { CollectionsStackParamList } from '../navigation/CollectionsStack';
 
 type Props = NativeStackScreenProps<CollectionsStackParamList, 'CollectionDetail'>;
 
-export default function CollectionDetailScreen({ route }: Props) {
+export default function CollectionDetailScreen({ route, navigation }: Props) {
   const { collectionId } = route.params;
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -57,7 +57,16 @@ export default function CollectionDetailScreen({ route }: Props) {
       contentContainerStyle={styles.list}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       renderItem={({ item }) => (
-        <View style={styles.row}>
+        <Pressable
+          style={styles.row}
+          onPress={() =>
+            navigation.navigate('ItemDetail', {
+              collectionId: route.params.collectionId,
+              itemId: item.id,
+              itemName: item.name,
+            })
+          }
+        >
           <View style={styles.rowContent}>
             <Text style={styles.name}>{item.name}</Text>
             {item.description ? (
@@ -75,7 +84,8 @@ export default function CollectionDetailScreen({ route }: Props) {
               ) : null}
             </View>
           </View>
-        </View>
+          <Text style={styles.chevron}>›</Text>
+        </Pressable>
       )}
     />
   );
@@ -93,6 +103,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   row: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
@@ -118,6 +130,11 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     color: '#777',
+  },
+  chevron: {
+    fontSize: 22,
+    color: '#999',
+    marginLeft: 8,
   },
   separator: {
     height: StyleSheet.hairlineWidth,

@@ -32,3 +32,54 @@ export async function listItems(collectionId: string): Promise<ItemSummary[]> {
   const parsed = PagedItemsResponseSchema.parse(raw);
   return parsed.items;
 }
+
+export const MediaAssetSchema = z.object({
+  id: z.string().uuid(),
+  url: z.string(),
+  contentType: z.string(),
+  fileName: z.string(),
+  sizeBytes: z.number(),
+  isPrimary: z.boolean(),
+  uploadedUtc: z.string(),
+});
+
+export const AttributeValueSchema = z.object({
+  attributeDefinitionId: z.string().uuid(),
+  attributeName: z.string(),
+  attributeKey: z.string(),
+  dataType: z.string(),
+  value: z.string(),
+});
+
+export const TagDetailSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+});
+
+export const ItemDetailSchema = z.object({
+  id: z.string().uuid(),
+  collectionId: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  quantity: z.number().int(),
+  locationId: z.string().uuid().nullable(),
+  locationName: z.string().nullable(),
+  itemTypeId: z.string().uuid().nullable(),
+  tags: z.array(TagDetailSchema),
+  createdUtc: z.string(),
+  updatedUtc: z.string().nullable(),
+  attributeValues: z.array(AttributeValueSchema),
+  mediaAssets: z.array(MediaAssetSchema),
+});
+
+export type MediaAsset = z.infer<typeof MediaAssetSchema>;
+export type AttributeValue = z.infer<typeof AttributeValueSchema>;
+export type ItemDetail = z.infer<typeof ItemDetailSchema>;
+
+export async function getItemDetail(
+  collectionId: string,
+  itemId: string,
+): Promise<ItemDetail> {
+  const raw = await apiFetch<unknown>(`/collections/${collectionId}/items/${itemId}`);
+  return ItemDetailSchema.parse(raw);
+}
