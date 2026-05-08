@@ -17,6 +17,13 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
     Screen: ({ component: Component }: { component: React.ComponentType }) => <Component />,
   }),
 }));
+// Mock the whole stack so CollectionDetailScreen (which needs route params) is never rendered
+jest.mock('../src/navigation/CollectionsStack', () => {
+  const { Text } = require('react-native');
+  return function CollectionsStack() {
+    return <Text>Collections</Text>;
+  };
+});
 jest.mock('@tanstack/react-query', () => {
   const actual = jest.requireActual('@tanstack/react-query');
   return { ...actual, useQuery: () => ({ data: [], isLoading: false, isError: false }) };

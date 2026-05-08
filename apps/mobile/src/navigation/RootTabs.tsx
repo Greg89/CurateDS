@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
 
-import CollectionsScreen from '../screens/CollectionsScreen';
+import CollectionsStack from './CollectionsStack';
 import ProfileScreen from '../screens/ProfileScreen';
 import SearchScreen from '../screens/SearchScreen';
 
@@ -17,24 +17,24 @@ export default function RootTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: true,
+        headerShown: false,
         tabBarActiveTintColor: '#111',
       }}
     >
       <Tab.Screen
         name="Collections"
-        component={CollectionsScreen}
+        component={CollectionsStack}
         options={{ tabBarIcon: () => <Text>📚</Text> }}
       />
       <Tab.Screen
         name="Search"
         component={SearchScreen}
-        options={{ tabBarIcon: () => <Text>🔍</Text> }}
+        options={{ headerShown: true, tabBarIcon: () => <Text>🔍</Text> }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarIcon: () => <Text>👤</Text> }}
+        options={{ headerShown: true, tabBarIcon: () => <Text>👤</Text> }}
       />
     </Tab.Navigator>
   );

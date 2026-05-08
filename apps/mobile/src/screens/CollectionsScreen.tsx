@@ -1,3 +1,4 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import {
   ActivityIndicator,
@@ -9,8 +10,11 @@ import {
 } from 'react-native';
 
 import { listCollections, type Collection } from '../api/collections';
+import type { CollectionsStackParamList } from '../navigation/CollectionsStack';
 
-export default function CollectionsScreen() {
+type Props = NativeStackScreenProps<CollectionsStackParamList, 'CollectionsList'>;
+
+export default function CollectionsScreen({ navigation }: Props) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['collections'],
     queryFn: listCollections,
@@ -51,10 +55,18 @@ export default function CollectionsScreen() {
       contentContainerStyle={styles.list}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       renderItem={({ item }) => (
-        <View style={styles.row}>
+        <Pressable
+          style={styles.row}
+          onPress={() =>
+            navigation.navigate('CollectionDetail', {
+              collectionId: item.id,
+              collectionName: item.name,
+            })
+          }
+        >
           <Text style={styles.name}>{item.name}</Text>
           <Text style={styles.chevron}>›</Text>
-        </View>
+        </Pressable>
       )}
     />
   );

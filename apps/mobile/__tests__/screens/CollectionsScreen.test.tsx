@@ -9,6 +9,9 @@ import CollectionsScreen from '../../src/screens/CollectionsScreen';
 jest.mock('../../src/api/collections');
 const mockedApi = collectionsApi as jest.Mocked<typeof collectionsApi>;
 
+const mockNavigation = { navigate: jest.fn() } as unknown as never;
+const mockRoute = { params: undefined, key: 'CollectionsList', name: 'CollectionsList' as const };
+
 let queryClient: QueryClient;
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -35,7 +38,7 @@ describe('CollectionsScreen', () => {
   it('shows a loading indicator while fetching', () => {
     mockedApi.listCollections.mockReturnValue(new Promise(() => {}));
 
-    const { getByTestId } = render(<CollectionsScreen />, { wrapper });
+    const { getByTestId } = render(<CollectionsScreen navigation={mockNavigation} route={mockRoute} />, { wrapper });
 
     expect(getByTestId('activity-indicator') ?? true).toBeTruthy();
   });
@@ -43,7 +46,7 @@ describe('CollectionsScreen', () => {
   it('renders the collection names on success', async () => {
     mockedApi.listCollections.mockResolvedValueOnce(collections);
 
-    const { findByText } = render(<CollectionsScreen />, { wrapper });
+    const { findByText } = render(<CollectionsScreen navigation={mockNavigation} route={mockRoute} />, { wrapper });
 
     expect(await findByText('Vinyl Records')).toBeTruthy();
     expect(await findByText('Vintage Cameras')).toBeTruthy();
@@ -52,7 +55,7 @@ describe('CollectionsScreen', () => {
   it('shows an empty state when the API returns an empty list', async () => {
     mockedApi.listCollections.mockResolvedValueOnce([]);
 
-    const { findByText } = render(<CollectionsScreen />, { wrapper });
+    const { findByText } = render(<CollectionsScreen navigation={mockNavigation} route={mockRoute} />, { wrapper });
 
     expect(await findByText('No collections yet.')).toBeTruthy();
   });
@@ -60,7 +63,7 @@ describe('CollectionsScreen', () => {
   it('shows an error message and retry button on failure', async () => {
     mockedApi.listCollections.mockRejectedValueOnce(new Error('Network error'));
 
-    const { findByText } = render(<CollectionsScreen />, { wrapper });
+    const { findByText } = render(<CollectionsScreen navigation={mockNavigation} route={mockRoute} />, { wrapper });
 
     expect(await findByText('Failed to load collections.')).toBeTruthy();
     expect(await findByText('Retry')).toBeTruthy();
@@ -71,7 +74,7 @@ describe('CollectionsScreen', () => {
       .mockRejectedValueOnce(new Error('Network error'))
       .mockResolvedValueOnce(collections);
 
-    const { findByText } = render(<CollectionsScreen />, { wrapper });
+    const { findByText } = render(<CollectionsScreen navigation={mockNavigation} route={mockRoute} />, { wrapper });
 
     const retryButton = await findByText('Retry');
     fireEvent.press(retryButton);
