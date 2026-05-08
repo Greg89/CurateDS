@@ -12,5 +12,6 @@ export default (): ExpoConfig => ({
       clientId: process.env.EXPO_PUBLIC_AUTH0_CLIENT_ID ?? '',
       audience: process.env.EXPO_PUBLIC_AUTH0_AUDIENCE ?? '',
     },
+    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? '',
   },
 });
