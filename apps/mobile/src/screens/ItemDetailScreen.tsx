@@ -1,7 +1,8 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   RefreshControl,
@@ -11,18 +12,38 @@ import {
   View,
 } from 'react-native';
 
-import { getItemDetail } from '../api/items';
+import { deleteItem, getItemDetail } from '../api/items';
 import type { CollectionsStackParamList } from '../navigation/CollectionsStack';
 
 type Props = NativeStackScreenProps<CollectionsStackParamList, 'ItemDetail'>;
 
-export default function ItemDetailScreen({ route }: Props) {
-  const { collectionId, itemId } = route.params;
+export default function ItemDetailScreen({ route, navigation }: Props) {
+  const { collectionId, itemId, itemName } = route.params;
+  const queryClient = useQueryClient();
 
   const { data, isLoading, isError, isRefetching, refetch } = useQuery({
     queryKey: ['collections', collectionId, 'items', itemId],
     queryFn: () => getItemDetail(collectionId, itemId),
   });
+
+  const { mutate: confirmDelete, isPending: isDeleting } = useMutation({
+    mutationFn: () => deleteItem(collectionId, itemId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['collections', collectionId, 'items'] });
+      navigation.goBack();
+    },
+  });
+
+  function handleDelete() {
+    Alert.alert(
+      'Delete item',
+      `Delete "${itemName}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => confirmDelete() },
+      ],
+    );
+  }
 
   if (isLoading) {
     return (
@@ -149,6 +170,30 @@ export default function ItemDetailScreen({ route }: Props) {
           </View>
         </>
       ) : null}
+
+      {/* Actions */}
+      <View style={styles.divider} />
+      <View style={styles.actions}>
+        <Pressable
+          testID="edit-button"
+          style={styles.editButton}
+          onPress={() => navigation.navigate('EditItem', { collectionId, itemId, itemName })}
+        >
+          <Text style={styles.editButtonText}>Edit</Text>
+        </Pressable>
+        <Pressable
+          testID="delete-button"
+          style={[styles.deleteButton, isDeleting && styles.actionDisabled]}
+          onPress={handleDelete}
+          disabled={isDeleting}
+        >
+          {isDeleting ? (
+            <ActivityIndicator color="#c00" />
+          ) : (
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          )}
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -267,5 +312,40 @@ const styles = StyleSheet.create({
   retryText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  editButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#6366f1',
+    alignItems: 'center',
+  },
+  editButtonText: {
+    color: '#6366f1',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  deleteButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ef4444',
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    color: '#ef4444',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  actionDisabled: {
+    opacity: 0.5,
   },
 });
