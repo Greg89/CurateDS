@@ -8,6 +8,7 @@ Concise outline for the eventual CurateDS mobile companion app. **Documentation 
 2. [01-mobile-architecture.md](./01-mobile-architecture.md) — stack, data flow, the API endpoints mobile consumes, auth, sync strategy.
 3. [02-mobile-feature-roadmap.md](./02-mobile-feature-roadmap.md) — phased plan from foundation through sync hardening, with explicit anti-goals.
 4. [03-mobile-quality-and-engineering.md](./03-mobile-quality-and-engineering.md) — TDD strategy, CI integration, release process, observability.
+5. [04-mobile-play-store-rollout.md](./04-mobile-play-store-rollout.md) — concrete, ordered plan to ship the Android app to the Play Store: code changes, EAS setup, signing, CI workflow, Google Play Console steps, and rollout sequence.
 
 ## Status
 

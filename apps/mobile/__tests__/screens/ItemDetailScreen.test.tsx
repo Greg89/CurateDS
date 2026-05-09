@@ -232,6 +232,23 @@ describe('ItemDetailScreen', () => {
     });
   });
 
+  it('pressing History navigates to ItemEvents screen', async () => {
+    mockedApi.getItemDetail.mockResolvedValueOnce(fullItem);
+
+    const { findByTestId } = render(
+      <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
+      { wrapper },
+    );
+
+    fireEvent.press(await findByTestId('history-button'));
+
+    expect((mockNavigation as any).navigate).toHaveBeenCalledWith('ItemEvents', {
+      collectionId: '22222222-2222-2222-2222-222222222222',
+      itemId: '11111111-1111-1111-1111-111111111111',
+      itemName: 'Canon AE-1',
+    });
+  });
+
   it('pressing Delete shows a confirmation alert', async () => {
     mockedApi.getItemDetail.mockResolvedValueOnce(fullItem);
 

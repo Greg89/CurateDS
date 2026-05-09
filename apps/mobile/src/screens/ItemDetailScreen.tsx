@@ -182,6 +182,13 @@ export default function ItemDetailScreen({ route, navigation }: Props) {
           <Text style={styles.editButtonText}>Edit</Text>
         </Pressable>
         <Pressable
+          testID="history-button"
+          style={styles.historyButton}
+          onPress={() => navigation.navigate('ItemEvents', { collectionId, itemId, itemName })}
+        >
+          <Text style={styles.historyButtonText}>History</Text>
+        </Pressable>
+        <Pressable
           testID="delete-button"
           style={[styles.deleteButton, isDeleting && styles.actionDisabled]}
           onPress={handleDelete}
@@ -329,6 +336,19 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     color: '#6366f1',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  historyButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#888',
+    alignItems: 'center',
+  },
+  historyButtonText: {
+    color: '#555',
     fontWeight: '600',
     fontSize: 15,
   },
