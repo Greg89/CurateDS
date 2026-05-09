@@ -1,15 +1,17 @@
 import type { ExpoConfig } from 'expo/config';
+import base from './app.json' with { type: 'json' };
 
-const base = require('./app.json') as { expo: ExpoConfig };
+const baseConfig = base.expo as ExpoConfig;
 
 export default (): ExpoConfig => ({
-  ...base.expo,
+  ...baseConfig,
   extra: {
-    ...(base.expo.extra ?? {}),
+    ...(baseConfig.extra ?? {}),
     auth0: {
       domain: process.env.EXPO_PUBLIC_AUTH0_DOMAIN ?? '',
       clientId: process.env.EXPO_PUBLIC_AUTH0_CLIENT_ID ?? '',
       audience: process.env.EXPO_PUBLIC_AUTH0_AUDIENCE ?? '',
     },
+    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? '',
   },
 });

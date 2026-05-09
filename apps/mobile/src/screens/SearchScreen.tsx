@@ -1,0 +1,23 @@
+import { StyleSheet, Text, View } from 'react-native';
+
+export default function SearchScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.text}>Search coming in Phase 4.</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  text: {
+    fontSize: 16,
+    color: '#999',
+  },
+});
