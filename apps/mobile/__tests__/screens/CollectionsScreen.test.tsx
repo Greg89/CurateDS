@@ -83,4 +83,36 @@ describe('CollectionsScreen', () => {
       expect(mockedApi.listCollections).toHaveBeenCalledTimes(2);
     });
   });
+
+  it('navigates to CollectionDetail when a row is pressed (no onSelectCollection)', async () => {
+    mockedApi.listCollections.mockResolvedValueOnce(collections);
+
+    const { findByText } = render(<CollectionsScreen navigation={mockNavigation} route={mockRoute} />, { wrapper });
+
+    fireEvent.press(await findByText('Vinyl Records'));
+
+    expect((mockNavigation as any).navigate).toHaveBeenCalledWith('CollectionDetail', {
+      collectionId: '11111111-1111-1111-1111-111111111111',
+      collectionName: 'Vinyl Records',
+    });
+  });
+
+  it('calls onSelectCollection instead of navigating when the prop is provided', async () => {
+    mockedApi.listCollections.mockResolvedValueOnce(collections);
+    const onSelectCollection = jest.fn();
+
+    const { findByText } = render(
+      <CollectionsScreen
+        navigation={mockNavigation}
+        route={mockRoute}
+        onSelectCollection={onSelectCollection}
+      />,
+      { wrapper },
+    );
+
+    fireEvent.press(await findByText('Vinyl Records'));
+
+    expect(onSelectCollection).toHaveBeenCalledWith(collections[0]);
+    expect((mockNavigation as any).navigate).not.toHaveBeenCalled();
+  });
 });

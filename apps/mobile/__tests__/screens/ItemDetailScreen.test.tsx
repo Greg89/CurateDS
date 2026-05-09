@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import * as itemsApi from '../../src/api/items';
@@ -126,5 +126,88 @@ describe('ItemDetailScreen', () => {
     );
 
     expect(await findByText('Failed to load item.')).toBeTruthy();
+  });
+
+  it('shows retry button in error state and refetches on press', async () => {
+    mockedApi.getItemDetail
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValueOnce(fullItem);
+
+    const { findByText } = render(
+      <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
+      { wrapper },
+    );
+
+    const retryButton = await findByText('Retry');
+    fireEvent.press(retryButton);
+    expect(await findByText('Canon AE-1')).toBeTruthy();
+  });
+
+  it('renders item without optional fields (no description, no location, no updatedUtc)', async () => {
+    const minimalItem: ItemDetail = {
+      ...fullItem,
+      description: null,
+      locationName: null,
+      updatedUtc: null,
+      tags: [],
+      attributeValues: [],
+      mediaAssets: [],
+    };
+    mockedApi.getItemDetail.mockResolvedValueOnce(minimalItem);
+
+    const { findByText, queryByText } = render(
+      <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
+      { wrapper },
+    );
+
+    expect(await findByText('Canon AE-1')).toBeTruthy();
+    expect(queryByText('Classic 35mm film camera from 1976')).toBeNull();
+    expect(queryByText('Camera shelf')).toBeNull();
+    expect(queryByText('Tags')).toBeNull();
+    expect(queryByText('Attributes')).toBeNull();
+  });
+
+  it('does not render updated row when updatedUtc is null', async () => {
+    mockedApi.getItemDetail.mockResolvedValueOnce({ ...fullItem, updatedUtc: null });
+
+    const { findByText, queryByText } = render(
+      <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
+      { wrapper },
+    );
+
+    await findByText('Canon AE-1');
+    expect(queryByText('Updated')).toBeNull();
+  });
+
+  it('renders updated date when updatedUtc is present', async () => {
+    mockedApi.getItemDetail.mockResolvedValueOnce({
+      ...fullItem,
+      updatedUtc: '2024-06-01T00:00:00Z',
+    });
+
+    const { findByText } = render(
+      <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
+      { wrapper },
+    );
+
+    expect(await findByText('Updated')).toBeTruthy();
+  });
+
+  it('renders photo gallery section when there are multiple media assets', async () => {
+    const itemWithPhotos: ItemDetail = {
+      ...fullItem,
+      mediaAssets: [
+        { id: 'cc1', url: 'https://example.com/1.jpg', contentType: 'image/jpeg', fileName: '1.jpg', sizeBytes: 1000, isPrimary: true, uploadedUtc: '2024-01-01T00:00:00Z' },
+        { id: 'cc2', url: 'https://example.com/2.jpg', contentType: 'image/jpeg', fileName: '2.jpg', sizeBytes: 1000, isPrimary: false, uploadedUtc: '2024-01-01T00:00:00Z' },
+      ],
+    };
+    mockedApi.getItemDetail.mockResolvedValueOnce(itemWithPhotos);
+
+    const { findByText } = render(
+      <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
+      { wrapper },
+    );
+
+    expect(await findByText('Photos')).toBeTruthy();
   });
 });

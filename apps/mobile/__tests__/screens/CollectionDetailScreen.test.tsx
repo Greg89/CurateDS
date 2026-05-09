@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import * as itemsApi from '../../src/api/items';
@@ -97,5 +97,57 @@ describe('CollectionDetailScreen', () => {
 
     expect(await findByText('Failed to load items.')).toBeTruthy();
     expect(await findByText('Retry')).toBeTruthy();
+  });
+
+  it('refetches when retry button is pressed', async () => {
+    mockedApi.listItems
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValueOnce(items);
+
+    const { findByText } = render(
+      <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
+      { wrapper },
+    );
+
+    const retryButton = await findByText('Retry');
+    fireEvent.press(retryButton);
+    expect(await findByText('Canon AE-1')).toBeTruthy();
+  });
+
+  it('navigates to ItemDetail when a row is pressed', async () => {
+    mockedApi.listItems.mockResolvedValueOnce(items);
+
+    const { findByText } = render(
+      <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
+      { wrapper },
+    );
+
+    fireEvent.press(await findByText('Canon AE-1'));
+
+    expect((mockNavigation as any).navigate).toHaveBeenCalledWith('ItemDetail', {
+      collectionId: '22222222-2222-2222-2222-222222222222',
+      itemId: '11111111-1111-1111-1111-111111111111',
+      itemName: 'Canon AE-1',
+    });
+  });
+
+  it('does not render optional fields when they are absent', async () => {
+    const minimalItem: ItemSummary = {
+      ...items[0],
+      description: null,
+      locationName: null,
+      tags: [],
+    };
+    mockedApi.listItems.mockResolvedValueOnce([minimalItem]);
+
+    const { findByText, queryByText } = render(
+      <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
+      { wrapper },
+    );
+
+    expect(await findByText('Canon AE-1')).toBeTruthy();
+    expect(queryByText('Classic 35mm film camera')).toBeNull();
+    expect(queryByText('📍 Camera shelf')).toBeNull();
+    expect(queryByText('film, vintage')).toBeNull();
   });
 });
