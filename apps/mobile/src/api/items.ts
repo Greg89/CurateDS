@@ -120,3 +120,76 @@ export async function uploadItemMedia(
   );
   return MediaAssetSchema.parse(raw);
 }
+
+export interface UpdateItemInput {
+  name: string;
+  description: string | null;
+  quantity: number;
+  locationId: string | null;
+  itemTypeId: string | null;
+  tagIds: string[];
+  attributeValues: Array<{ attributeDefinitionId: string; value: string }>;
+}
+
+export async function updateItem(
+  collectionId: string,
+  itemId: string,
+  input: UpdateItemInput,
+): Promise<ItemDetail> {
+  const raw = await apiFetch<unknown>(`/collections/${collectionId}/items/${itemId}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+  return ItemDetailSchema.parse(raw);
+}
+
+export async function deleteItem(
+  collectionId: string,
+  itemId: string,
+): Promise<void> {
+  await apiFetch<void>(`/collections/${collectionId}/items/${itemId}`, {
+    method: 'DELETE',
+  });
+}
+
+export const ItemEventSchema = z.object({
+  id: z.string().uuid(),
+  itemId: z.string().uuid(),
+  collectionId: z.string().uuid(),
+  eventType: z.string(),
+  occurredUtc: z.string(),
+  occurredBy: z.string(),
+  notes: z.string().nullable(),
+});
+
+export type ItemEvent = z.infer<typeof ItemEventSchema>;
+
+export async function listItemEvents(
+  collectionId: string,
+  itemId: string,
+): Promise<ItemEvent[]> {
+  const raw = await apiFetch<unknown>(`/collections/${collectionId}/items/${itemId}/events`);
+  return z.array(ItemEventSchema).parse(raw);
+}
+
+export async function deleteItemMedia(
+  collectionId: string,
+  itemId: string,
+  mediaAssetId: string,
+): Promise<void> {
+  await apiFetch<void>(
+    `/collections/${collectionId}/items/${itemId}/media/${mediaAssetId}`,
+    { method: 'DELETE' },
+  );
+}
+
+export async function setPrimaryItemMedia(
+  collectionId: string,
+  itemId: string,
+  mediaAssetId: string,
+): Promise<void> {
+  await apiFetch<void>(
+    `/collections/${collectionId}/items/${itemId}/media/${mediaAssetId}/primary`,
+    { method: 'PUT' },
+  );
+}
