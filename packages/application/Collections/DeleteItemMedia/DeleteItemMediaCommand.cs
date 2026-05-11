@@ -1,7 +1,7 @@
 namespace CurateDS.Application.Collections.DeleteItemMedia;
 
 public sealed record DeleteItemMediaCommand(
-    Guid OwnerId,
+    string OwnerId,
     Guid CollectionId,
     Guid ItemId,
     Guid MediaAssetId);

@@ -6,11 +6,11 @@ public interface ILocationRepository
 {
     Task AddAsync(Location location, CancellationToken cancellationToken);
 
-    Task<bool> ExistsByNameAsync(Guid ownerId, string name, CancellationToken cancellationToken);
+    Task<bool> ExistsByNameAsync(string OwnerId, string name, CancellationToken cancellationToken);
 
-    Task<Location?> GetByIdAndOwnerAsync(Guid locationId, Guid ownerId, CancellationToken cancellationToken);
+    Task<Location?> GetByIdAndOwnerAsync(Guid locationId, string OwnerId, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Location>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Location>> ListByOwnerAsync(string OwnerId, CancellationToken cancellationToken);
 
-    Task<bool> SoftDeleteAsync(Guid locationId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken);
+    Task<bool> SoftDeleteAsync(Guid locationId, string OwnerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken);
 }

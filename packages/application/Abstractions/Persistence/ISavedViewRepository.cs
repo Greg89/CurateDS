@@ -6,9 +6,9 @@ public interface ISavedViewRepository
 {
     Task AddAsync(SavedView savedView, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<SavedView>> ListByCollectionAsync(Guid collectionId, Guid ownerId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<SavedView>> ListByCollectionAsync(Guid collectionId, string OwnerId, CancellationToken cancellationToken);
 
-    Task<SavedView?> GetByIdAsync(Guid id, Guid ownerId, CancellationToken cancellationToken);
+    Task<SavedView?> GetByIdAsync(Guid id, string OwnerId, CancellationToken cancellationToken);
 
     void Remove(SavedView savedView);
 
