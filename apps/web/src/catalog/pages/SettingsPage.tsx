@@ -1,17 +1,29 @@
 import { FormEvent, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AttributeDataType,
-  AttributeDefinition,
   Collection,
-  ItemSummary,
   ItemType,
-  Location,
-  Tag,
-  downloadCollectionExport
+  createAttributeDefinition,
+  createItemType,
+  createLocation,
+  createTag,
+  deleteAttributeDefinition,
+  deleteCollection,
+  deleteItemType,
+  deleteLocation,
+  deleteTag,
+  downloadCollectionExport,
+  listAttributeDefinitions,
+  listItems,
+  listItemTypes,
+  listLocations,
+  listTags
 } from "../../api";
 import { AttributeDefinitionList } from "../components/AttributeDefinitionList";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { OrganizationSummary } from "../components/OrganizationSummary";
+import { useNavigate } from "react-router-dom";
 
 const attributeDataTypes: AttributeDataType[] = [
   "Text",
@@ -23,101 +35,159 @@ const attributeDataTypes: AttributeDataType[] = [
 ];
 
 export function SettingsPage({
-  attributeDataType,
-  attributeDefinitions,
-  attributeIsFilterable,
-  attributeIsRequired,
-  attributeName,
-  attributeItemTypeId,
-  createAttributeDefinitionError,
-  createLocationError,
-  createTagError,
-  createItemTypeError,
-  isCreateAttributePending,
-  isCreateLocationPending,
-  isCreateTagPending,
-  isCreateItemTypePending,
-  itemTypeName,
-  itemTypes,
-  isDeleteItemTypePending,
-  items,
-  locationDescription,
-  locationName,
-  locations,
-  selectedCollection,
-  tagName,
-  tags,
-  onAttributeDataTypeChange,
-  onAttributeIsFilterableChange,
-  onAttributeIsRequiredChange,
-  onAttributeNameChange,
-  onAttributeItemTypeIdChange,
-  onAttributeSubmit,
-  onLocationDescriptionChange,
-  onLocationNameChange,
-  onLocationSubmit,
-  onTagNameChange,
-  onTagSubmit,
-  isDeleteCollectionPending,
-  onDeleteCollection,
-  isDeleteAttributeDefinitionPending,
-  onDeleteAttributeDefinition,
-  isDeleteTagPending,
-  onDeleteTag,
-  isDeleteLocationPending,
-  onDeleteLocation,
-  onItemTypeNameChange,
-  onItemTypeSubmit,
-  onDeleteItemType
+  selectedCollection
 }: Readonly<{
-  attributeDataType: AttributeDataType;
-  attributeDefinitions: AttributeDefinition[];
-  attributeIsFilterable: boolean;
-  attributeIsRequired: boolean;
-  attributeName: string;
-  attributeItemTypeId: string;
-  createAttributeDefinitionError: string | null;
-  createLocationError: string | null;
-  createTagError: string | null;
-  createItemTypeError: string | null;
-  isCreateAttributePending: boolean;
-  isCreateLocationPending: boolean;
-  isCreateTagPending: boolean;
-  isCreateItemTypePending: boolean;
-  itemTypeName: string;
-  itemTypes: ItemType[];
-  isDeleteItemTypePending: boolean;
-  items: ItemSummary[];
-  locationDescription: string;
-  locationName: string;
-  locations: Location[];
   selectedCollection: Collection;
-  tagName: string;
-  tags: Tag[];
-  onAttributeDataTypeChange: (value: AttributeDataType) => void;
-  onAttributeIsFilterableChange: (value: boolean) => void;
-  onAttributeIsRequiredChange: (value: boolean) => void;
-  onAttributeNameChange: (value: string) => void;
-  onAttributeItemTypeIdChange: (value: string) => void;
-  onAttributeSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onLocationDescriptionChange: (value: string) => void;
-  onLocationNameChange: (value: string) => void;
-  onLocationSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onTagNameChange: (value: string) => void;
-  onTagSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  isDeleteCollectionPending: boolean;
-  onDeleteCollection: () => void;
-  isDeleteAttributeDefinitionPending: boolean;
-  onDeleteAttributeDefinition: (id: string) => void;
-  isDeleteTagPending: boolean;
-  onDeleteTag: (id: string) => void;
-  isDeleteLocationPending: boolean;
-  onDeleteLocation: (id: string) => void;
-  onItemTypeNameChange: (value: string) => void;
-  onItemTypeSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onDeleteItemType: (id: string) => void;
 }>) {
+  const collectionId = selectedCollection.id;
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Form state
+  const [attributeName, setAttributeName] = useState("");
+  const [attributeDataType, setAttributeDataType] = useState<AttributeDataType>("Text");
+  const [attributeIsRequired, setAttributeIsRequired] = useState(false);
+  const [attributeIsFilterable, setAttributeIsFilterable] = useState(true);
+  const [attributeItemTypeId, setAttributeItemTypeId] = useState("");
+  const [itemTypeName, setItemTypeName] = useState("");
+  const [tagName, setTagName] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [locationDescription, setLocationDescription] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Queries
+  const attributeDefinitionsQuery = useQuery({
+    queryKey: ["attribute-definitions", collectionId],
+    queryFn: () => listAttributeDefinitions(collectionId)
+  });
+
+  const itemTypesQuery = useQuery({
+    queryKey: ["item-types", collectionId],
+    queryFn: () => listItemTypes(collectionId)
+  });
+
+  const tagsQuery = useQuery({
+    queryKey: ["tags"],
+    queryFn: listTags
+  });
+
+  const locationsQuery = useQuery({
+    queryKey: ["locations"],
+    queryFn: listLocations
+  });
+
+  const itemsQuery = useQuery({
+    queryKey: ["items", collectionId],
+    queryFn: () => listItems(collectionId)
+  });
+
+  const attributeDefinitions = attributeDefinitionsQuery.data ?? [];
+  const itemTypes = itemTypesQuery.data ?? [];
+  const tags = tagsQuery.data ?? [];
+  const locations = locationsQuery.data ?? [];
+  const items = itemsQuery.data?.items ?? [];
+
+  // Mutations
+  const createAttributeDefinitionMutation = useMutation({
+    mutationFn: createAttributeDefinition,
+    onSuccess: async () => {
+      setAttributeName("");
+      setAttributeDataType("Text");
+      setAttributeIsRequired(false);
+      setAttributeIsFilterable(true);
+      await queryClient.invalidateQueries({ queryKey: ["attribute-definitions", collectionId] });
+    }
+  });
+
+  const deleteAttributeDefinitionMutation = useMutation({
+    mutationFn: deleteAttributeDefinition,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["attribute-definitions", collectionId] });
+    }
+  });
+
+  const createItemTypeMutation = useMutation({
+    mutationFn: createItemType,
+    onSuccess: async () => {
+      setItemTypeName("");
+      await queryClient.invalidateQueries({ queryKey: ["item-types", collectionId] });
+    }
+  });
+
+  const deleteItemTypeMutation = useMutation({
+    mutationFn: deleteItemType,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["item-types", collectionId] });
+      await queryClient.invalidateQueries({ queryKey: ["attribute-definitions", collectionId] });
+    }
+  });
+
+  const createTagMutation = useMutation({
+    mutationFn: createTag,
+    onSuccess: async () => {
+      setTagName("");
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
+    }
+  });
+
+  const deleteTagMutation = useMutation({
+    mutationFn: deleteTag,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
+    }
+  });
+
+  const createLocationMutation = useMutation({
+    mutationFn: createLocation,
+    onSuccess: async () => {
+      setLocationName("");
+      setLocationDescription("");
+      await queryClient.invalidateQueries({ queryKey: ["locations"] });
+    }
+  });
+
+  const deleteLocationMutation = useMutation({
+    mutationFn: deleteLocation,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["locations"] });
+    }
+  });
+
+  const deleteCollectionMutation = useMutation({
+    mutationFn: deleteCollection,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["collections"] });
+      navigate("/");
+    }
+  });
+
+  function handleAttributeSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    createAttributeDefinitionMutation.mutate({
+      collectionId,
+      name: attributeName,
+      dataType: attributeDataType,
+      isRequired: attributeIsRequired,
+      isFilterable: attributeIsFilterable,
+      itemTypeId: attributeItemTypeId || null
+    });
+  }
+
+  function handleItemTypeSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    createItemTypeMutation.mutate({ collectionId, name: itemTypeName });
+  }
+
+  function handleTagSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    createTagMutation.mutate(tagName);
+  }
+
+  function handleLocationSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    createLocationMutation.mutate({ name: locationName, description: locationDescription });
+  }
+
   return (
     <section className="content-grid">
       <section className="panel">
@@ -126,12 +196,12 @@ export function SettingsPage({
           <p>Define reusable item fields for {selectedCollection.name}.</p>
         </div>
 
-        <form className="collection-form" onSubmit={onAttributeSubmit}>
+        <form className="collection-form" onSubmit={handleAttributeSubmit}>
           <label className="field">
             <span>Name</span>
             <input
               value={attributeName}
-              onChange={(event) => onAttributeNameChange(event.target.value)}
+              onChange={(event) => setAttributeName(event.target.value)}
               placeholder="Release Year"
               maxLength={60}
             />
@@ -142,7 +212,7 @@ export function SettingsPage({
             <select
               value={attributeDataType}
               onChange={(event) =>
-                onAttributeDataTypeChange(event.target.value as AttributeDataType)
+                setAttributeDataType(event.target.value as AttributeDataType)
               }
             >
               {attributeDataTypes.map((dataType) => (
@@ -156,7 +226,7 @@ export function SettingsPage({
           <label className="checkbox-row">
             <input
               checked={attributeIsRequired}
-              onChange={(event) => onAttributeIsRequiredChange(event.target.checked)}
+              onChange={(event) => setAttributeIsRequired(event.target.checked)}
               type="checkbox"
             />
             <span>Required for future items</span>
@@ -165,7 +235,7 @@ export function SettingsPage({
           <label className="checkbox-row">
             <input
               checked={attributeIsFilterable}
-              onChange={(event) => onAttributeIsFilterableChange(event.target.checked)}
+              onChange={(event) => setAttributeIsFilterable(event.target.checked)}
               type="checkbox"
             />
             <span>Filterable in list views</span>
@@ -175,7 +245,7 @@ export function SettingsPage({
             <span>Applies to</span>
             <select
               value={attributeItemTypeId}
-              onChange={(event) => onAttributeItemTypeIdChange(event.target.value)}
+              onChange={(event) => setAttributeItemTypeId(event.target.value)}
             >
               <option value="">All item types</option>
               {itemTypes.map((itemType) => (
@@ -186,20 +256,20 @@ export function SettingsPage({
             </select>
           </label>
 
-          <button className="primary-button" disabled={isCreateAttributePending} type="submit">
-            {isCreateAttributePending ? "Saving..." : "Add Attribute"}
+          <button className="primary-button" disabled={createAttributeDefinitionMutation.isPending} type="submit">
+            {createAttributeDefinitionMutation.isPending ? "Saving..." : "Add Attribute"}
           </button>
 
-          {createAttributeDefinitionError ? (
-            <p className="message error">{createAttributeDefinitionError}</p>
+          {createAttributeDefinitionMutation.error ? (
+            <p className="message error">{createAttributeDefinitionMutation.error.message}</p>
           ) : null}
         </form>
 
         <AttributeDefinitionList
           attributeDefinitions={attributeDefinitions}
           selectedCollectionName={selectedCollection.name}
-          isDeletePending={isDeleteAttributeDefinitionPending}
-          onDelete={onDeleteAttributeDefinition}
+          isDeletePending={deleteAttributeDefinitionMutation.isPending}
+          onDelete={(id) => deleteAttributeDefinitionMutation.mutate({ collectionId, attributeDefinitionId: id })}
         />
       </section>
 
@@ -209,31 +279,31 @@ export function SettingsPage({
           <p>Define named types for items in {selectedCollection.name} (e.g. Machine, Part).</p>
         </div>
 
-        <form className="collection-form" onSubmit={onItemTypeSubmit}>
+        <form className="collection-form" onSubmit={handleItemTypeSubmit}>
           <label className="field">
             <span>Name</span>
             <input
               value={itemTypeName}
-              onChange={(event) => onItemTypeNameChange(event.target.value)}
+              onChange={(event) => setItemTypeName(event.target.value)}
               placeholder="Machine"
               maxLength={50}
             />
           </label>
 
-          <button className="primary-button" disabled={isCreateItemTypePending} type="submit">
-            {isCreateItemTypePending ? "Saving..." : "Add Item Type"}
+          <button className="primary-button" disabled={createItemTypeMutation.isPending} type="submit">
+            {createItemTypeMutation.isPending ? "Saving..." : "Add Item Type"}
           </button>
 
-          {createItemTypeError ? (
-            <p className="message error">{createItemTypeError}</p>
+          {createItemTypeMutation.error ? (
+            <p className="message error">{createItemTypeMutation.error.message}</p>
           ) : null}
         </form>
 
         {itemTypes.length > 0 ? (
           <ItemTypeList
             itemTypes={itemTypes}
-            isDeletePending={isDeleteItemTypePending}
-            onDelete={onDeleteItemType}
+            isDeletePending={deleteItemTypeMutation.isPending}
+            onDelete={(id) => deleteItemTypeMutation.mutate({ collectionId, itemTypeId: id })}
           />
         ) : (
           <div className="empty-state">
@@ -249,30 +319,30 @@ export function SettingsPage({
           <p>Create reusable tags and storage locations for your items.</p>
         </div>
 
-        <form className="collection-form" onSubmit={onTagSubmit}>
+        <form className="collection-form" onSubmit={handleTagSubmit}>
           <label className="field">
             <span>Tag Name</span>
             <input
               value={tagName}
-              onChange={(event) => onTagNameChange(event.target.value)}
+              onChange={(event) => setTagName(event.target.value)}
               placeholder="Wishlist"
               maxLength={50}
             />
           </label>
 
-          <button className="primary-button" disabled={isCreateTagPending} type="submit">
-            {isCreateTagPending ? "Saving..." : "Add Tag"}
+          <button className="primary-button" disabled={createTagMutation.isPending} type="submit">
+            {createTagMutation.isPending ? "Saving..." : "Add Tag"}
           </button>
 
-          {createTagError ? <p className="message error">{createTagError}</p> : null}
+          {createTagMutation.error ? <p className="message error">{createTagMutation.error.message}</p> : null}
         </form>
 
-        <form className="collection-form section-gap" onSubmit={onLocationSubmit}>
+        <form className="collection-form section-gap" onSubmit={handleLocationSubmit}>
           <label className="field">
             <span>Location Name</span>
             <input
               value={locationName}
-              onChange={(event) => onLocationNameChange(event.target.value)}
+              onChange={(event) => setLocationName(event.target.value)}
               placeholder="Office Shelf"
               maxLength={80}
             />
@@ -282,27 +352,27 @@ export function SettingsPage({
             <span>Description</span>
             <input
               value={locationDescription}
-              onChange={(event) => onLocationDescriptionChange(event.target.value)}
+              onChange={(event) => setLocationDescription(event.target.value)}
               placeholder="Upper left bookcase"
               maxLength={240}
             />
           </label>
 
-          <button className="primary-button" disabled={isCreateLocationPending} type="submit">
-            {isCreateLocationPending ? "Saving..." : "Add Location"}
+          <button className="primary-button" disabled={createLocationMutation.isPending} type="submit">
+            {createLocationMutation.isPending ? "Saving..." : "Add Location"}
           </button>
 
-          {createLocationError ? <p className="message error">{createLocationError}</p> : null}
+          {createLocationMutation.error ? <p className="message error">{createLocationMutation.error.message}</p> : null}
         </form>
 
         <OrganizationSummary
           items={items}
           locations={locations}
           tags={tags}
-          isDeleteTagPending={isDeleteTagPending}
-          isDeleteLocationPending={isDeleteLocationPending}
-          onDeleteTag={onDeleteTag}
-          onDeleteLocation={onDeleteLocation}
+          isDeleteTagPending={deleteTagMutation.isPending}
+          isDeleteLocationPending={deleteLocationMutation.isPending}
+          onDeleteTag={(id) => deleteTagMutation.mutate(id)}
+          onDeleteLocation={(id) => deleteLocationMutation.mutate(id)}
         />
       </section>
 
@@ -341,8 +411,8 @@ export function SettingsPage({
         <ConfirmDialog
           title={`Delete "${selectedCollection.name}"?`}
           message="This will permanently delete the collection, all its items, attribute definitions, and associated data. This action cannot be undone."
-          isPending={isDeleteCollectionPending}
-          onConfirm={onDeleteCollection}
+          isPending={deleteCollectionMutation.isPending}
+          onConfirm={() => deleteCollectionMutation.mutate(selectedCollection.id)}
           onCancel={() => setShowDeleteConfirm(false)}
         />
       ) : null}
