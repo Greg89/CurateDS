@@ -121,8 +121,12 @@ export function SettingsPage({
   const deleteItemTypeMutation = useMutation({
     mutationFn: deleteItemType,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["item-types", collectionId] });
-      await queryClient.invalidateQueries({ queryKey: ["attribute-definitions", collectionId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["item-types", collectionId] }),
+        queryClient.invalidateQueries({ queryKey: ["attribute-definitions", collectionId] }),
+        queryClient.invalidateQueries({ queryKey: ["items", collectionId] }),
+        queryClient.invalidateQueries({ queryKey: ["item-detail", collectionId] }),
+      ]);
     }
   });
 
