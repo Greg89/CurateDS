@@ -3,7 +3,7 @@ using CurateDS.Domain.Collections;
 namespace CurateDS.Application.Collections.CreateAttributeDefinition;
 
 public sealed record CreateAttributeDefinitionCommand(
-    Guid OwnerId,
+    string OwnerId,
     Guid CollectionId,
     string Name,
     AttributeDataType DataType,

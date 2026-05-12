@@ -9,7 +9,7 @@ namespace CurateDS.Application.Collections.Shared;
 internal static class ItemOrganizationValidator
 {
     public static async Task<(Location? Location, IReadOnlyList<Tag> Tags)> ValidateAsync(
-        Guid ownerId,
+        string ownerId,
         Guid? locationId,
         IReadOnlyList<Guid> tagIds,
         ILocationRepository locationRepository,

@@ -1,7 +1,7 @@
 namespace CurateDS.Application.Collections.UpdateItem;
 
 public sealed record UpdateItemCommand(
-    Guid OwnerId,
+    string OwnerId,
     Guid CollectionId,
     Guid ItemId,
     string Name,

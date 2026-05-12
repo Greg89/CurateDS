@@ -19,7 +19,7 @@ public sealed class CreateCollectionServiceTests
     {
         var repository = new FakeCollectionRepository();
         var service = new CreateCollectionService(repository, new FakeCurrentUserService(), new CreateCollectionCommandValidator());
-        var command = new CreateCollectionCommand(Guid.NewGuid(), "  Vinyl Records  ");
+        var command = new CreateCollectionCommand("auth0|test-owner", "  Vinyl Records  ");
 
         var result = await service.ExecuteAsync(command, CancellationToken.None);
 
@@ -37,18 +37,18 @@ public sealed class CreateCollectionServiceTests
             return Task.CompletedTask;
         }
 
-        public Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, Guid ownerId, CancellationToken cancellationToken)
+        public Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, string ownerId, CancellationToken cancellationToken)
         {
             return Task.FromResult(Collections.SingleOrDefault(collection =>
                 collection.Id == collectionId && collection.OwnerId == ownerId));
         }
 
-        public Task<IReadOnlyList<Collection>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<Collection>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyList<Collection>>(Collections.Where(collection => collection.OwnerId == ownerId).ToArray());
         }
 
-        public Task<bool> SoftDeleteAsync(Guid collectionId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+        public Task<bool> SoftDeleteAsync(Guid collectionId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
         public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)

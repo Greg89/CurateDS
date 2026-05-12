@@ -21,7 +21,7 @@ public sealed class CreateLocationServiceTests
         var service = new CreateLocationService(repository, new FakeCurrentUserService(), new CreateLocationCommandValidator());
 
         var result = await service.ExecuteAsync(
-            new CreateLocationCommand(Guid.NewGuid(), "Hall Closet", null),
+            new CreateLocationCommand("auth0|test-owner", "Hall Closet", null),
             CancellationToken.None);
 
         result.Name.Should().Be("Hall Closet");
@@ -31,7 +31,7 @@ public sealed class CreateLocationServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenNameAlreadyExists()
     {
-        var ownerId = Guid.NewGuid();
+        const string ownerId = "auth0|test-owner";
         var repository = new FakeLocationRepository(existingName: "Hall Closet", ownerId: ownerId);
         var service = new CreateLocationService(repository, new FakeCurrentUserService(), new CreateLocationCommandValidator());
 
@@ -49,11 +49,11 @@ public sealed class CreateLocationServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldNotThrow_WhenSameNameExistsForDifferentOwner()
     {
-        var repository = new FakeLocationRepository(existingName: "Hall Closet", ownerId: Guid.NewGuid());
+        var repository = new FakeLocationRepository(existingName: "Hall Closet", ownerId: "auth0|other-owner");
         var service = new CreateLocationService(repository, new FakeCurrentUserService(), new CreateLocationCommandValidator());
 
         var act = () => service.ExecuteAsync(
-            new CreateLocationCommand(Guid.NewGuid(), "Hall Closet", null),
+            new CreateLocationCommand("auth0|test-owner", "Hall Closet", null),
             CancellationToken.None);
 
         await act.Should().NotThrowAsync();
@@ -67,7 +67,7 @@ public sealed class CreateLocationServiceTests
         var service = new CreateLocationService(repository, new FakeCurrentUserService(), new CreateLocationCommandValidator());
 
         var act = () => service.ExecuteAsync(
-            new CreateLocationCommand(Guid.NewGuid(), "A", null),
+            new CreateLocationCommand("auth0|test-owner", "A", null),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>();
@@ -76,14 +76,14 @@ public sealed class CreateLocationServiceTests
 
     private sealed class FakeLocationRepository : ILocationRepository
     {
-        private readonly List<(Guid OwnerId, string Name)> _existing;
+        private readonly List<(string ownerId, string Name)> _existing;
 
         public FakeLocationRepository()
         {
             _existing = [];
         }
 
-        public FakeLocationRepository(string existingName, Guid ownerId)
+        public FakeLocationRepository(string existingName, string ownerId)
         {
             _existing = [(ownerId, existingName)];
         }
@@ -96,18 +96,18 @@ public sealed class CreateLocationServiceTests
             return Task.CompletedTask;
         }
 
-        public Task<bool> ExistsByNameAsync(Guid ownerId, string name, CancellationToken cancellationToken)
+        public Task<bool> ExistsByNameAsync(string ownerId, string name, CancellationToken cancellationToken)
         {
-            return Task.FromResult(_existing.Any(e => e.OwnerId == ownerId && e.Name == name));
+            return Task.FromResult(_existing.Any(e => e.ownerId == ownerId && e.Name == name));
         }
 
-        public Task<Location?> GetByIdAndOwnerAsync(Guid locationId, Guid ownerId, CancellationToken cancellationToken)
+        public Task<Location?> GetByIdAndOwnerAsync(Guid locationId, string ownerId, CancellationToken cancellationToken)
             => Task.FromResult<Location?>(null);
 
-        public Task<IReadOnlyList<Location>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<Location>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Location>>([]);
 
-        public Task<bool> SoftDeleteAsync(Guid locationId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+        public Task<bool> SoftDeleteAsync(Guid locationId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
     }
 }

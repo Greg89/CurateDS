@@ -20,7 +20,7 @@ public sealed class CollectionRepository : ICollectionRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, Guid ownerId, CancellationToken cancellationToken)
+    public async Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, string ownerId, CancellationToken cancellationToken)
     {
         return await _dbContext.Collections
             .SingleOrDefaultAsync(
@@ -28,7 +28,7 @@ public sealed class CollectionRepository : ICollectionRepository
                 cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Collection>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Collection>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
     {
         return await _dbContext.Collections
             .Where(collection => collection.OwnerId == ownerId)
@@ -36,7 +36,7 @@ public sealed class CollectionRepository : ICollectionRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<bool> SoftDeleteAsync(Guid collectionId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+    public async Task<bool> SoftDeleteAsync(Guid collectionId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
     {
         var collection = await _dbContext.Collections
             .SingleOrDefaultAsync(

@@ -11,7 +11,7 @@ public sealed class CreateAttributeDefinitionCommandValidatorTests
     {
         var validator = new CreateAttributeDefinitionCommandValidator();
         var command = new CreateAttributeDefinitionCommand(
-            Guid.NewGuid(),
+            "auth0|test-owner",
             Guid.NewGuid(),
             "   ",
             AttributeDataType.Text,
@@ -28,7 +28,7 @@ public sealed class CreateAttributeDefinitionCommandValidatorTests
     {
         var validator = new CreateAttributeDefinitionCommandValidator();
         var command = new CreateAttributeDefinitionCommand(
-            Guid.NewGuid(),
+            "auth0|test-owner",
             Guid.NewGuid(),
             " a ",
             AttributeDataType.Text,

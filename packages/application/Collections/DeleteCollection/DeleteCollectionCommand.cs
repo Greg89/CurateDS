@@ -1,3 +1,3 @@
 namespace CurateDS.Application.Collections.DeleteCollection;
 
-public sealed record DeleteCollectionCommand(Guid OwnerId, Guid CollectionId);
+public sealed record DeleteCollectionCommand(string OwnerId, Guid CollectionId);

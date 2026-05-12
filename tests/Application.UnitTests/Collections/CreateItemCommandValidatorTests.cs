@@ -10,7 +10,7 @@ public sealed class CreateItemCommandValidatorTests
     {
         var validator = new CreateItemCommandValidator();
         var command = new CreateItemCommand(
-            Guid.NewGuid(),
+            "auth0|test-owner",
             Guid.NewGuid(),
             " a ",
             null,
@@ -31,7 +31,7 @@ public sealed class CreateItemCommandValidatorTests
         var validator = new CreateItemCommandValidator();
         var attributeDefinitionId = Guid.NewGuid();
         var command = new CreateItemCommand(
-            Guid.NewGuid(),
+            "auth0|test-owner",
             Guid.NewGuid(),
             "Vintage Card",
             null,

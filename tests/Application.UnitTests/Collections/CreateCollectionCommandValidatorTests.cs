@@ -9,7 +9,7 @@ public sealed class CreateCollectionCommandValidatorTests
     public void Validate_ShouldFail_WhenNameIsEmpty()
     {
         var validator = new CreateCollectionCommandValidator();
-        var command = new CreateCollectionCommand(Guid.NewGuid(), string.Empty);
+        var command = new CreateCollectionCommand("auth0|test-owner", string.Empty);
 
         var result = validator.Validate(command);
 
@@ -20,7 +20,7 @@ public sealed class CreateCollectionCommandValidatorTests
     public void Validate_ShouldFail_WhenNameIsWhitespaceOnly()
     {
         var validator = new CreateCollectionCommandValidator();
-        var command = new CreateCollectionCommand(Guid.NewGuid(), "   ");
+        var command = new CreateCollectionCommand("auth0|test-owner", "   ");
 
         var result = validator.Validate(command);
 
@@ -31,7 +31,7 @@ public sealed class CreateCollectionCommandValidatorTests
     public void Validate_ShouldFail_WhenTrimmedNameIsTooShort()
     {
         var validator = new CreateCollectionCommandValidator();
-        var command = new CreateCollectionCommand(Guid.NewGuid(), " ab ");
+        var command = new CreateCollectionCommand("auth0|test-owner", " ab ");
 
         var result = validator.Validate(command);
 

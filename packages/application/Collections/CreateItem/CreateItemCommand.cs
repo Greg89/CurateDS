@@ -1,7 +1,7 @@
 namespace CurateDS.Application.Collections.CreateItem;
 
 public sealed record CreateItemCommand(
-    Guid OwnerId,
+    string OwnerId,
     Guid CollectionId,
     string Name,
     string? Description,
