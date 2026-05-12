@@ -16,7 +16,8 @@ internal sealed class SavedViewConfiguration : IEntityTypeConfiguration<SavedVie
             .IsRequired();
 
         builder.Property(v => v.OwnerId)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(200);
 
         builder.Property(v => v.Name)
             .IsRequired()

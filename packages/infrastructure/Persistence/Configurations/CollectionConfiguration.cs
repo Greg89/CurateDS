@@ -13,7 +13,8 @@ internal sealed class CollectionConfiguration : IEntityTypeConfiguration<Collect
         builder.HasKey(collection => collection.Id);
 
         builder.Property(collection => collection.OwnerId)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(200);
 
         builder.Property(collection => collection.Name)
             .IsRequired()

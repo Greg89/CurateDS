@@ -4,11 +4,12 @@ public sealed class Tag : AuditableEntity
 {
     private Tag()
     {
+        OwnerId = null!;
         Name = null!;
         Key = null!;
     }
 
-    private Tag(Guid id, Guid ownerId, string name, string key, DateTime createdUtc, string createdBy)
+    private Tag(Guid id, string ownerId, string name, string key, DateTime createdUtc, string createdBy)
     {
         Id = id;
         OwnerId = ownerId;
@@ -19,15 +20,15 @@ public sealed class Tag : AuditableEntity
 
     public Guid Id { get; }
 
-    public Guid OwnerId { get; private set; }
+    public string OwnerId { get; private set; }
 
     public string Name { get; private set; }
 
     public string Key { get; private set; }
 
-    public static Tag Create(Guid ownerId, string name, DateTime createdUtc, string createdBy)
+    public static Tag Create(string ownerId, string name, DateTime createdUtc, string createdBy)
     {
-        if (ownerId == Guid.Empty)
+        if (string.IsNullOrWhiteSpace(ownerId))
         {
             throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
@@ -41,7 +42,7 @@ public sealed class Tag : AuditableEntity
             throw new ArgumentException("Tag name must be between 2 and 50 characters.", nameof(name));
         }
 
-        return new Tag(Guid.NewGuid(), ownerId, normalizedName, BuildKey(normalizedName), createdUtc, createdBy);
+        return new Tag(Guid.NewGuid(), ownerId.Trim(), normalizedName, BuildKey(normalizedName), createdUtc, createdBy);
     }
 
     private static string BuildKey(string name)

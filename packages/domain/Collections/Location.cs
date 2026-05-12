@@ -4,10 +4,11 @@ public sealed class Location : AuditableEntity
 {
     private Location()
     {
+        OwnerId = null!;
         Name = null!;
     }
 
-    private Location(Guid id, Guid ownerId, string name, string? description, DateTime createdUtc, string createdBy)
+    private Location(Guid id, string ownerId, string name, string? description, DateTime createdUtc, string createdBy)
     {
         Id = id;
         OwnerId = ownerId;
@@ -18,15 +19,15 @@ public sealed class Location : AuditableEntity
 
     public Guid Id { get; }
 
-    public Guid OwnerId { get; private set; }
+    public string OwnerId { get; private set; }
 
     public string Name { get; private set; }
 
     public string? Description { get; private set; }
 
-    public static Location Create(Guid ownerId, string name, string? description, DateTime createdUtc, string createdBy)
+    public static Location Create(string ownerId, string name, string? description, DateTime createdUtc, string createdBy)
     {
-        if (ownerId == Guid.Empty)
+        if (string.IsNullOrWhiteSpace(ownerId))
         {
             throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
@@ -47,6 +48,6 @@ public sealed class Location : AuditableEntity
             throw new ArgumentException("Location description must be 240 characters or fewer.", nameof(description));
         }
 
-        return new Location(Guid.NewGuid(), ownerId, normalizedName, normalizedDescription, createdUtc, createdBy);
+        return new Location(Guid.NewGuid(), ownerId.Trim(), normalizedName, normalizedDescription, createdUtc, createdBy);
     }
 }

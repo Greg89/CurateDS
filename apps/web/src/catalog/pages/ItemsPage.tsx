@@ -1,181 +1,217 @@
 import { FormEvent, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AttributeDefinition,
   Collection,
-  ItemDetail,
-  ItemFilters,
-  ItemSummary,
-  ItemType,
-  Location,
-  Tag
+  createItem,
+  deleteItem,
+  deleteItemMedia,
+  getItemDetail,
+  listAttributeDefinitions,
+  listItems,
+  listItemTypes,
+  listLocations,
+  listTags,
+  setPrimaryItemMedia,
+  updateItem,
+  uploadItemMedia
 } from "../../api";
-import { SavedItemView } from "../types";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { DynamicAttributeFields } from "../components/DynamicAttributeFields";
 import { ItemDetailCard } from "../components/ItemDetailCard";
 import { ItemFiltersPanel } from "../components/ItemFiltersPanel";
 import { ItemList } from "../components/ItemList";
 import { TagSelector } from "../components/TagMultiSelect";
+import { useItemFilters } from "../hooks/useItemFilters";
+import { useItemForm } from "../hooks/useItemForm";
+import { useSavedViews } from "../hooks/useSavedViews";
 
 export function ItemsPage({
-  attributeDefinitions,
-  createItemError,
-  isCreatePending,
-  isUpdatePending,
-  itemAttributeFilters,
-  itemAttributeValues,
-  itemDescription,
-  itemDetail,
-  itemFilterLocationId,
-  itemFilterTagIds,
-  itemFilterTypeId,
-  itemLocationId,
-  itemTypeId,
-  itemName,
-  itemQuantity,
-  itemSaveCount,
-  itemSearchText,
-  itemSortBy,
-  itemSortDirection,
-  itemTagIds,
-  itemTypes,
-  items,
-  itemsError,
-  isEditing,
-  isItemDetailLoading,
-  isItemsLoading,
-  locations,
-  savedViewName,
-  savedViews,
-  selectedCollection,
-  selectedItemId,
-  tags,
-  updateItemError,
-  itemFilterMinQuantity,
-  itemFilterMaxQuantity,
-  itemFilterCreatedAfter,
-  itemFilterCreatedBefore,
-  itemFilterHasNoLocation,
-  itemFilterHasNoTags,
-  onApplySavedView,
-  onAttributeFilterChange,
-  onAttributeValueChange,
-  onClearItemFilters,
-  onDeleteSavedView,
-  onEditItem,
-  onItemDescriptionChange,
-  onItemLocationChange,
-  onItemTypeIdChange,
-  onItemNameChange,
-  onItemQuantityChange,
-  onItemSearchTextChange,
-  onItemSortByChange,
-  onItemSortDirectionChange,
-  onItemSubmit,
-  onItemFilterLocationChange,
-  onItemFilterTypeIdChange,
-  onResetItemForm,
-  onSaveCurrentView,
-  onSavedViewNameChange,
-  onSelectItem,
-  onToggleFilterTag,
-  onToggleItemTag,
-  onItemMinQuantityChange,
-  onItemMaxQuantityChange,
-  onItemCreatedAfterChange,
-  onItemCreatedBeforeChange,
-  onItemHasNoLocationChange,
-  onItemHasNoTagsChange,
-  isDeleteItemPending,
-  onDeleteItem,
-  itemPage,
-  itemTotalPages,
-  itemTotalCount,
-  onItemPageChange,
-  onUploadItemMedia,
-  onDeleteItemMedia,
-  onSetPrimaryItemMedia,
-  isUploadMediaPending
+  selectedCollection
 }: Readonly<{
-  attributeDefinitions: AttributeDefinition[];
-  createItemError: string | null;
-  isCreatePending: boolean;
-  isUpdatePending: boolean;
-  itemAttributeFilters: Record<string, string>;
-  itemAttributeValues: Record<string, string>;
-  itemDescription: string;
-  itemDetail: ItemDetail | null;
-  itemFilterLocationId: string;
-  itemFilterTagIds: string[];
-  itemFilterTypeId: string;
-  itemLocationId: string;
-  itemTypeId: string;
-  itemName: string;
-  itemQuantity: string;
-  itemSaveCount: number;
-  itemSearchText: string;
-  itemSortBy: ItemFilters["sortBy"];
-  itemSortDirection: ItemFilters["sortDirection"];
-  itemTagIds: string[];
-  itemTypes: ItemType[];
-  items: ItemSummary[];
-  itemsError: string | null;
-  isEditing: boolean;
-  isItemDetailLoading: boolean;
-  isItemsLoading: boolean;
-  locations: Location[];
-  savedViewName: string;
-  savedViews: SavedItemView[];
   selectedCollection: Collection;
-  selectedItemId: string;
-  tags: Tag[];
-  updateItemError: string | null;
-  itemFilterMinQuantity: number | undefined;
-  itemFilterMaxQuantity: number | undefined;
-  itemFilterCreatedAfter: string;
-  itemFilterCreatedBefore: string;
-  itemFilterHasNoLocation: boolean;
-  itemFilterHasNoTags: boolean;
-  onApplySavedView: (view: SavedItemView) => void;
-  onAttributeFilterChange: (attributeKey: string, value: string) => void;
-  onAttributeValueChange: (attributeDefinitionId: string, value: string) => void;
-  onClearItemFilters: () => void;
-  onDeleteSavedView: (viewId: string) => void;
-  onEditItem: () => void;
-  onItemDescriptionChange: (value: string) => void;
-  onItemLocationChange: (value: string) => void;
-  onItemTypeIdChange: (value: string) => void;
-  onItemNameChange: (value: string) => void;
-  onItemQuantityChange: (value: string) => void;
-  onItemSearchTextChange: (value: string) => void;
-  onItemSortByChange: (value: ItemFilters["sortBy"]) => void;
-  onItemSortDirectionChange: (value: ItemFilters["sortDirection"]) => void;
-  onItemSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onItemFilterLocationChange: (value: string) => void;
-  onItemFilterTypeIdChange: (value: string) => void;
-  onResetItemForm: () => void;
-  onSaveCurrentView: () => void;
-  onSavedViewNameChange: (value: string) => void;
-  onSelectItem: (itemId: string) => void;
-  onToggleFilterTag: (tagId: string) => void;
-  onToggleItemTag: (tagId: string) => void;
-  onItemMinQuantityChange: (value: number | undefined) => void;
-  onItemMaxQuantityChange: (value: number | undefined) => void;
-  onItemCreatedAfterChange: (value: string) => void;
-  onItemCreatedBeforeChange: (value: string) => void;
-  onItemHasNoLocationChange: (value: boolean) => void;
-  onItemHasNoTagsChange: (value: boolean) => void;
-  isDeleteItemPending: boolean;
-  onDeleteItem: () => void;
-  itemPage: number;
-  itemTotalPages: number;
-  itemTotalCount: number;
-  onItemPageChange: (page: number) => void;
-  onUploadItemMedia: (file: File) => void;
-  onDeleteItemMedia: (mediaAssetId: string) => void;
-  onSetPrimaryItemMedia: (mediaAssetId: string) => void;
-  isUploadMediaPending: boolean;
 }>) {
+  const collectionId = selectedCollection.id;
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const {
+    itemFilters,
+    itemSearchText,
+    setItemSearchText,
+    itemFilterLocationId,
+    setItemFilterLocationId,
+    itemFilterTagIds,
+    setItemFilterTagIds,
+    itemAttributeFilters,
+    itemSortBy,
+    setItemSortBy,
+    itemSortDirection,
+    setItemSortDirection,
+    itemPage,
+    setItemPage,
+    pageSize,
+    normalizedItemFilterTagIds,
+    itemFilterMinQuantity,
+    setItemFilterMinQuantity,
+    itemFilterMaxQuantity,
+    setItemFilterMaxQuantity,
+    itemFilterCreatedAfter,
+    setItemFilterCreatedAfter,
+    itemFilterCreatedBefore,
+    setItemFilterCreatedBefore,
+    itemFilterHasNoLocation,
+    setItemFilterHasNoLocation,
+    itemFilterHasNoTags,
+    setItemFilterHasNoTags,
+    itemFilterTypeId,
+    setItemFilterTypeId,
+    clearItemFilters,
+    toggleFilterTag,
+    handleAttributeFilterChange,
+    applySavedView
+  } = useItemFilters(collectionId);
+
+  const {
+    itemName,
+    setItemName,
+    itemDescription,
+    setItemDescription,
+    itemQuantity,
+    setItemQuantity,
+    itemLocationId,
+    setItemLocationId,
+    itemTypeId,
+    setItemTypeId,
+    itemTagIds,
+    itemAttributeValues,
+    selectedItemId,
+    setSelectedItemId,
+    editingItemId,
+    setEditingItemId,
+    itemSaveCount,
+    setItemSaveCount,
+    populateItemForm,
+    resetItemForm,
+    toggleItemTag,
+    handleAttributeValueChange
+  } = useItemForm(collectionId);
+
+  const {
+    savedViewName,
+    setSavedViewName,
+    savedViews,
+    saveCurrentView,
+    deleteSavedView
+  } = useSavedViews(collectionId);
+
+  const attributeDefinitionsQuery = useQuery({
+    queryKey: ["attribute-definitions", collectionId],
+    queryFn: () => listAttributeDefinitions(collectionId)
+  });
+
+  const itemsQuery = useQuery({
+    queryKey: [
+      "items",
+      collectionId,
+      itemPage,
+      itemSearchText,
+      itemFilterLocationId,
+      itemFilterTypeId,
+      itemSortBy,
+      itemSortDirection,
+      JSON.stringify(itemAttributeFilters),
+      ...normalizedItemFilterTagIds
+    ],
+    queryFn: () => listItems(collectionId, itemFilters, itemPage, pageSize)
+  });
+
+  const itemDetailQuery = useQuery({
+    queryKey: ["item-detail", collectionId, selectedItemId],
+    queryFn: () => getItemDetail(collectionId, selectedItemId),
+    enabled: selectedItemId.length > 0
+  });
+
+  const tagsQuery = useQuery({
+    queryKey: ["tags"],
+    queryFn: listTags
+  });
+
+  const locationsQuery = useQuery({
+    queryKey: ["locations"],
+    queryFn: listLocations
+  });
+
+  const itemTypesQuery = useQuery({
+    queryKey: ["item-types", collectionId],
+    queryFn: () => listItemTypes(collectionId)
+  });
+
+  const createItemMutation = useMutation({
+    mutationFn: createItem,
+    onSuccess: async (item) => {
+      resetItemForm();
+      setSelectedItemId(item.id);
+      setItemSaveCount((c) => c + 1);
+      await queryClient.invalidateQueries({ queryKey: ["items", collectionId] });
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", collectionId, item.id] });
+    }
+  });
+
+  const updateItemMutation = useMutation({
+    mutationFn: updateItem,
+    onSuccess: async (item) => {
+      populateItemForm(item);
+      setSelectedItemId(item.id);
+      setEditingItemId(item.id);
+      setItemSaveCount((c) => c + 1);
+      await queryClient.invalidateQueries({ queryKey: ["items", collectionId] });
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", collectionId, item.id] });
+    }
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: deleteItem,
+    onSuccess: async () => {
+      setSelectedItemId("");
+      await queryClient.invalidateQueries({ queryKey: ["items", collectionId] });
+    }
+  });
+
+  const uploadItemMediaMutation = useMutation({
+    mutationFn: uploadItemMedia,
+    onSuccess: async (_asset, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
+    }
+  });
+
+  const deleteItemMediaMutation = useMutation({
+    mutationFn: deleteItemMedia,
+    onSuccess: async (_result, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
+    }
+  });
+
+  const setPrimaryItemMediaMutation = useMutation({
+    mutationFn: setPrimaryItemMedia,
+    onSuccess: async (_result, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
+      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
+    }
+  });
+
+  const attributeDefinitions = attributeDefinitionsQuery.data ?? [];
+  const items = itemsQuery.data?.items ?? [];
+  const itemDetail = itemDetailQuery.data ?? null;
+  const tags = tagsQuery.data ?? [];
+  const locations = locationsQuery.data ?? [];
+  const itemTypes = itemTypesQuery.data ?? [];
+  const itemTotalPages = itemsQuery.data?.totalPages ?? 1;
+  const itemTotalCount = itemsQuery.data?.totalCount ?? 0;
+  const isEditing = editingItemId !== null;
+
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [isFormDrawerOpen, setIsFormDrawerOpen] = useState(false);
@@ -198,12 +234,14 @@ export function ItemsPage({
     (itemFilterHasNoLocation ? 1 : 0) +
     (itemFilterHasNoTags ? 1 : 0);
 
+  // Close form drawer after a successful save
   useEffect(() => {
     if (itemSaveCount > 0) {
       setIsFormDrawerOpen(false);
     }
   }, [itemSaveCount]);
 
+  // Escape key closes open drawers
   useEffect(() => {
     if (!anyDrawerOpen) return;
     function handleKeyDown(e: KeyboardEvent) {
@@ -216,31 +254,106 @@ export function ItemsPage({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [anyDrawerOpen]);
 
+  // Drill-through from Reports page via URL search params
+  useEffect(() => {
+    const drillTagId = searchParams.get("tagId");
+    const drillLocationId = searchParams.get("locationId");
+    const drillItemId = searchParams.get("itemId");
+
+    if (!drillTagId && !drillLocationId && !drillItemId) return;
+
+    if (drillItemId) {
+      clearItemFilters();
+      setSelectedItemId(drillItemId);
+    }
+    if (drillTagId) setItemFilterTagIds([drillTagId]);
+    if (drillLocationId) setItemFilterLocationId(drillLocationId);
+    setItemPage(1);
+
+    const next = new URLSearchParams(searchParams);
+    next.delete("tagId");
+    next.delete("locationId");
+    next.delete("itemId");
+    setSearchParams(next, { replace: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Auto-select the first item when the results change and nothing is selected
+  useEffect(() => {
+    if (!itemsQuery.data) return;
+
+    const dataItems = itemsQuery.data.items;
+
+    if (dataItems.length === 0) {
+      if (selectedItemId) setSelectedItemId("");
+      return;
+    }
+
+    const hasSelectedItem = dataItems.some((item) => item.id === selectedItemId);
+    if (!hasSelectedItem) setSelectedItemId(dataItems[0].id);
+  }, [itemsQuery.data, selectedItemId]);
+
   function handleSelectItem(itemId: string) {
-    onSelectItem(itemId);
+    setSelectedItemId(itemId);
     setIsDetailDrawerOpen(true);
   }
 
   function handleEditFromDetail() {
-    onEditItem();
+    if (!itemDetailQuery.data) return;
+    populateItemForm(itemDetailQuery.data);
+    setEditingItemId(itemDetailQuery.data.id);
     setIsDetailDrawerOpen(false);
     setIsFormDrawerOpen(true);
   }
 
   function handleAddItem() {
-    onResetItemForm();
+    resetItemForm();
     setIsFormDrawerOpen(true);
   }
 
   function handleCancelForm() {
-    onResetItemForm();
+    resetItemForm();
     setIsFormDrawerOpen(false);
   }
 
   function handleDeleteConfirmed() {
-    onDeleteItem();
+    deleteItemMutation.mutate({ collectionId, itemId: selectedItemId });
     setShowDeleteItemConfirm(false);
     setIsDetailDrawerOpen(false);
+  }
+
+  function handleItemSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const attributeValues = attributeDefinitions
+      .map((d) => ({ attributeDefinitionId: d.id, value: itemAttributeValues[d.id] ?? "" }))
+      .filter((av) => av.value.trim().length > 0);
+
+    if (editingItemId) {
+      updateItemMutation.mutate({
+        collectionId,
+        itemId: editingItemId,
+        name: itemName,
+        description: itemDescription,
+        quantity: Number(itemQuantity),
+        locationId: itemLocationId || null,
+        itemTypeId: itemTypeId || null,
+        tagIds: itemTagIds,
+        attributeValues
+      });
+      return;
+    }
+
+    createItemMutation.mutate({
+      collectionId,
+      name: itemName,
+      description: itemDescription,
+      quantity: Number(itemQuantity),
+      locationId: itemLocationId || null,
+      itemTypeId: itemTypeId || null,
+      tagIds: itemTagIds,
+      attributeValues
+    });
   }
 
   return (
@@ -251,7 +364,7 @@ export function ItemsPage({
           className="items-toolbar-search"
           placeholder="Search items"
           value={itemSearchText}
-          onChange={(e) => onItemSearchTextChange(e.target.value)}
+          onChange={(e) => { setItemPage(1); setItemSearchText(e.target.value); }}
         />
         <button
           className={`secondary-button filters-toggle${isFiltersOpen ? " active" : ""}`}
@@ -298,9 +411,7 @@ export function ItemsPage({
       {isFiltersOpen && (
         <div className="filters-collapsible panel">
           <ItemFiltersPanel
-            attributeDefinitions={attributeDefinitions.filter(
-              (attributeDefinition) => attributeDefinition.isFilterable
-            )}
+            attributeDefinitions={attributeDefinitions.filter((d) => d.isFilterable)}
             attributeFilters={itemAttributeFilters}
             disabled={false}
             locationId={itemFilterLocationId}
@@ -320,24 +431,24 @@ export function ItemsPage({
             createdBefore={itemFilterCreatedBefore}
             hasNoLocation={itemFilterHasNoLocation}
             hasNoTags={itemFilterHasNoTags}
-            onApplySavedView={onApplySavedView}
-            onAttributeFilterChange={onAttributeFilterChange}
-            onClear={onClearItemFilters}
-            onDeleteSavedView={onDeleteSavedView}
-            onLocationChange={onItemFilterLocationChange}
-            onItemTypeIdChange={onItemFilterTypeIdChange}
-            onSavedViewNameChange={onSavedViewNameChange}
-            onSaveView={onSaveCurrentView}
-            onSearchTextChange={onItemSearchTextChange}
-            onSortByChange={onItemSortByChange}
-            onSortDirectionChange={onItemSortDirectionChange}
-            onToggleTag={onToggleFilterTag}
-            onMinQuantityChange={onItemMinQuantityChange}
-            onMaxQuantityChange={onItemMaxQuantityChange}
-            onCreatedAfterChange={onItemCreatedAfterChange}
-            onCreatedBeforeChange={onItemCreatedBeforeChange}
-            onHasNoLocationChange={onItemHasNoLocationChange}
-            onHasNoTagsChange={onItemHasNoTagsChange}
+            onApplySavedView={applySavedView}
+            onAttributeFilterChange={handleAttributeFilterChange}
+            onClear={clearItemFilters}
+            onDeleteSavedView={deleteSavedView}
+            onLocationChange={(v) => { setItemPage(1); setItemFilterLocationId(v); }}
+            onItemTypeIdChange={(v) => { setItemPage(1); setItemFilterTypeId(v); }}
+            onSavedViewNameChange={setSavedViewName}
+            onSaveView={() => saveCurrentView(itemFilters)}
+            onSearchTextChange={(v) => { setItemPage(1); setItemSearchText(v); }}
+            onSortByChange={(v) => { setItemPage(1); setItemSortBy(v); }}
+            onSortDirectionChange={(v) => { setItemPage(1); setItemSortDirection(v); }}
+            onToggleTag={toggleFilterTag}
+            onMinQuantityChange={(v) => { setItemPage(1); setItemFilterMinQuantity(v); }}
+            onMaxQuantityChange={(v) => { setItemPage(1); setItemFilterMaxQuantity(v); }}
+            onCreatedAfterChange={(v) => { setItemPage(1); setItemFilterCreatedAfter(v); }}
+            onCreatedBeforeChange={(v) => { setItemPage(1); setItemFilterCreatedBefore(v); }}
+            onHasNoLocationChange={(v) => { setItemPage(1); setItemFilterHasNoLocation(v); }}
+            onHasNoTagsChange={(v) => { setItemPage(1); setItemFilterHasNoTags(v); }}
           />
         </div>
       )}
@@ -349,8 +460,8 @@ export function ItemsPage({
           <p>Browse the filtered results for this collection.</p>
         </div>
 
-        {isItemsLoading ? <p className="message">Loading items...</p> : null}
-        {itemsError ? <p className="message error">{itemsError}</p> : null}
+        {itemsQuery.isLoading ? <p className="message">Loading items...</p> : null}
+        {itemsQuery.isError ? <p className="message error">{itemsQuery.error.message}</p> : null}
 
         <ItemList
           items={items}
@@ -365,7 +476,7 @@ export function ItemsPage({
             <button
               className="secondary-button"
               disabled={itemPage <= 1}
-              onClick={() => onItemPageChange(itemPage - 1)}
+              onClick={() => setItemPage(itemPage - 1)}
               type="button"
             >
               &lsaquo; Previous
@@ -376,7 +487,7 @@ export function ItemsPage({
             <button
               className="secondary-button"
               disabled={itemPage >= itemTotalPages}
-              onClick={() => onItemPageChange(itemPage + 1)}
+              onClick={() => setItemPage(itemPage + 1)}
               type="button"
             >
               Next &rsaquo;
@@ -417,17 +528,23 @@ export function ItemsPage({
             &#x2715;
           </button>
         </div>
-        {isItemDetailLoading && <p className="message">Loading item detail...</p>}
+        {itemDetailQuery.isLoading && <p className="message">Loading item detail...</p>}
         <ItemDetailCard
           item={itemDetail}
           isEditing={isEditing && itemDetail?.id === selectedItemId}
           onEdit={handleEditFromDetail}
           onDelete={() => setShowDeleteItemConfirm(true)}
           selectedCollectionName={selectedCollection.name}
-          onUploadMedia={onUploadItemMedia}
-          onDeleteMedia={onDeleteItemMedia}
-          onSetPrimaryMedia={onSetPrimaryItemMedia}
-          isUploadPending={isUploadMediaPending}
+          onUploadMedia={(file) =>
+            uploadItemMediaMutation.mutate({ collectionId, itemId: selectedItemId, file })
+          }
+          onDeleteMedia={(mediaAssetId) =>
+            deleteItemMediaMutation.mutate({ collectionId, itemId: selectedItemId, mediaAssetId })
+          }
+          onSetPrimaryMedia={(mediaAssetId) =>
+            setPrimaryItemMediaMutation.mutate({ collectionId, itemId: selectedItemId, mediaAssetId })
+          }
+          isUploadPending={uploadItemMediaMutation.isPending}
         />
       </div>
 
@@ -451,13 +568,13 @@ export function ItemsPage({
           </button>
         </div>
 
-        <form className="collection-form" onSubmit={onItemSubmit}>
+        <form className="collection-form" onSubmit={handleItemSubmit}>
           <div className="form-mode-row">
             <p className="message">
               {isEditing ? "Editing the selected item." : "Creating a new item draft."}
             </p>
             {isEditing ? (
-              <button className="secondary-button" onClick={onResetItemForm} type="button">
+              <button className="secondary-button" onClick={resetItemForm} type="button">
                 Start New Item
               </button>
             ) : null}
@@ -467,7 +584,7 @@ export function ItemsPage({
             <span>Name</span>
             <input
               value={itemName}
-              onChange={(event) => onItemNameChange(event.target.value)}
+              onChange={(event) => setItemName(event.target.value)}
               placeholder="Kind of Blue"
               maxLength={120}
             />
@@ -478,7 +595,7 @@ export function ItemsPage({
             <textarea
               className="field-textarea"
               value={itemDescription}
-              onChange={(event) => onItemDescriptionChange(event.target.value)}
+              onChange={(event) => setItemDescription(event.target.value)}
               placeholder="Original mono pressing with clean sleeve."
               maxLength={2000}
               rows={3}
@@ -489,7 +606,7 @@ export function ItemsPage({
             <span>Quantity</span>
             <input
               value={itemQuantity}
-              onChange={(event) => onItemQuantityChange(event.target.value)}
+              onChange={(event) => setItemQuantity(event.target.value)}
               inputMode="numeric"
               min={1}
               max={9999}
@@ -501,7 +618,7 @@ export function ItemsPage({
             <span>Location</span>
             <select
               value={itemLocationId}
-              onChange={(event) => onItemLocationChange(event.target.value)}
+              onChange={(event) => setItemLocationId(event.target.value)}
             >
               <option value="">No location</option>
               {locations.map((location) => (
@@ -517,7 +634,7 @@ export function ItemsPage({
               <span>Item Type</span>
               <select
                 value={itemTypeId}
-                onChange={(event) => onItemTypeIdChange(event.target.value)}
+                onChange={(event) => setItemTypeId(event.target.value)}
               >
                 <option value="">No type</option>
                 {itemTypes.map((itemType) => (
@@ -533,7 +650,7 @@ export function ItemsPage({
             disabled={false}
             selectedTagIds={itemTagIds}
             tags={tags}
-            onToggle={onToggleItemTag}
+            onToggle={toggleItemTag}
           />
 
           <DynamicAttributeFields
@@ -542,23 +659,25 @@ export function ItemsPage({
             )}
             disabled={false}
             values={itemAttributeValues}
-            onChange={onAttributeValueChange}
+            onChange={handleAttributeValueChange}
           />
 
           <button
             className="primary-button"
-            disabled={isCreatePending || isUpdatePending}
+            disabled={createItemMutation.isPending || updateItemMutation.isPending}
             type="submit"
           >
-            {isCreatePending || isUpdatePending
+            {createItemMutation.isPending || updateItemMutation.isPending
               ? "Saving Item..."
               : isEditing
                 ? "Save Item Changes"
                 : "Create Item"}
           </button>
 
-          {createItemError || updateItemError ? (
-            <p className="message error">{createItemError ?? updateItemError}</p>
+          {createItemMutation.error || updateItemMutation.error ? (
+            <p className="message error">
+              {createItemMutation.error?.message ?? updateItemMutation.error?.message}
+            </p>
           ) : null}
         </form>
       </div>
@@ -567,7 +686,7 @@ export function ItemsPage({
         <ConfirmDialog
           title={`Delete "${itemDetail.name}"?`}
           message="This item will be permanently removed. This action cannot be undone."
-          isPending={isDeleteItemPending}
+          isPending={deleteItemMutation.isPending}
           onConfirm={handleDeleteConfirmed}
           onCancel={() => setShowDeleteItemConfirm(false)}
         />
