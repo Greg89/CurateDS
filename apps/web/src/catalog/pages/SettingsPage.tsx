@@ -102,7 +102,11 @@ export function SettingsPage({
   const deleteAttributeDefinitionMutation = useMutation({
     mutationFn: deleteAttributeDefinition,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["attribute-definitions", collectionId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["attribute-definitions", collectionId] }),
+        queryClient.invalidateQueries({ queryKey: ["items", collectionId] }),
+        queryClient.invalidateQueries({ queryKey: ["item-detail", collectionId] }),
+      ]);
     }
   });
 
