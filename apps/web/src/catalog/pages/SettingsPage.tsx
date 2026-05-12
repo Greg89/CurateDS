@@ -141,7 +141,11 @@ export function SettingsPage({
   const deleteTagMutation = useMutation({
     mutationFn: deleteTag,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["tags"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["tags"] }),
+        queryClient.invalidateQueries({ queryKey: ["items", collectionId] }),
+        queryClient.invalidateQueries({ queryKey: ["item-detail", collectionId] }),
+      ]);
     }
   });
 
@@ -157,7 +161,11 @@ export function SettingsPage({
   const deleteLocationMutation = useMutation({
     mutationFn: deleteLocation,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["locations"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["locations"] }),
+        queryClient.invalidateQueries({ queryKey: ["items", collectionId] }),
+        queryClient.invalidateQueries({ queryKey: ["item-detail", collectionId] }),
+      ]);
     }
   });
 
