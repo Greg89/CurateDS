@@ -1,3 +1,3 @@
 namespace CurateDS.Application.Collections.ListSavedViews;
 
-public sealed record ListSavedViewsQuery(Guid OwnerId, Guid CollectionId);
+public sealed record ListSavedViewsQuery(string OwnerId, Guid CollectionId);
