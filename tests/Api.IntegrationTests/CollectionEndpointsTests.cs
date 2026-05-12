@@ -948,6 +948,32 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     }
 
     [Fact]
+    public async Task GetItemEvents_ShouldReturnCreatedEvent_AfterItemCreated()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Events"));
+        var item = await CreateItemAsync(collection.Id, "Event Item");
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/items/{item.Id}/events");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var events = await response.Content.ReadFromJsonAsync<ItemEventResponse[]>(JsonOptions);
+
+        events.Should().NotBeNull();
+        events!.Should().ContainSingle(e => e.EventType == "Created" && e.ItemId == item.Id);
+    }
+
+    [Fact]
+    public async Task GetItemEvents_ShouldReturn404_WhenItemDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Events404"));
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/items/{Guid.NewGuid()}/events");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task ListSavedViews_ShouldReturnEmpty_WhenNoneExist()
     {
         var collection = await CreateCollectionAsync(UniqueName("SV Empty"));
@@ -1181,6 +1207,47 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     private sealed record LocationResponse(Guid Id, string Name, string? Description, DateTime CreatedUtc);
 
     private sealed record ItemTypeResponse(Guid Id, Guid CollectionId, string Name, int SortOrder, DateTime CreatedUtc);
+
+    private sealed record ItemEventResponse(Guid Id, Guid ItemId, Guid CollectionId, string EventType, DateTime OccurredUtc, string OccurredBy, string? Notes);
+
+    [Fact]
+    public async Task DeleteItemMedia_ShouldReturn404_WhenItemDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Media404"));
+
+        var response = await _client.DeleteAsync(
+            $"/collections/{collection.Id}/items/{Guid.NewGuid()}/media/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task SetPrimaryItemMedia_ShouldReturn404_WhenItemDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Primary404"));
+
+        var response = await _client.PutAsync(
+            $"/collections/{collection.Id}/items/{Guid.NewGuid()}/media/{Guid.NewGuid()}/primary",
+            new StringContent(string.Empty));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task UploadItemMedia_ShouldReturn404_WhenItemDoesNotExist()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("Upload404"));
+        using var content = new MultipartFormDataContent();
+        using var fileContent = new ByteArrayContent([0xFF, 0xD8, 0xFF]);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+        content.Add(fileContent, "file", "photo.jpg");
+
+        var response = await _client.PostAsync(
+            $"/collections/{collection.Id}/items/{Guid.NewGuid()}/media",
+            content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 
     [Fact]
     public async Task PostItemTypes_ShouldCreateItemType()

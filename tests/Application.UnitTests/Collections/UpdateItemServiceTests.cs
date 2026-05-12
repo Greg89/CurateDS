@@ -21,7 +21,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldUpdateItemAndReplaceAttributeValues()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Trading Cards", DateTime.UtcNow, "system");
         var issueNumber = AttributeDefinition.Create(
             collection.Id,
             "Issue Number",
@@ -85,7 +85,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenRequiredAttributeIsMissing()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Comics", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Comics", DateTime.UtcNow, "system");
         var issueNumber = AttributeDefinition.Create(
             collection.Id,
             "Issue Number",
@@ -128,7 +128,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenAttributeValueBelongsToDifferentItemType()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Trading Cards", DateTime.UtcNow, "system");
         var itemTypeA = ItemType.Create(collection.Id, "Type A", 0, DateTime.UtcNow, "system");
         var itemTypeB = ItemType.Create(collection.Id, "Type B", 1, DateTime.UtcNow, "system");
 
@@ -177,7 +177,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldNotRequireTypeSpecificAttribute_WhenDifferentItemTypeSelected()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Trading Cards", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Trading Cards", DateTime.UtcNow, "system");
         var itemTypeA = ItemType.Create(collection.Id, "Type A", 0, DateTime.UtcNow, "system");
         var itemTypeB = ItemType.Create(collection.Id, "Type B", 1, DateTime.UtcNow, "system");
 
@@ -228,7 +228,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenItemDoesNotExist()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Books", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Books", DateTime.UtcNow, "system");
 
         var service = new UpdateItemService(
             new FakeCollectionRepository(collection),
@@ -262,7 +262,7 @@ public sealed class UpdateItemServiceTests
     public async Task ExecuteAsync_ShouldNotPersistCoreChanges_WhenAttributeParsingFails()
     {
         var createdUtc = DateTime.UtcNow;
-        var collection = Collection.Create(Guid.NewGuid(), "Records", createdUtc, "system");
+        var collection = Collection.Create("auth0|test-owner", "Records", createdUtc, "system");
         var releaseYear = AttributeDefinition.Create(
             collection.Id,
             "Release Year",
@@ -314,7 +314,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldRecordEventWithNameChange_WhenNameDiffers()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Books", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Books", DateTime.UtcNow, "system");
         var item = Item.Create(collection.Id, "Old Name", null, 1, DateTime.UtcNow, "system");
         var eventRepository = new FakeItemEventRepository();
 
@@ -340,7 +340,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldRecordEventWithQuantityChange_WhenQuantityDiffers()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Records", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Records", DateTime.UtcNow, "system");
         var item = Item.Create(collection.Id, "Abbey Road", null, 1, DateTime.UtcNow, "system");
         var eventRepository = new FakeItemEventRepository();
 
@@ -366,7 +366,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldRecordEventWithNullNotes_WhenNothingChanged()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Stamps", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Stamps", DateTime.UtcNow, "system");
         var item = Item.Create(collection.Id, "Same Name", "Same desc", 2, DateTime.UtcNow, "system");
         var eventRepository = new FakeItemEventRepository();
 
@@ -392,7 +392,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldRecordMultipleChanges_WhenSeveralFieldsDiffer()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Coins", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Coins", DateTime.UtcNow, "system");
         var item = Item.Create(collection.Id, "Original", "Old desc", 1, DateTime.UtcNow, "system");
         var eventRepository = new FakeItemEventRepository();
 
@@ -420,7 +420,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenItemTypeIdDoesNotBelongToCollection()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Cards", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Cards", DateTime.UtcNow, "system");
         var item = Item.Create(collection.Id, "Card", null, 1, DateTime.UtcNow, "system");
         var unknownItemTypeId = Guid.NewGuid();
 
@@ -446,7 +446,7 @@ public sealed class UpdateItemServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldRecordItemTypeChangeInNotes_WhenItemTypeChanges()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Stamps", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Stamps", DateTime.UtcNow, "system");
         var oldType = ItemType.Create(collection.Id, "Definitive", 0, DateTime.UtcNow, "system");
         var newType = ItemType.Create(collection.Id, "Commemorative", 1, DateTime.UtcNow, "system");
         var item = Item.Create(collection.Id, "Penny Black", null, 1, DateTime.UtcNow, "system");
@@ -488,19 +488,19 @@ public sealed class UpdateItemServiceTests
             return Task.CompletedTask;
         }
 
-        public Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, Guid ownerId, CancellationToken cancellationToken)
+        public Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, string ownerId, CancellationToken cancellationToken)
         {
             return Task.FromResult(_collections.SingleOrDefault(collection =>
                 collection.Id == collectionId && collection.OwnerId == ownerId));
         }
 
-        public Task<IReadOnlyList<Collection>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<Collection>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyList<Collection>>(
                 _collections.Where(collection => collection.OwnerId == ownerId).ToArray());
         }
 
-        public Task<bool> SoftDeleteAsync(Guid collectionId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+        public Task<bool> SoftDeleteAsync(Guid collectionId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
         public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)
@@ -625,16 +625,16 @@ public sealed class UpdateItemServiceTests
     {
         public Task AddAsync(Location location, CancellationToken cancellationToken) => Task.CompletedTask;
 
-        public Task<bool> ExistsByNameAsync(Guid ownerId, string name, CancellationToken cancellationToken)
+        public Task<bool> ExistsByNameAsync(string ownerId, string name, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
-        public Task<Location?> GetByIdAndOwnerAsync(Guid locationId, Guid ownerId, CancellationToken cancellationToken)
+        public Task<Location?> GetByIdAndOwnerAsync(Guid locationId, string ownerId, CancellationToken cancellationToken)
             => Task.FromResult<Location?>(null);
 
-        public Task<IReadOnlyList<Location>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<Location>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Location>>([]);
 
-        public Task<bool> SoftDeleteAsync(Guid locationId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+        public Task<bool> SoftDeleteAsync(Guid locationId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
     }
 
@@ -642,16 +642,16 @@ public sealed class UpdateItemServiceTests
     {
         public Task AddAsync(Tag tag, CancellationToken cancellationToken) => Task.CompletedTask;
 
-        public Task<bool> ExistsByKeyAsync(Guid ownerId, string key, CancellationToken cancellationToken)
+        public Task<bool> ExistsByKeyAsync(string ownerId, string key, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
-        public Task<IReadOnlyList<Tag>> ListByIdsAsync(Guid ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<Tag>> ListByIdsAsync(string ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Tag>>([]);
 
-        public Task<IReadOnlyList<Tag>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<Tag>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Tag>>([]);
 
-        public Task<bool> SoftDeleteAsync(Guid tagId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+        public Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
     }
 

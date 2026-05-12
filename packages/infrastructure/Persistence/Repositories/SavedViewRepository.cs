@@ -18,7 +18,7 @@ public sealed class SavedViewRepository : ISavedViewRepository
         await _dbContext.SavedViews.AddAsync(savedView, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<SavedView>> ListByCollectionAsync(Guid collectionId, Guid ownerId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<SavedView>> ListByCollectionAsync(Guid collectionId, string ownerId, CancellationToken cancellationToken)
     {
         return await _dbContext.SavedViews
             .Where(v => v.CollectionId == collectionId && v.OwnerId == ownerId)
@@ -26,7 +26,7 @@ public sealed class SavedViewRepository : ISavedViewRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<SavedView?> GetByIdAsync(Guid id, Guid ownerId, CancellationToken cancellationToken)
+    public async Task<SavedView?> GetByIdAsync(Guid id, string ownerId, CancellationToken cancellationToken)
     {
         return await _dbContext.SavedViews
             .FirstOrDefaultAsync(v => v.Id == id && v.OwnerId == ownerId, cancellationToken);

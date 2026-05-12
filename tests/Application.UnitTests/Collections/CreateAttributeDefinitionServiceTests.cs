@@ -19,7 +19,7 @@ public sealed class CreateAttributeDefinitionServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldPersistAttributeDefinition()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Board Games", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Board Games", DateTime.UtcNow, "system");
         var collectionRepository = new FakeCollectionRepository(collection);
         var attributeDefinitionRepository = new FakeAttributeDefinitionRepository();
         var service = new CreateAttributeDefinitionService(
@@ -48,7 +48,7 @@ public sealed class CreateAttributeDefinitionServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenItemTypeIdDoesNotBelongToCollection()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Board Games", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Board Games", DateTime.UtcNow, "system");
         var unknownItemTypeId = Guid.NewGuid();
 
         var service = new CreateAttributeDefinitionService(
@@ -85,7 +85,7 @@ public sealed class CreateAttributeDefinitionServiceTests
 
         var act = () => service.ExecuteAsync(
             new CreateAttributeDefinitionCommand(
-                Guid.NewGuid(),
+                "auth0|test-owner",
                 Guid.NewGuid(),
                 "Publisher",
                 AttributeDataType.Text,
@@ -111,19 +111,19 @@ public sealed class CreateAttributeDefinitionServiceTests
             return Task.CompletedTask;
         }
 
-        public Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, Guid ownerId, CancellationToken cancellationToken)
+        public Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, string ownerId, CancellationToken cancellationToken)
         {
             return Task.FromResult(_collections.SingleOrDefault(collection =>
                 collection.Id == collectionId && collection.OwnerId == ownerId));
         }
 
-        public Task<IReadOnlyList<Collection>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<Collection>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyList<Collection>>(
                 _collections.Where(collection => collection.OwnerId == ownerId).ToArray());
         }
 
-        public Task<bool> SoftDeleteAsync(Guid collectionId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+        public Task<bool> SoftDeleteAsync(Guid collectionId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
         public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)

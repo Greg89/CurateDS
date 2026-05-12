@@ -13,7 +13,8 @@ internal sealed class LocationConfiguration : IEntityTypeConfiguration<Location>
         builder.HasKey(location => location.Id);
 
         builder.Property(location => location.OwnerId)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(200);
 
         builder.Property(location => location.Name)
             .IsRequired()
