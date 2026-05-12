@@ -19,14 +19,14 @@ public sealed class TagRepository : ITagRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<bool> ExistsByKeyAsync(Guid ownerId, string key, CancellationToken cancellationToken)
+    public Task<bool> ExistsByKeyAsync(string ownerId, string key, CancellationToken cancellationToken)
     {
         return _dbContext.Tags.AnyAsync(
             tag => tag.OwnerId == ownerId && tag.Key == key,
             cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Tag>> ListByIdsAsync(Guid ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Tag>> ListByIdsAsync(string ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
     {
         return await _dbContext.Tags
             .Where(tag => tag.OwnerId == ownerId && tagIds.Contains(tag.Id))
@@ -34,7 +34,7 @@ public sealed class TagRepository : ITagRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Tag>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Tag>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
     {
         return await _dbContext.Tags
             .Where(tag => tag.OwnerId == ownerId)
@@ -42,7 +42,7 @@ public sealed class TagRepository : ITagRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<bool> SoftDeleteAsync(Guid tagId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+    public async Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
     {
         var tag = await _dbContext.Tags
             .SingleOrDefaultAsync(t => t.Id == tagId && t.OwnerId == ownerId, cancellationToken);

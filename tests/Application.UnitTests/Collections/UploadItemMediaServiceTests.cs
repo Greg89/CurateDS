@@ -20,7 +20,7 @@ public sealed class UploadItemMediaServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldUploadAndAddMedia_WhenValidImageProvided()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Records", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Records", DateTime.UtcNow, "system");
         var item = Item.Create(collection.Id, "Kind of Blue", null, 1, DateTime.UtcNow, "system");
         var itemRepository = new FakeItemRepository(item);
         var storageService = new FakeMediaStorageService();
@@ -53,7 +53,7 @@ public sealed class UploadItemMediaServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldMakeAssetPrimary_WhenFirstImageOnItem()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Records", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Records", DateTime.UtcNow, "system");
         var item = Item.Create(collection.Id, "Kind of Blue", null, 1, DateTime.UtcNow, "system");
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
@@ -72,7 +72,7 @@ public sealed class UploadItemMediaServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenContentTypeIsNotAllowed()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Records", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Records", DateTime.UtcNow, "system");
         var item = Item.Create(collection.Id, "Kind of Blue", null, 1, DateTime.UtcNow, "system");
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
@@ -91,7 +91,7 @@ public sealed class UploadItemMediaServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenFileSizeExceedsLimit()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Records", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Records", DateTime.UtcNow, "system");
         var item = Item.Create(collection.Id, "Kind of Blue", null, 1, DateTime.UtcNow, "system");
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
@@ -119,7 +119,7 @@ public sealed class UploadItemMediaServiceTests
 
         using var stream = new MemoryStream(new byte[512]);
         var act = () => service.ExecuteAsync(
-            new UploadItemMediaCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), stream, "image/jpeg", "img.jpg", 512),
+            new UploadItemMediaCommand("auth0|test-owner", Guid.NewGuid(), Guid.NewGuid(), stream, "image/jpeg", "img.jpg", 512),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();
@@ -128,7 +128,7 @@ public sealed class UploadItemMediaServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenItemNotFound()
     {
-        var collection = Collection.Create(Guid.NewGuid(), "Records", DateTime.UtcNow, "system");
+        var collection = Collection.Create("auth0|test-owner", "Records", DateTime.UtcNow, "system");
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(),
@@ -178,13 +178,13 @@ public sealed class UploadItemMediaServiceTests
 
         public Task AddAsync(Collection collection, CancellationToken cancellationToken) => Task.CompletedTask;
 
-        public Task<Collection?> GetByIdAndOwnerAsync(Guid id, Guid ownerId, CancellationToken cancellationToken)
+        public Task<Collection?> GetByIdAndOwnerAsync(Guid id, string ownerId, CancellationToken cancellationToken)
             => Task.FromResult(_collections.SingleOrDefault(c => c.Id == id && c.OwnerId == ownerId));
 
-        public Task<IReadOnlyList<Collection>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<Collection>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Collection>>(_collections.Where(c => c.OwnerId == ownerId).ToArray());
 
-        public Task<bool> SoftDeleteAsync(Guid id, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+        public Task<bool> SoftDeleteAsync(Guid id, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
         public Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken)

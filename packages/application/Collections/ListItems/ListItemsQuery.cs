@@ -1,7 +1,7 @@
 namespace CurateDS.Application.Collections.ListItems;
 
 public sealed record ListItemsQuery(
-    Guid OwnerId,
+    string OwnerId,
     Guid CollectionId,
     string? SearchText,
     Guid? LocationId,

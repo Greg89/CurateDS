@@ -9,7 +9,7 @@ public sealed class LocationTests
     public void Create_ShouldTrimNameAndDescription()
     {
         var location = Location.Create(
-            Guid.NewGuid(),
+            "auth0|test-owner",
             "  Office Shelf  ",
             "  Top left corner  ",
             DateTime.UtcNow,
@@ -22,9 +22,17 @@ public sealed class LocationTests
     [Fact]
     public void Create_ShouldThrowArgumentNullException_WhenNameIsNull()
     {
-        var act = () => Location.Create(Guid.NewGuid(), null!, null, DateTime.UtcNow, "system");
+        var act = () => Location.Create("auth0|test-owner", null!, null, DateTime.UtcNow, "system");
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("name");
+    }
+
+    [Fact]
+    public void Create_ShouldThrow_WhenOwnerIdIsWhitespace()
+    {
+        var act = () => Location.Create("   ", "Shelf", null, DateTime.UtcNow, "system");
+
+        act.Should().Throw<ArgumentException>().WithParameterName("ownerId");
     }
 }
