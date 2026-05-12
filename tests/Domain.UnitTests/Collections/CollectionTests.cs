@@ -22,4 +22,12 @@ public sealed class CollectionTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Fact]
+    public void Create_ShouldThrow_WhenOwnerIdIsWhitespace()
+    {
+        var act = () => Collection.Create("   ", "Board Games", DateTime.UtcNow, "system");
+
+        act.Should().Throw<ArgumentException>().WithParameterName("ownerId");
+    }
 }

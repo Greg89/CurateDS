@@ -27,4 +27,12 @@ public sealed class LocationTests
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("name");
     }
+
+    [Fact]
+    public void Create_ShouldThrow_WhenOwnerIdIsWhitespace()
+    {
+        var act = () => Location.Create("   ", "Shelf", null, DateTime.UtcNow, "system");
+
+        act.Should().Throw<ArgumentException>().WithParameterName("ownerId");
+    }
 }

@@ -22,4 +22,12 @@ public sealed class TagTests
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("name");
     }
+
+    [Fact]
+    public void Create_ShouldThrow_WhenOwnerIdIsWhitespace()
+    {
+        var act = () => Tag.Create("   ", "Wishlist", DateTime.UtcNow, "system");
+
+        act.Should().Throw<ArgumentException>().WithParameterName("ownerId");
+    }
 }
