@@ -1,7 +1,7 @@
 namespace CurateDS.Application.Collections.SetPrimaryItemMedia;
 
 public sealed record SetPrimaryItemMediaCommand(
-    Guid OwnerId,
+    string OwnerId,
     Guid CollectionId,
     Guid ItemId,
     Guid MediaAssetId);

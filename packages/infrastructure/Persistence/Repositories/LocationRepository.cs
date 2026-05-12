@@ -19,20 +19,20 @@ public sealed class LocationRepository : ILocationRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<bool> ExistsByNameAsync(Guid ownerId, string name, CancellationToken cancellationToken)
+    public Task<bool> ExistsByNameAsync(string ownerId, string name, CancellationToken cancellationToken)
     {
         return _dbContext.Locations.AnyAsync(
             location => location.OwnerId == ownerId && location.Name == name,
             cancellationToken);
     }
 
-    public async Task<Location?> GetByIdAndOwnerAsync(Guid locationId, Guid ownerId, CancellationToken cancellationToken)
+    public async Task<Location?> GetByIdAndOwnerAsync(Guid locationId, string ownerId, CancellationToken cancellationToken)
     {
         return await _dbContext.Locations
             .SingleOrDefaultAsync(location => location.Id == locationId && location.OwnerId == ownerId, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Location>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Location>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
     {
         return await _dbContext.Locations
             .Where(location => location.OwnerId == ownerId)
@@ -40,7 +40,7 @@ public sealed class LocationRepository : ILocationRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<bool> SoftDeleteAsync(Guid locationId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+    public async Task<bool> SoftDeleteAsync(Guid locationId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
     {
         var location = await _dbContext.Locations
             .SingleOrDefaultAsync(l => l.Id == locationId && l.OwnerId == ownerId, cancellationToken);

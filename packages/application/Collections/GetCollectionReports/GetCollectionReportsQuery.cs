@@ -1,3 +1,3 @@
 namespace CurateDS.Application.Collections.GetCollectionReports;
 
-public sealed record GetCollectionReportsQuery(Guid OwnerId, Guid CollectionId);
+public sealed record GetCollectionReportsQuery(string OwnerId, Guid CollectionId);

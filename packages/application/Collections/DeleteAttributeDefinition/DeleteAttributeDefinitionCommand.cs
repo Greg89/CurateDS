@@ -1,3 +1,3 @@
 namespace CurateDS.Application.Collections.DeleteAttributeDefinition;
 
-public sealed record DeleteAttributeDefinitionCommand(Guid OwnerId, Guid CollectionId, Guid AttributeDefinitionId);
+public sealed record DeleteAttributeDefinitionCommand(string OwnerId, Guid CollectionId, Guid AttributeDefinitionId);
