@@ -7,11 +7,11 @@ public interface ICollectionRepository
 {
     Task AddAsync(Collection collection, CancellationToken cancellationToken);
 
-    Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, string OwnerId, CancellationToken cancellationToken);
+    Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, string ownerId, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Collection>> ListByOwnerAsync(string OwnerId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Collection>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken);
 
-    Task<bool> SoftDeleteAsync(Guid collectionId, string OwnerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken);
+    Task<bool> SoftDeleteAsync(Guid collectionId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken);
 
     Task<CollectionSummaryDto> GetSummaryAsync(Guid collectionId, CancellationToken cancellationToken);
 
