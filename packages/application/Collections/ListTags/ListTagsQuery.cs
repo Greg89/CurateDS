@@ -1,3 +1,3 @@
 namespace CurateDS.Application.Collections.ListTags;
 
-public sealed record ListTagsQuery(Guid OwnerId);
+public sealed record ListTagsQuery(string OwnerId);

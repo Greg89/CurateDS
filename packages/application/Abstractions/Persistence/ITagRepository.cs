@@ -6,11 +6,11 @@ public interface ITagRepository
 {
     Task AddAsync(Tag tag, CancellationToken cancellationToken);
 
-    Task<bool> ExistsByKeyAsync(Guid ownerId, string key, CancellationToken cancellationToken);
+    Task<bool> ExistsByKeyAsync(string ownerId, string key, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Tag>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Tag>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Tag>> ListByIdsAsync(Guid ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Tag>> ListByIdsAsync(string ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken);
 
-    Task<bool> SoftDeleteAsync(Guid tagId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken);
+    Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken);
 }

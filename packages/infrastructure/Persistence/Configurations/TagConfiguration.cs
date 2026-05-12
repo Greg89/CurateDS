@@ -13,7 +13,8 @@ internal sealed class TagConfiguration : IEntityTypeConfiguration<Tag>
         builder.HasKey(tag => tag.Id);
 
         builder.Property(tag => tag.OwnerId)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(200);
 
         builder.Property(tag => tag.Name)
             .IsRequired()

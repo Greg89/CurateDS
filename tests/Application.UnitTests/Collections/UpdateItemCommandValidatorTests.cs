@@ -11,7 +11,7 @@ public sealed class UpdateItemCommandValidatorTests
     {
         var validator = new UpdateItemCommandValidator();
         var command = new UpdateItemCommand(
-            Guid.NewGuid(),
+            "auth0|test-owner",
             Guid.NewGuid(),
             Guid.NewGuid(),
             " a ",
@@ -33,7 +33,7 @@ public sealed class UpdateItemCommandValidatorTests
         var validator = new UpdateItemCommandValidator();
         var attributeDefinitionId = Guid.NewGuid();
         var command = new UpdateItemCommand(
-            Guid.NewGuid(),
+            "auth0|test-owner",
             Guid.NewGuid(),
             Guid.NewGuid(),
             "Vintage Card",
