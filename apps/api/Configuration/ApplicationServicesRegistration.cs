@@ -99,6 +99,7 @@ internal static class ApplicationServicesRegistration
         services.Configure<MediaStorageOptions>(
             configuration.GetSection(MediaStorageOptions.SectionName));
         services.AddScoped<IMediaStorageService, MinioMediaStorageService>();
+        services.AddHostedService<MediaStorageInitializer>();
 
         return services;
     }
