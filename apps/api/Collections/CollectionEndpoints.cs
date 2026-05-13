@@ -91,7 +91,7 @@ public static class CollectionEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Collection was not found.");
             }
         });
 
@@ -750,7 +750,7 @@ public static class CollectionEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Item was not found.");
             }
         });
 
