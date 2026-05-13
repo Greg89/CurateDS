@@ -1,20 +1,14 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Collection,
-  createItem,
-  deleteItem,
-  deleteItemMedia,
   getItemDetail,
   listAttributeDefinitions,
   listItems,
   listItemTypes,
   listLocations,
-  listTags,
-  setPrimaryItemMedia,
-  updateItem,
-  uploadItemMedia
+  listTags
 } from "../../api";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { DynamicAttributeFields } from "../components/DynamicAttributeFields";
@@ -24,6 +18,7 @@ import { ItemList } from "../components/ItemList";
 import { TagSelector } from "../components/TagMultiSelect";
 import { useItemFilters } from "../hooks/useItemFilters";
 import { useItemForm } from "../hooks/useItemForm";
+import { useItemMutations } from "../hooks/useItemMutations";
 import { useSavedViews } from "../hooks/useSavedViews";
 
 export function ItemsPage({
@@ -32,7 +27,6 @@ export function ItemsPage({
   selectedCollection: Collection;
 }>) {
   const collectionId = selectedCollection.id;
-  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const {
@@ -105,6 +99,22 @@ export function ItemsPage({
     deleteSavedView
   } = useSavedViews(collectionId);
 
+  const {
+    createItemMutation,
+    updateItemMutation,
+    deleteItemMutation,
+    uploadItemMediaMutation,
+    deleteItemMediaMutation,
+    setPrimaryItemMediaMutation
+  } = useItemMutations({
+    collectionId,
+    populateItemForm,
+    setSelectedItemId,
+    setEditingItemId,
+    setItemSaveCount,
+    onCreateSuccess: resetItemForm
+  });
+
   const attributeDefinitionsQuery = useQuery({
     queryKey: ["attribute-definitions", collectionId],
     queryFn: () => listAttributeDefinitions(collectionId)
@@ -145,61 +155,6 @@ export function ItemsPage({
   const itemTypesQuery = useQuery({
     queryKey: ["item-types", collectionId],
     queryFn: () => listItemTypes(collectionId)
-  });
-
-  const createItemMutation = useMutation({
-    mutationFn: createItem,
-    onSuccess: async (item) => {
-      resetItemForm();
-      setSelectedItemId(item.id);
-      setItemSaveCount((c) => c + 1);
-      await queryClient.invalidateQueries({ queryKey: ["items", collectionId] });
-      await queryClient.invalidateQueries({ queryKey: ["item-detail", collectionId, item.id] });
-    }
-  });
-
-  const updateItemMutation = useMutation({
-    mutationFn: updateItem,
-    onSuccess: async (item) => {
-      populateItemForm(item);
-      setSelectedItemId(item.id);
-      setEditingItemId(item.id);
-      setItemSaveCount((c) => c + 1);
-      await queryClient.invalidateQueries({ queryKey: ["items", collectionId] });
-      await queryClient.invalidateQueries({ queryKey: ["item-detail", collectionId, item.id] });
-    }
-  });
-
-  const deleteItemMutation = useMutation({
-    mutationFn: deleteItem,
-    onSuccess: async () => {
-      setSelectedItemId("");
-      await queryClient.invalidateQueries({ queryKey: ["items", collectionId] });
-    }
-  });
-
-  const uploadItemMediaMutation = useMutation({
-    mutationFn: uploadItemMedia,
-    onSuccess: async (_asset, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
-      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
-    }
-  });
-
-  const deleteItemMediaMutation = useMutation({
-    mutationFn: deleteItemMedia,
-    onSuccess: async (_result, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
-      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
-    }
-  });
-
-  const setPrimaryItemMediaMutation = useMutation({
-    mutationFn: setPrimaryItemMedia,
-    onSuccess: async (_result, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ["item-detail", variables.collectionId, variables.itemId] });
-      await queryClient.invalidateQueries({ queryKey: ["items", variables.collectionId] });
-    }
   });
 
   const attributeDefinitions = attributeDefinitionsQuery.data ?? [];
