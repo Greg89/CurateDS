@@ -27,6 +27,15 @@ public sealed class MediaStorageInitializer : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(_options.Endpoint) ||
+            string.IsNullOrWhiteSpace(_options.BucketName) ||
+            string.IsNullOrWhiteSpace(_options.AccessKey) ||
+            string.IsNullOrWhiteSpace(_options.SecretKey))
+        {
+            _logger.LogDebug("Media storage options are not configured — skipping bucket initialisation.");
+            return;
+        }
+
         try
         {
             var credentials = new BasicAWSCredentials(_options.AccessKey, _options.SecretKey);
