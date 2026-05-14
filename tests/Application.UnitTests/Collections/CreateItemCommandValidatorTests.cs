@@ -1,4 +1,5 @@
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.Shared;
 using FluentAssertions;
 
 namespace CurateDS.Application.UnitTests.Collections;
@@ -40,8 +41,8 @@ public sealed class CreateItemCommandValidatorTests
             null,
             [],
             [
-                new CreateItemAttributeValueInput(attributeDefinitionId, "Blue"),
-                new CreateItemAttributeValueInput(attributeDefinitionId, "Red")
+                new AttributeValueInput(attributeDefinitionId, "Blue"),
+                new AttributeValueInput(attributeDefinitionId, "Red")
             ]);
 
         var result = validator.Validate(command);

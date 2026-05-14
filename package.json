@@ -8,6 +8,7 @@
     "tests/EndToEndTests"
   ],
   "scripts": {
+    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web -- --run",
     "build:web": "npm run build --workspace @curateds/web",
     "test:web": "npm run test --workspace @curateds/web-tests",
     "test:web:coverage": "npm run test:coverage --workspace @curateds/web-tests",

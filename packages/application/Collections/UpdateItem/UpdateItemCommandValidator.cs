@@ -1,4 +1,4 @@
-using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.Shared;
 using FluentValidation;
 
 namespace CurateDS.Application.Collections.UpdateItem;
@@ -50,7 +50,7 @@ public sealed class UpdateItemCommandValidator : AbstractValidator<UpdateItemCom
             });
     }
 
-    private static bool HaveUniqueAttributeDefinitionIds(IReadOnlyList<CreateItemAttributeValueInput> attributeValues)
+    private static bool HaveUniqueAttributeDefinitionIds(IReadOnlyList<AttributeValueInput> attributeValues)
     {
         return attributeValues
             .Select(attributeValue => attributeValue.AttributeDefinitionId)

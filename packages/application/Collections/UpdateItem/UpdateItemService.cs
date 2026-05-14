@@ -1,6 +1,5 @@
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
-using CurateDS.Application.Collections.CreateItem;
 using CurateDS.Application.Collections.Shared;
 using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
@@ -177,53 +176,11 @@ public sealed class UpdateItemService
     }
 
     private static void ValidateAttributeValues(
-        IReadOnlyList<CreateItemAttributeValueInput> attributeValues,
+        IReadOnlyList<AttributeValueInput> attributeValues,
         IReadOnlyList<AttributeDefinition> attributeDefinitions,
         IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup,
         Guid? itemTypeId)
-    {
-        var failures = new List<ValidationFailure>();
-
-        // Valid definitions for this item: global (null ItemTypeId) OR matching the item's type
-        var validDefinitions = attributeDefinitions
-            .Where(d => d.ItemTypeId == null || d.ItemTypeId == itemTypeId)
-            .ToList();
-
-        var validDefinitionIds = validDefinitions.Select(d => d.Id).ToHashSet();
-
-        var requiredDefinitionIds = validDefinitions
-            .Where(definition => definition.IsRequired)
-            .Select(definition => definition.Id)
-            .ToHashSet();
-
-        var providedDefinitionIds = attributeValues
-            .Select(attributeValue => attributeValue.AttributeDefinitionId)
-            .ToHashSet();
-
-        foreach (var attributeValue in attributeValues)
-        {
-            if (!validDefinitionIds.Contains(attributeValue.AttributeDefinitionId))
-            {
-                failures.Add(new ValidationFailure(
-                    nameof(UpdateItemCommand.AttributeValues),
-                    "Attribute values must belong to the selected collection and item type."));
-            }
-        }
-
-        foreach (var missingDefinitionId in requiredDefinitionIds.Except(providedDefinitionIds))
-        {
-            var attributeDefinition = attributeDefinitionLookup[missingDefinitionId];
-
-            failures.Add(new ValidationFailure(
-                nameof(UpdateItemCommand.AttributeValues),
-                $"A value for '{attributeDefinition.Name}' is required."));
-        }
-
-        if (failures.Count > 0)
-        {
-            throw new ValidationException(failures);
-        }
-    }
+        => ItemAttributeValueValidator.Validate(attributeValues, attributeDefinitions, attributeDefinitionLookup, itemTypeId);
 
     private static string? BuildChangeNotes(
         Item item,

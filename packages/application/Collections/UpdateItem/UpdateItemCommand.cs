@@ -1,3 +1,5 @@
+using CurateDS.Application.Collections.Shared;
+
 namespace CurateDS.Application.Collections.UpdateItem;
 
 public sealed record UpdateItemCommand(
@@ -10,4 +12,4 @@ public sealed record UpdateItemCommand(
     Guid? LocationId,
     Guid? ItemTypeId,
     IReadOnlyList<Guid> TagIds,
-    IReadOnlyList<CreateItem.CreateItemAttributeValueInput> AttributeValues);
+    IReadOnlyList<AttributeValueInput> AttributeValues);

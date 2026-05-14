@@ -45,7 +45,7 @@ public static class MediaEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Item or collection was not found.");
             }
             catch (ValidationException ex)
             {
@@ -71,7 +71,7 @@ public static class MediaEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Media asset was not found.");
             }
         });
 
@@ -93,7 +93,7 @@ public static class MediaEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Media asset was not found.");
             }
         });
 

@@ -4,6 +4,7 @@ using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.Shared;
 using CurateDS.Application.Collections.CreateItemType;
 using CurateDS.Application.Collections.CreateLocation;
 using CurateDS.Application.Collections.CreateTag;
@@ -91,7 +92,7 @@ public static class CollectionEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Collection was not found.");
             }
         });
 
@@ -596,7 +597,7 @@ public static class CollectionEndpoints
                         request.ItemTypeId,
                         request.TagIds ?? [],
                         (request.AttributeValues ?? []).Select(attributeValue =>
-                            new CreateItemAttributeValueInput(
+                            new AttributeValueInput(
                                 attributeValue.AttributeDefinitionId,
                                 attributeValue.Value)).ToArray()),
                     cancellationToken);
@@ -702,7 +703,7 @@ public static class CollectionEndpoints
                         request.ItemTypeId,
                         request.TagIds ?? [],
                         (request.AttributeValues ?? []).Select(attributeValue =>
-                            new CreateItemAttributeValueInput(
+                            new AttributeValueInput(
                                 attributeValue.AttributeDefinitionId,
                                 attributeValue.Value)).ToArray()),
                     cancellationToken);
@@ -750,7 +751,7 @@ public static class CollectionEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Item was not found.");
             }
         });
 
