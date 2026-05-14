@@ -31,15 +31,11 @@ internal static class ItemAttributeValueValidator
             .Select(attributeValue => attributeValue.AttributeDefinitionId)
             .ToHashSet();
 
-        foreach (var attributeValue in attributeValues)
-        {
-            if (!validDefinitionIds.Contains(attributeValue.AttributeDefinitionId))
-            {
-                failures.Add(new ValidationFailure(
-                    "AttributeValues",
-                    "Attribute values must belong to the selected collection and item type."));
-            }
-        }
+        failures.AddRange(attributeValues
+            .Where(attributeValue => !validDefinitionIds.Contains(attributeValue.AttributeDefinitionId))
+            .Select(_ => new ValidationFailure(
+                "AttributeValues",
+                "Attribute values must belong to the selected collection and item type.")));
 
         foreach (var missingDefinitionId in requiredDefinitionIds.Except(providedDefinitionIds))
         {
