@@ -71,6 +71,10 @@ public sealed class MediaStorageInitializer : IHostedService
 
             _logger.LogInformation("Media storage bucket '{Bucket}' policy configured.", _options.BucketName);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
