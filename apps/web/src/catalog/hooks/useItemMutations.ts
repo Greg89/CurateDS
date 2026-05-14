@@ -1,3 +1,4 @@
+import { type Dispatch, type SetStateAction } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createItem,
@@ -14,7 +15,7 @@ interface UseItemMutationsOptions {
   populateItemForm: (item: ItemDetail) => void;
   setSelectedItemId: (id: string) => void;
   setEditingItemId: (id: string | null) => void;
-  setItemSaveCount: React.Dispatch<React.SetStateAction<number>>;
+  setItemSaveCount: Dispatch<SetStateAction<number>>;
   onCreateSuccess?: () => void;
 }
 
