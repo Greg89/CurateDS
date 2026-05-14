@@ -94,7 +94,8 @@ public sealed class MediaStorageInitializer : IHostedService
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "Media storage initialisation failed. Upload will proceed but bucket may not be ready.");
+                "Media storage initialisation failed. Uploads may fail until storage is configured and bucket '{Bucket}' exists.",
+                _options.BucketName);
         }
     }
 
