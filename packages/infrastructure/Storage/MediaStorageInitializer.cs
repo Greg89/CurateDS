@@ -79,13 +79,16 @@ public sealed class MediaStorageInitializer : IHostedService
                 }
                 """;
 
-            await client.PutBucketPolicyAsync(new PutBucketPolicyRequest
+            if (_options.EnablePublicReadPolicy)
             {
-                BucketName = _options.BucketName,
-                Policy = policy
-            }, cancellationToken);
+                await client.PutBucketPolicyAsync(new PutBucketPolicyRequest
+                {
+                    BucketName = _options.BucketName,
+                    Policy = policy
+                }, cancellationToken);
 
-            _logger.LogInformation("Media storage bucket '{Bucket}' policy configured.", _options.BucketName);
+                _logger.LogInformation("Media storage bucket '{Bucket}' policy configured.", _options.BucketName);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
