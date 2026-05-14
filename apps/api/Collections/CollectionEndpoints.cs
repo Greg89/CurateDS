@@ -1,8 +1,10 @@
 using CurateDS.Api.ApiContracts;
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.Shared;
 using CurateDS.Application.Collections.CreateItemType;
 using CurateDS.Application.Collections.CreateLocation;
 using CurateDS.Application.Collections.CreateTag;
@@ -42,10 +44,10 @@ public static class CollectionEndpoints
 
         group.MapGet("/", async (
             ListCollectionsService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
-            var ownerId = GetDefaultOwnerId(configuration);
+            var ownerId = currentUserService.GetCurrentUser();
             var collections = await service.ExecuteAsync(new ListCollectionsQuery(ownerId), cancellationToken);
 
             return Results.Ok(collections.Select(ToResponse));
@@ -54,12 +56,12 @@ public static class CollectionEndpoints
         group.MapPost("/", async (
             CreateCollectionRequest request,
             CreateCollectionService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
                     new CreateCollectionCommand(ownerId, request.Name),
                     cancellationToken);
@@ -76,12 +78,12 @@ public static class CollectionEndpoints
         group.MapDelete("/{collectionId:guid}", async (
             Guid collectionId,
             DeleteCollectionService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 await service.ExecuteAsync(
                     new DeleteCollectionCommand(ownerId, collectionId),
                     cancellationToken);
@@ -90,19 +92,19 @@ public static class CollectionEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Collection was not found.");
             }
         });
 
         group.MapGet("/{collectionId:guid}/summary", async (
             Guid collectionId,
             GetCollectionSummaryService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var summary = await service.ExecuteAsync(
                     new GetCollectionSummaryQuery(ownerId, collectionId),
                     cancellationToken);
@@ -126,12 +128,12 @@ public static class CollectionEndpoints
         group.MapGet("/{collectionId:guid}/reports", async (
             Guid collectionId,
             GetCollectionReportsService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var reports = await service.ExecuteAsync(
                     new GetCollectionReportsQuery(ownerId, collectionId),
                     cancellationToken);
@@ -151,12 +153,12 @@ public static class CollectionEndpoints
             int page,
             int pageSize,
             ListCollectionActivityService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
                     new ListCollectionActivityQuery(ownerId, collectionId, page, pageSize),
                     cancellationToken);
@@ -178,12 +180,12 @@ public static class CollectionEndpoints
         group.MapGet("/{collectionId:guid}/export", async (
             Guid collectionId,
             ExportCollectionService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
                     new ExportCollectionQuery(ownerId, collectionId),
                     cancellationToken);
@@ -199,12 +201,12 @@ public static class CollectionEndpoints
         group.MapGet("/{collectionId:guid}/saved-views", async (
             Guid collectionId,
             ListSavedViewsService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var views = await service.ExecuteAsync(
                     new ListSavedViewsQuery(ownerId, collectionId),
                     cancellationToken);
@@ -222,12 +224,12 @@ public static class CollectionEndpoints
             Guid collectionId,
             CreateSavedViewRequest request,
             CreateSavedViewService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var view = await service.ExecuteAsync(
                     new CreateSavedViewCommand(ownerId, collectionId, request.Name, request.FiltersJson),
                     cancellationToken);
@@ -246,12 +248,12 @@ public static class CollectionEndpoints
             Guid collectionId,
             Guid viewId,
             DeleteSavedViewService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 await service.ExecuteAsync(
                     new DeleteSavedViewCommand(ownerId, collectionId, viewId),
                     cancellationToken);
@@ -266,10 +268,10 @@ public static class CollectionEndpoints
 
         app.MapGet("/tags", async (
             ListTagsService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
-            var ownerId = GetDefaultOwnerId(configuration);
+            var ownerId = currentUserService.GetCurrentUser();
             var tags = await service.ExecuteAsync(new ListTagsQuery(ownerId), cancellationToken);
             return Results.Ok(tags.Select(tag => new TagResponse(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)));
         }).RequireAuthorization();
@@ -277,12 +279,12 @@ public static class CollectionEndpoints
         app.MapPost("/tags", async (
             CreateTagRequest request,
             CreateTagService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(new CreateTagCommand(ownerId, request.Name), cancellationToken);
                 return Results.Created($"/tags/{result.Id}", new TagResponse(result.Id, result.Name, result.Key, result.CreatedUtc));
             }
@@ -302,10 +304,10 @@ public static class CollectionEndpoints
         app.MapDelete("/tags/{tagId:guid}", async (
             Guid tagId,
             DeleteTagService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
-            var ownerId = GetDefaultOwnerId(configuration);
+            var ownerId = currentUserService.GetCurrentUser();
             try
             {
                 await service.ExecuteAsync(new DeleteTagCommand(ownerId, tagId), cancellationToken);
@@ -319,10 +321,10 @@ public static class CollectionEndpoints
 
         app.MapGet("/locations", async (
             ListLocationsService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
-            var ownerId = GetDefaultOwnerId(configuration);
+            var ownerId = currentUserService.GetCurrentUser();
             var locations = await service.ExecuteAsync(new ListLocationsQuery(ownerId), cancellationToken);
             return Results.Ok(locations.Select(location => new LocationResponse(
                 location.Id,
@@ -334,12 +336,12 @@ public static class CollectionEndpoints
         app.MapPost("/locations", async (
             CreateLocationRequest request,
             CreateLocationService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
                     new CreateLocationCommand(ownerId, request.Name, request.Description),
                     cancellationToken);
@@ -357,10 +359,10 @@ public static class CollectionEndpoints
         app.MapDelete("/locations/{locationId:guid}", async (
             Guid locationId,
             DeleteLocationService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
-            var ownerId = GetDefaultOwnerId(configuration);
+            var ownerId = currentUserService.GetCurrentUser();
             try
             {
                 await service.ExecuteAsync(new DeleteLocationCommand(ownerId, locationId), cancellationToken);
@@ -375,12 +377,12 @@ public static class CollectionEndpoints
         group.MapGet("/{collectionId:guid}/attribute-definitions", async (
             Guid collectionId,
             ListAttributeDefinitionsService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var attributeDefinitions = await service.ExecuteAsync(
                     new ListAttributeDefinitionsQuery(ownerId, collectionId),
                     cancellationToken);
@@ -397,12 +399,12 @@ public static class CollectionEndpoints
             Guid collectionId,
             CreateAttributeDefinitionRequest request,
             CreateAttributeDefinitionService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
                     new CreateAttributeDefinitionCommand(
                         ownerId,
@@ -442,10 +444,10 @@ public static class CollectionEndpoints
             Guid collectionId,
             Guid attributeDefinitionId,
             DeleteAttributeDefinitionService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
-            var ownerId = GetDefaultOwnerId(configuration);
+            var ownerId = currentUserService.GetCurrentUser();
             try
             {
                 await service.ExecuteAsync(
@@ -462,12 +464,12 @@ public static class CollectionEndpoints
         group.MapGet("/{collectionId:guid}/item-types", async (
             Guid collectionId,
             ListItemTypesService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var itemTypes = await service.ExecuteAsync(
                     new ListItemTypesQuery(ownerId, collectionId),
                     cancellationToken);
@@ -485,12 +487,12 @@ public static class CollectionEndpoints
             Guid collectionId,
             CreateItemTypeRequest request,
             CreateItemTypeService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
                     new CreateItemTypeCommand(ownerId, collectionId, request.Name),
                     cancellationToken);
@@ -513,10 +515,10 @@ public static class CollectionEndpoints
             Guid collectionId,
             Guid itemTypeId,
             DeleteItemTypeService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
-            var ownerId = GetDefaultOwnerId(configuration);
+            var ownerId = currentUserService.GetCurrentUser();
             try
             {
                 await service.ExecuteAsync(
@@ -534,12 +536,12 @@ public static class CollectionEndpoints
             Guid collectionId,
             [AsParameters] ListItemsRequest request,
             ListItemsService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
                     new ListItemsQuery(
                         ownerId,
@@ -578,12 +580,12 @@ public static class CollectionEndpoints
             Guid collectionId,
             CreateItemRequest request,
             CreateItemService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
                     new CreateItemCommand(
                         ownerId,
@@ -595,7 +597,7 @@ public static class CollectionEndpoints
                         request.ItemTypeId,
                         request.TagIds ?? [],
                         (request.AttributeValues ?? []).Select(attributeValue =>
-                            new CreateItemAttributeValueInput(
+                            new AttributeValueInput(
                                 attributeValue.AttributeDefinitionId,
                                 attributeValue.Value)).ToArray()),
                     cancellationToken);
@@ -631,12 +633,12 @@ public static class CollectionEndpoints
             Guid collectionId,
             Guid itemId,
             GetItemDetailService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var item = await service.ExecuteAsync(
                     new GetItemDetailQuery(ownerId, collectionId, itemId),
                     cancellationToken);
@@ -653,12 +655,12 @@ public static class CollectionEndpoints
             Guid collectionId,
             Guid itemId,
             ListItemEventsService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var events = await service.ExecuteAsync(
                     new ListItemEventsQuery(ownerId, collectionId, itemId),
                     cancellationToken);
@@ -683,12 +685,12 @@ public static class CollectionEndpoints
             Guid itemId,
             UpdateItemRequest request,
             UpdateItemService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
                     new UpdateItemCommand(
                         ownerId,
@@ -701,7 +703,7 @@ public static class CollectionEndpoints
                         request.ItemTypeId,
                         request.TagIds ?? [],
                         (request.AttributeValues ?? []).Select(attributeValue =>
-                            new CreateItemAttributeValueInput(
+                            new AttributeValueInput(
                                 attributeValue.AttributeDefinitionId,
                                 attributeValue.Value)).ToArray()),
                     cancellationToken);
@@ -735,12 +737,12 @@ public static class CollectionEndpoints
             Guid collectionId,
             Guid itemId,
             DeleteItemService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 await service.ExecuteAsync(
                     new DeleteItemCommand(ownerId, collectionId, itemId),
                     cancellationToken);
@@ -749,23 +751,11 @@ public static class CollectionEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Item was not found.");
             }
         });
 
         return app;
-    }
-
-    private static Guid GetDefaultOwnerId(IConfiguration configuration)
-    {
-        var value = configuration["AppDefaults:DefaultOwnerId"];
-
-        if (!Guid.TryParse(value, out var ownerId))
-        {
-            throw new InvalidOperationException("AppDefaults:DefaultOwnerId must be configured.");
-        }
-
-        return ownerId;
     }
 
     private static CollectionResponse ToResponse(CollectionDto collection) =>

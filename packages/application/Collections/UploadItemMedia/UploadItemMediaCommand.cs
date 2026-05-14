@@ -1,7 +1,7 @@
 namespace CurateDS.Application.Collections.UploadItemMedia;
 
 public sealed record UploadItemMediaCommand(
-    Guid OwnerId,
+    string OwnerId,
     Guid CollectionId,
     Guid ItemId,
     Stream Content,

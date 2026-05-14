@@ -43,7 +43,13 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapDefaultEndpoints();
-app.MapCollectionEndpoints();
+app.MapCollectionCrudEndpoints();
+app.MapCollectionReportEndpoints();
+app.MapSavedViewEndpoints();
+app.MapOrganizationEndpoints();
+app.MapAttributeDefinitionEndpoints();
+app.MapItemTypeEndpoints();
+app.MapItemEndpoints();
 app.MapMediaEndpoints();
 
 app.LogStartupBanner(serviceVersion);

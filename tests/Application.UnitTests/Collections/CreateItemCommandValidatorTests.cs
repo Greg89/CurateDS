@@ -1,4 +1,5 @@
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.Shared;
 using FluentAssertions;
 
 namespace CurateDS.Application.UnitTests.Collections;
@@ -10,7 +11,7 @@ public sealed class CreateItemCommandValidatorTests
     {
         var validator = new CreateItemCommandValidator();
         var command = new CreateItemCommand(
-            Guid.NewGuid(),
+            "auth0|test-owner",
             Guid.NewGuid(),
             " a ",
             null,
@@ -31,7 +32,7 @@ public sealed class CreateItemCommandValidatorTests
         var validator = new CreateItemCommandValidator();
         var attributeDefinitionId = Guid.NewGuid();
         var command = new CreateItemCommand(
-            Guid.NewGuid(),
+            "auth0|test-owner",
             Guid.NewGuid(),
             "Vintage Card",
             null,
@@ -40,8 +41,8 @@ public sealed class CreateItemCommandValidatorTests
             null,
             [],
             [
-                new CreateItemAttributeValueInput(attributeDefinitionId, "Blue"),
-                new CreateItemAttributeValueInput(attributeDefinitionId, "Red")
+                new AttributeValueInput(attributeDefinitionId, "Blue"),
+                new AttributeValueInput(attributeDefinitionId, "Red")
             ]);
 
         var result = validator.Validate(command);

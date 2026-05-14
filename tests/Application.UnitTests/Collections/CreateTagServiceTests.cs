@@ -21,7 +21,7 @@ public sealed class CreateTagServiceTests
         var service = new CreateTagService(repository, new FakeCurrentUserService(), new CreateTagCommandValidator());
 
         var result = await service.ExecuteAsync(
-            new CreateTagCommand(Guid.NewGuid(), "Wishlist"),
+            new CreateTagCommand("auth0|test-owner", "Wishlist"),
             CancellationToken.None);
 
         result.Name.Should().Be("Wishlist");
@@ -32,7 +32,7 @@ public sealed class CreateTagServiceTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenKeyAlreadyExists()
     {
-        var ownerId = Guid.NewGuid();
+        const string ownerId = "auth0|test-owner";
         var repository = new FakeTagRepository(
             Tag.Create(ownerId, "Wishlist", DateTime.UtcNow, "system"));
         var service = new CreateTagService(repository, new FakeCurrentUserService(), new CreateTagCommandValidator());
@@ -66,24 +66,24 @@ public sealed class CreateTagServiceTests
             return Task.CompletedTask;
         }
 
-        public Task<bool> ExistsByKeyAsync(Guid ownerId, string key, CancellationToken cancellationToken)
+        public Task<bool> ExistsByKeyAsync(string ownerId, string key, CancellationToken cancellationToken)
         {
             return Task.FromResult(_tags.Any(tag => tag.OwnerId == ownerId && tag.Key == key));
         }
 
-        public Task<IReadOnlyList<Tag>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<Tag>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyList<Tag>>(
                 _tags.Where(tag => tag.OwnerId == ownerId).ToArray());
         }
 
-        public Task<IReadOnlyList<Tag>> ListByIdsAsync(Guid ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<Tag>> ListByIdsAsync(string ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyList<Tag>>(
                 _tags.Where(tag => tag.OwnerId == ownerId && tagIds.Contains(tag.Id)).ToArray());
         }
 
-        public Task<bool> SoftDeleteAsync(Guid tagId, Guid ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+        public Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
     }
 }

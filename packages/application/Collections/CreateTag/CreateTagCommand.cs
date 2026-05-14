@@ -1,3 +1,3 @@
 namespace CurateDS.Application.Collections.CreateTag;
 
-public sealed record CreateTagCommand(Guid OwnerId, string Name);
+public sealed record CreateTagCommand(string OwnerId, string Name);

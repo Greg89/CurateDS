@@ -8,6 +8,7 @@
     "tests/EndToEndTests"
   ],
   "scripts": {
+    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web -- --run",
     "build:web": "npm run build --workspace @curateds/web",
     "test:web": "npm run test --workspace @curateds/web-tests",
     "test:web:coverage": "npm run test:coverage --workspace @curateds/web-tests",
@@ -18,7 +19,7 @@
     "test:mobile:coverage": "npm run test:coverage --workspace @curateds/mobile"
   },
   "overrides": {
-    "react-test-renderer": "19.2.5",
+    "react-test-renderer": "19.2.6",
     "@react-native-async-storage/async-storage": "^1.24.0",
     "uuid": "^14.0.0",
     "xcode": {
@@ -32,6 +33,8 @@
     }
   },
   "devDependencies": {
-    "uuid": "^14.0.0"
+    "@vitest/coverage-v8": "^4.1.6",
+    "uuid": "^14.0.0",
+    "vitest": "^4.1.6"
   }
 }

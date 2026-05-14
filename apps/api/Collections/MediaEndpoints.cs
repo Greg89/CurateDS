@@ -1,4 +1,5 @@
 using CurateDS.Api.ApiContracts;
+using CurateDS.Application.Abstractions;
 using CurateDS.Application.Collections.DeleteItemMedia;
 using CurateDS.Application.Collections.SetPrimaryItemMedia;
 using CurateDS.Application.Collections.UploadItemMedia;
@@ -21,12 +22,12 @@ public static class MediaEndpoints
             Guid itemId,
             IFormFile file,
             UploadItemMediaService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 await using var stream = file.OpenReadStream();
                 var command = new UploadItemMediaCommand(
                     ownerId,
@@ -44,7 +45,7 @@ public static class MediaEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Item or collection was not found.");
             }
             catch (ValidationException ex)
             {
@@ -57,12 +58,12 @@ public static class MediaEndpoints
             Guid itemId,
             Guid mediaAssetId,
             DeleteItemMediaService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 await service.ExecuteAsync(
                     new DeleteItemMediaCommand(ownerId, collectionId, itemId, mediaAssetId),
                     cancellationToken);
@@ -70,7 +71,7 @@ public static class MediaEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Media asset was not found.");
             }
         });
 
@@ -79,12 +80,12 @@ public static class MediaEndpoints
             Guid itemId,
             Guid mediaAssetId,
             SetPrimaryItemMediaService service,
-            IConfiguration configuration,
+            ICurrentUserService currentUserService,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var ownerId = GetDefaultOwnerId(configuration);
+                var ownerId = currentUserService.GetCurrentUser();
                 await service.ExecuteAsync(
                     new SetPrimaryItemMediaCommand(ownerId, collectionId, itemId, mediaAssetId),
                     cancellationToken);
@@ -92,13 +93,12 @@ public static class MediaEndpoints
             }
             catch (NotFoundException)
             {
-                return Results.NotFound();
+                return ApiResponses.NotFound("Media asset was not found.");
             }
         });
 
         return app;
     }
 
-    private static Guid GetDefaultOwnerId(IConfiguration configuration)
-        => Guid.Parse(configuration["AppDefaults:DefaultOwnerId"]!);
 }
+
