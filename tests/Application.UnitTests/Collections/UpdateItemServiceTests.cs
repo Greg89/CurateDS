@@ -2,6 +2,7 @@ using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.Shared;
 using CurateDS.Application.Collections.ListItems;
 using CurateDS.Application.Collections.UpdateItem;
 using CurateDS.Application.Common;
@@ -71,8 +72,8 @@ public sealed class UpdateItemServiceTests
                 null,
                 [],
                 [
-                    new CreateItemAttributeValueInput(issueNumber.Id, "12"),
-                    new CreateItemAttributeValueInput(condition.Id, "Near Mint")
+                    new AttributeValueInput(issueNumber.Id, "12"),
+                    new AttributeValueInput(condition.Id, "Near Mint")
                 ]),
             CancellationToken.None);
 
@@ -167,7 +168,7 @@ public sealed class UpdateItemServiceTests
                 null,
                 itemTypeB.Id,
                 [],
-                [new CreateItemAttributeValueInput(typeADefinition.Id, "Rare")]),
+                [new AttributeValueInput(typeADefinition.Id, "Rare")]),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>()
@@ -301,7 +302,7 @@ public sealed class UpdateItemServiceTests
                 null,
                 null,
                 [],
-                [new CreateItemAttributeValueInput(releaseYear.Id, "not-a-number")]),
+                [new AttributeValueInput(releaseYear.Id, "not-a-number")]),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ArgumentException>();

@@ -165,7 +165,7 @@ public sealed class CreateItemService
     }
 
     private static void ValidateAttributeValues(
-        IReadOnlyList<CreateItemAttributeValueInput> attributeValues,
+        IReadOnlyList<AttributeValueInput> attributeValues,
         IReadOnlyList<AttributeDefinition> attributeDefinitions,
         IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup,
         Guid? itemTypeId)

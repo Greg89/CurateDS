@@ -1,4 +1,3 @@
-using CurateDS.Application.Collections.CreateItem;
 using CurateDS.Domain.Collections;
 using FluentValidation;
 using FluentValidation.Results;
@@ -8,7 +7,7 @@ namespace CurateDS.Application.Collections.Shared;
 internal static class ItemAttributeValueValidator
 {
     public static void Validate(
-        IReadOnlyList<CreateItemAttributeValueInput> attributeValues,
+        IReadOnlyList<AttributeValueInput> attributeValues,
         IReadOnlyList<AttributeDefinition> attributeDefinitions,
         IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup,
         Guid? itemTypeId)

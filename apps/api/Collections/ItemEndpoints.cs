@@ -6,6 +6,7 @@ using CurateDS.Application.Collections.DeleteItem;
 using CurateDS.Application.Collections.GetItemDetail;
 using CurateDS.Application.Collections.ListItemEvents;
 using CurateDS.Application.Collections.ListItems;
+using CurateDS.Application.Collections.Shared;
 using CurateDS.Application.Collections.UpdateItem;
 using CurateDS.Application.Common;
 using FluentValidation;
@@ -83,7 +84,7 @@ public static class ItemEndpoints
                         request.ItemTypeId,
                         request.TagIds ?? [],
                         (request.AttributeValues ?? []).Select(attributeValue =>
-                            new CreateItemAttributeValueInput(
+                            new AttributeValueInput(
                                 attributeValue.AttributeDefinitionId,
                                 attributeValue.Value)).ToArray()),
                     cancellationToken);
@@ -189,7 +190,7 @@ public static class ItemEndpoints
                         request.ItemTypeId,
                         request.TagIds ?? [],
                         (request.AttributeValues ?? []).Select(attributeValue =>
-                            new CreateItemAttributeValueInput(
+                            new AttributeValueInput(
                                 attributeValue.AttributeDefinitionId,
                                 attributeValue.Value)).ToArray()),
                     cancellationToken);

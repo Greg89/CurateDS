@@ -1,6 +1,5 @@
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
-using CurateDS.Application.Collections.CreateItem;
 using CurateDS.Application.Collections.Shared;
 using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
@@ -177,7 +176,7 @@ public sealed class UpdateItemService
     }
 
     private static void ValidateAttributeValues(
-        IReadOnlyList<CreateItemAttributeValueInput> attributeValues,
+        IReadOnlyList<AttributeValueInput> attributeValues,
         IReadOnlyList<AttributeDefinition> attributeDefinitions,
         IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup,
         Guid? itemTypeId)

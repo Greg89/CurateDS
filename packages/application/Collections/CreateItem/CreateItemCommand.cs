@@ -1,3 +1,5 @@
+using CurateDS.Application.Collections.Shared;
+
 namespace CurateDS.Application.Collections.CreateItem;
 
 public sealed record CreateItemCommand(
@@ -9,4 +11,4 @@ public sealed record CreateItemCommand(
     Guid? LocationId,
     Guid? ItemTypeId,
     IReadOnlyList<Guid> TagIds,
-    IReadOnlyList<CreateItemAttributeValueInput> AttributeValues);
+    IReadOnlyList<AttributeValueInput> AttributeValues);

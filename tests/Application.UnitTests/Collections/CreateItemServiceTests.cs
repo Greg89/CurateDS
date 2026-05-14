@@ -2,6 +2,7 @@ using CurateDS.Application.Abstractions;
 using CurateDS.Application.Abstractions.Persistence;
 using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateItem;
+using CurateDS.Application.Collections.Shared;
 using CurateDS.Application.Collections.ListItems;
 using CurateDS.Application.Common;
 using CurateDS.Domain.Collections;
@@ -63,8 +64,8 @@ public sealed class CreateItemServiceTests
                 null,
                 [],
                 [
-                    new CreateItemAttributeValueInput(issueNumber.Id, "12"),
-                    new CreateItemAttributeValueInput(isFoil.Id, "true")
+                    new AttributeValueInput(issueNumber.Id, "12"),
+                    new AttributeValueInput(isFoil.Id, "true")
                 ]),
             CancellationToken.None);
 
@@ -153,7 +154,7 @@ public sealed class CreateItemServiceTests
                 null,
                 itemTypeB.Id,
                 [],
-                [new CreateItemAttributeValueInput(typeADefinition.Id, "Rare")]),
+                [new AttributeValueInput(typeADefinition.Id, "Rare")]),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>()
