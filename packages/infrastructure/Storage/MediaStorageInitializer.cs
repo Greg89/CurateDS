@@ -53,9 +53,16 @@ public sealed class MediaStorageInitializer : IHostedService
                 await client.PutBucketAsync(_options.BucketName, cancellationToken);
                 _logger.LogInformation("Media storage bucket '{Bucket}' created.", _options.BucketName);
             }
-            catch (AmazonS3Exception ex) when (ex.ErrorCode is "BucketAlreadyExists" or "BucketAlreadyOwnedByYou")
+            catch (AmazonS3Exception ex) when (ex.ErrorCode is "BucketAlreadyOwnedByYou")
             {
-                // Already exists — that's fine
+                // Already exists and we own it — that's fine
+            }
+            catch (AmazonS3Exception ex) when (ex.ErrorCode is "BucketAlreadyExists")
+            {
+                _logger.LogWarning(ex,
+                    "Media storage bucket '{Bucket}' already exists and is owned by another account. Check your storage configuration.",
+                    _options.BucketName);
+                return;
             }
 
             var policy = $$"""
