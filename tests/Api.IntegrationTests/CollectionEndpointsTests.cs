@@ -554,6 +554,113 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     }
 
     [Fact]
+    public async Task GetItems_ShouldSortByNameDescending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortNameDesc"));
+        await CreateItemAsync(collection.Id, "Zelda");
+        await CreateItemAsync(collection.Id, "Animal Crossing");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=name&sortDirection=desc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("Zelda", "Animal Crossing");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldSortByQuantityAscending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortQty"));
+        await CreateItemWithQuantityAsync(collection.Id, "High", 10);
+        await CreateItemWithQuantityAsync(collection.Id, "Low", 1);
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=quantity&sortDirection=asc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("Low", "High");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldSortByQuantityDescending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortQtyDesc"));
+        await CreateItemWithQuantityAsync(collection.Id, "High", 10);
+        await CreateItemWithQuantityAsync(collection.Id, "Low", 1);
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=quantity&sortDirection=desc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("High", "Low");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldSortByCreatedUtcDescending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortCreated"));
+        await CreateItemAsync(collection.Id, "First");
+        await CreateItemAsync(collection.Id, "Second");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=createdutc&sortDirection=desc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("Second", "First");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldSortByCreatedUtcAscending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortCreatedAsc"));
+        await CreateItemAsync(collection.Id, "First");
+        await CreateItemAsync(collection.Id, "Second");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=createdutc&sortDirection=asc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("First", "Second");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldDefaultSortByUpdatedAscending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortDefault"));
+        await CreateItemAsync(collection.Id, "Alpha");
+        await CreateItemAsync(collection.Id, "Beta");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortDirection=asc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        // asc default: earliest-updated first
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("Alpha", "Beta");
+    }
+
+    [Fact]
+    public async Task GetItems_CreatedBeforeFilter_ShouldReturnOnlyMatchingItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("CreatedBefore"));
+        await CreateItemAsync(collection.Id, "Existing");
+
+        var yesterday = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?createdBefore={yesterday}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        paged!.Items.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task DeleteCollection_ShouldReturn204_AndHideFromList()
     {
         var collection = await CreateCollectionAsync(UniqueName("Delete Me"));
