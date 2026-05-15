@@ -19,26 +19,24 @@ internal static class ItemQueryBuilder
             q.Where(i => dbContext.ItemTags.Any(it => it.ItemId == i.Id && it.TagId == tagId)));
 
         // Attribute value filter — case-insensitive contains on ValueText, matched via key
-        foreach (var filter in request.AttributeFilters)
-        {
-            if (string.IsNullOrWhiteSpace(filter.AttributeKey) || string.IsNullOrWhiteSpace(filter.Value))
-                continue;
-
-            var key = filter.AttributeKey.Trim();
-            var value = filter.Value.Trim().ToLower();
-
-            query = query.Where(i => dbContext.ItemAttributeValues
-                .Join(
-                    dbContext.AttributeDefinitions.Where(ad =>
-                        ad.CollectionId == request.CollectionId && ad.Key == key),
-                    iav => iav.AttributeDefinitionId,
-                    ad => ad.Id,
-                    (iav, ad) => new { iav, ad })
-                .Any(joined =>
-                    joined.iav.ItemId == i.Id &&
-                    joined.iav.ValueText != null &&
-                    joined.iav.ValueText.ToLower().Contains(value)));
-        }
+        query = request.AttributeFilters
+            .Where(f => !string.IsNullOrWhiteSpace(f.AttributeKey) && !string.IsNullOrWhiteSpace(f.Value))
+            .Aggregate(query, (q, filter) =>
+            {
+                var key = filter.AttributeKey.Trim();
+                var value = filter.Value.Trim().ToLower();
+                return q.Where(i => dbContext.ItemAttributeValues
+                    .Join(
+                        dbContext.AttributeDefinitions.Where(ad =>
+                            ad.CollectionId == request.CollectionId && ad.Key == key),
+                        iav => iav.AttributeDefinitionId,
+                        ad => ad.Id,
+                        (iav, ad) => new { iav, ad })
+                    .Any(joined =>
+                        joined.iav.ItemId == i.Id &&
+                        joined.iav.ValueText != null &&
+                        joined.iav.ValueText.ToLower().Contains(value)));
+            });
 
         // Full-text search across name, description, location, tags, and attribute text values
         if (!string.IsNullOrWhiteSpace(request.SearchText))
