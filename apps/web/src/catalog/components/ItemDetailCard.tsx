@@ -90,13 +90,15 @@ export function ItemDetailCard({
             timeStyle: "short"
           }).format(new Date(item.createdUtc))}
         </p>
-        <p>
-          Updated{" "}
-          {new Intl.DateTimeFormat("en-US", {
-            dateStyle: "medium",
-            timeStyle: "short"
-          }).format(new Date(item.updatedUtc))}
-        </p>
+        {item.updatedUtc != null && (
+          <p>
+            Updated{" "}
+            {new Intl.DateTimeFormat("en-US", {
+              dateStyle: "medium",
+              timeStyle: "short"
+            }).format(new Date(item.updatedUtc))}
+          </p>
+        )}
       </div>
 
       {item.attributeValues.length === 0 ? (
