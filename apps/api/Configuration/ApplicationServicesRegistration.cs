@@ -50,6 +50,7 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<IValidator<CreateItemTypeCommand>, CreateItemTypeCommandValidator>();
         services.AddScoped<IValidator<CreateLocationCommand>, CreateLocationCommandValidator>();
         services.AddScoped<IValidator<CreateTagCommand>, CreateTagCommandValidator>();
+        services.AddScoped<IValidator<CreateSavedViewCommand>, CreateSavedViewCommandValidator>();
         services.AddScoped<IValidator<UpdateItemCommand>, UpdateItemCommandValidator>();
 
         // Command/query services
