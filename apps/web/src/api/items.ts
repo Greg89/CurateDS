@@ -24,7 +24,7 @@ export const ItemSummarySchema = z.object({
   tags: z.array(z.string()),
   attributeValueCount: z.number(),
   createdUtc: z.string(),
-  updatedUtc: z.string(),
+  updatedUtc: z.string().nullable(),
   primaryImageUrl: z.string().nullable(),
 });
 export type ItemSummary = z.infer<typeof ItemSummarySchema>;
@@ -49,7 +49,7 @@ export const ItemDetailSchema = z.object({
   itemTypeId: z.string().nullable(),
   tags: z.array(TagSchema),
   createdUtc: z.string(),
-  updatedUtc: z.string(),
+  updatedUtc: z.string().nullable(),
   attributeValues: z.array(ItemAttributeValueSchema),
   mediaAssets: z.array(MediaAssetSchema),
 });
