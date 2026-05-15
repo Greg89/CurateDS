@@ -15,11 +15,8 @@ internal static class ItemQueryBuilder
             query = query.Where(i => i.LocationId == request.LocationId.Value);
 
         // Tag filter — item must have ALL requested tag ids
-        foreach (var tagId in request.TagIds)
-        {
-            var capturedId = tagId;
-            query = query.Where(i => dbContext.ItemTags.Any(it => it.ItemId == i.Id && it.TagId == capturedId));
-        }
+        query = request.TagIds.Aggregate(query, (q, tagId) =>
+            q.Where(i => dbContext.ItemTags.Any(it => it.ItemId == i.Id && it.TagId == tagId)));
 
         // Attribute value filter — case-insensitive contains on ValueText, matched via key
         foreach (var filter in request.AttributeFilters)
