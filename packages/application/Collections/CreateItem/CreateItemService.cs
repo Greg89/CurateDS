@@ -87,7 +87,7 @@ public sealed class CreateItemService
             _tagRepository,
             cancellationToken);
 
-        ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup, command.ItemTypeId);
+        ItemAttributeValueValidator.Validate(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup, command.ItemTypeId);
 
         var now = DateTime.UtcNow;
         var actor = _currentUser.GetCurrentUser();
@@ -164,10 +164,4 @@ public sealed class CreateItemService
             .ToArray();
     }
 
-    private static void ValidateAttributeValues(
-        IReadOnlyList<AttributeValueInput> attributeValues,
-        IReadOnlyList<AttributeDefinition> attributeDefinitions,
-        IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup,
-        Guid? itemTypeId)
-        => ItemAttributeValueValidator.Validate(attributeValues, attributeDefinitions, attributeDefinitionLookup, itemTypeId);
 }
