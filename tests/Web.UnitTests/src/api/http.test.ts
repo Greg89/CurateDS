@@ -70,7 +70,7 @@ describe("readValidationMessage", () => {
     expect(result).toBe("Collection was not found.");
   });
 
-  it("returns detail over errors when both are absent — detail only", async () => {
+  it("returns detail when only detail is present", async () => {
     const response = makeResponse(
       { detail: "Item was not found." },
       404
