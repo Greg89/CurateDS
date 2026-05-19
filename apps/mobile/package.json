@@ -34,7 +34,7 @@
     "react": "19.2.6",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "^5.7.0",
-    "react-native-screens": "^4.24.0",
+    "react-native-screens": "4.24.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
