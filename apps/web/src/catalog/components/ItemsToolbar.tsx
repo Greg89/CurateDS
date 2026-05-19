@@ -22,6 +22,7 @@ export function ItemsToolbar({
   return (
     <div className="panel items-toolbar">
       <input
+        aria-label="Search items"
         className="items-toolbar-search"
         placeholder="Search items"
         value={searchText}
