@@ -22,12 +22,16 @@ export const apiBase = appConfig.apiBaseUrl;
 
 export async function readValidationMessage(response: Response): Promise<string | null> {
   const details = (await response.json().catch(() => null)) as
-    | { errors?: Record<string, string[]> }
+    | { errors?: Record<string, string[]>; detail?: string }
     | null;
 
-  if (!details?.errors) {
-    return null;
+  if (!details) return null;
+
+  // Validation / conflict (400, 409): pick the first field error message
+  if (details.errors) {
+    return Object.values(details.errors).flat()[0] ?? null;
   }
 
-  return Object.values(details.errors).flat()[0] ?? null;
+  // Not-found or other ProblemDetails: use the detail field
+  return details.detail ?? null;
 }
