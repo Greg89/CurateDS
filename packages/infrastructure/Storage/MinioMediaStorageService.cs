@@ -66,7 +66,12 @@ public sealed class MinioMediaStorageService : IMediaStorageService
         {
             ServiceURL = _options.Endpoint,
             ForcePathStyle = true,
-            AuthenticationRegion = "us-east-1"
+            AuthenticationRegion = "us-east-1",
+            // SDK v4 (4.0.23+) sends CRC32 checksums on PutObject by default.
+            // MinIO does not support flexible checksums and returns 502 via Railway's proxy.
+            // Revert to the pre-4.0.23 behaviour of only computing checksums when required.
+            RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
+            ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED
         };
         return new AmazonS3Client(credentials, config);
     }
