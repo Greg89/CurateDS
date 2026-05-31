@@ -43,7 +43,9 @@ public sealed class MediaStorageInitializer : IHostedService
             {
                 ServiceURL = _options.Endpoint,
                 ForcePathStyle = true,
-                AuthenticationRegion = "us-east-1"
+                AuthenticationRegion = "us-east-1",
+                RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
+                ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED
             };
 
             using var client = new AmazonS3Client(credentials, config);
