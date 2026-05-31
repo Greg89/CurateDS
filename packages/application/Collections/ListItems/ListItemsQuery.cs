@@ -17,6 +17,18 @@ public sealed record ListItemsQuery(
     DateTime? CreatedBefore = null,
     bool HasNoLocation = false,
     bool HasNoTags = false,
-    Guid? ItemTypeId = null);
+    Guid? ItemTypeId = null,
+    TagMatchMode TagMatchMode = TagMatchMode.All);
 
 public sealed record ListItemsAttributeFilter(string AttributeKey, string Value);
+
+/// <summary>
+/// Controls how multiple tag filters are combined.
+/// <see cref="All"/> requires items to have every requested tag (default, backwards-compatible).
+/// <see cref="Any"/> matches items that have at least one of the requested tags.
+/// </summary>
+public enum TagMatchMode
+{
+    All = 0,
+    Any = 1
+}

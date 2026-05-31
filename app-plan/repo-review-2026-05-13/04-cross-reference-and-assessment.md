@@ -11,15 +11,15 @@ This document cross-references each item in `01-targeted-refactors.md` against t
 
 | Ref | Title | Confirmed by code? | Do it? | Priority adjustment | Status 2026-05-31 |
 |-----|-------|--------------------|--------|---------------------|-------------------|
-| P0-1 | Fix mobile typecheck | Yes | Yes | Keep P0 | OPEN |
-| P0-2 | Add `verify` script | Not verifiable by static read | Yes | Keep P0 | PARTIAL (web only) |
+| P0-1 | Fix mobile typecheck | Yes | Yes | Keep P0 | DONE |
+| P0-2 | Add `verify` script | Not verifiable by static read | Yes | Keep P0 | DONE |
 | P0-3 | Fix encoding artifacts | Partially | Low urgency | Downgrade to P3 | OPEN |
 | P1-A | Decompose `CollectionEndpoints.cs` | **Strongly confirmed** | Yes | Keep P1 | **DONE** |
 | P1-B | Extract `ItemAttributeValueValidator` | **Exactly confirmed** | Yes | Keep P1 | **DONE** |
-| P1-C | Extract `ItemQueryBuilder` | Confirmed | Yes | Keep P1 | DONE (composition); indexes/tag-mode/tests OPEN |
+| P1-C | Extract `ItemQueryBuilder` | Confirmed | Yes | Keep P1 | DONE (composition + tag mode + indexes); PostgreSQL test coverage OPEN |
 | P1-D | Shared API contracts / zod on web | Confirmed | Yes | Keep P1 | DONE (zod); OpenAPI OPEN |
 | P1-E | Split `ItemsPage` | Partially confirmed | Partial | Narrow scope (see below) | **DONE** |
-| P1-F | Standardize error contracts | Confirmed | Yes | Keep P1 | PARTIAL (NotFound unified; codes OPEN) |
+| P1-F | Standardize error contracts | Confirmed | Yes | Keep P1 | PARTIAL (duplicate-name codes done; required-attribute / item-type-deleted / media-rejected OPEN) |
 | P2-A | Media privacy and storage lifecycle | **Critical bug found** | Upgrade to P1 | Upgrade to P1 | DONE (bug fix); privacy decision OPEN |
 | P2-B | Transaction boundaries | Confirmed | Yes | Keep P2 | OPEN — sequence before P2-C |
 | P2-C | Collector domain modeling | Product design, not code | Yes | Feature roadmap | OPEN (tracked under M3) |

@@ -14,9 +14,23 @@ internal static class ItemQueryBuilder
         if (request.LocationId.HasValue)
             query = query.Where(i => i.LocationId == request.LocationId.Value);
 
-        // Tag filter — item must have ALL requested tag ids
-        query = request.TagIds.Aggregate(query, (q, tagId) =>
-            q.Where(i => dbContext.ItemTags.Any(it => it.ItemId == i.Id && it.TagId == tagId)));
+        // Tag filter — combine according to the requested match mode.
+        // ALL (default): item must have every requested tag id.
+        // ANY: item must have at least one of the requested tag ids.
+        if (request.TagIds.Count > 0)
+        {
+            if (request.TagMatchMode == TagMatchMode.Any)
+            {
+                var tagIds = request.TagIds;
+                query = query.Where(i => dbContext.ItemTags.Any(it =>
+                    it.ItemId == i.Id && tagIds.Contains(it.TagId)));
+            }
+            else
+            {
+                query = request.TagIds.Aggregate(query, (q, tagId) =>
+                    q.Where(i => dbContext.ItemTags.Any(it => it.ItemId == i.Id && it.TagId == tagId)));
+            }
+        }
 
         // Attribute value filter — case-insensitive contains on ValueText, matched via key
         query = request.AttributeFilters

@@ -27,6 +27,9 @@ public sealed class CreateLocationService
         {
             throw new ValidationException([
                 new ValidationFailure(nameof(CreateLocationCommand.Name), "A location with this name already exists.")
+                {
+                    ErrorCode = "duplicate_location"
+                }
             ]);
         }
 

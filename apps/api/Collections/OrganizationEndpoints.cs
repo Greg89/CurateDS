@@ -8,7 +8,6 @@ using CurateDS.Application.Collections.ListLocations;
 using CurateDS.Application.Collections.ListTags;
 using CurateDS.Application.Common;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 
 namespace CurateDS.Api.Collections;
 
@@ -41,13 +40,6 @@ public static class OrganizationEndpoints
             catch (ValidationException exception)
             {
                 return ApiResponses.Validation(exception);
-            }
-            catch (DbUpdateException)
-            {
-                return ApiResponses.Conflict(
-                    nameof(CreateTagRequest.Name),
-                    "A tag with this name already exists.",
-                    "duplicate_tag");
             }
         }).RequireAuthorization();
 

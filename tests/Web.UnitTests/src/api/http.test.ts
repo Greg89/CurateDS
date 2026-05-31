@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readValidationMessage } from "@app/api/http";
+import { readProblemDetails, readValidationMessage } from "@app/api/http";
 
 function makeResponse(body: unknown, status = 400): Response {
   return new Response(JSON.stringify(body), {
@@ -86,5 +86,65 @@ describe("readValidationMessage", () => {
     });
     const result = await readValidationMessage(response);
     expect(result).toBe("Name is required.");
+  });
+});
+
+describe("readProblemDetails", () => {
+  it("returns null when the response body is not valid JSON", async () => {
+    const response = new Response("not json", { status: 400 });
+    const result = await readProblemDetails(response);
+    expect(result).toBeNull();
+  });
+
+  it("extracts message, code, and field errors from a validation response", async () => {
+    const response = makeResponse({
+      errors: { Name: ["A tag with this name already exists."] },
+      code: "duplicate_tag",
+    });
+
+    const result = await readProblemDetails(response);
+
+    expect(result).not.toBeNull();
+    expect(result!.message).toBe("A tag with this name already exists.");
+    expect(result!.code).toBe("duplicate_tag");
+    expect(result!.errors).toEqual({
+      Name: ["A tag with this name already exists."],
+    });
+  });
+
+  it("returns a null code when the API does not supply one", async () => {
+    const response = makeResponse({
+      errors: { Name: ["Name is required."] },
+    });
+
+    const result = await readProblemDetails(response);
+
+    expect(result!.message).toBe("Name is required.");
+    expect(result!.code).toBeNull();
+  });
+
+  it("extracts code and detail from a 404 problem response", async () => {
+    const response = makeResponse(
+      {
+        type: "urn:curateds:problem:not-found",
+        title: "Resource not found",
+        status: 404,
+        detail: "Collection was not found.",
+        code: "resource_not_found",
+      },
+      404
+    );
+
+    const result = await readProblemDetails(response);
+
+    expect(result!.message).toBe("Collection was not found.");
+    expect(result!.code).toBe("resource_not_found");
+    expect(result!.errors).toBeNull();
+  });
+
+  it("ignores empty-string codes", async () => {
+    const response = makeResponse({ detail: "Boom.", code: "" });
+    const result = await readProblemDetails(response);
+    expect(result!.code).toBeNull();
   });
 });
