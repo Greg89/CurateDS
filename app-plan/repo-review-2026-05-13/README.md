@@ -33,6 +33,7 @@ Original P1 refactors are **complete**:
 - Bucket provisioning lifted out of upload path (P2-A, code-bug half) — done.
 - Mobile typecheck/test reproducibility (P0-1) — verified passing.
 - Root `verify` script extended to include mobile (P0-2) — done.
+- `primaryImageUrl` storage-key vs URL mismatch (Finding B) — done; repository now returns `ItemSummaryProjection` and the application layer maps to the public URL.
 
 Still open: media-privacy product decision (P2-A long tail), transaction
 boundaries (P2-B), collector domain models (P2-C → roadmap M3), web design

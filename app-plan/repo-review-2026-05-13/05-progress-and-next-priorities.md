@@ -29,6 +29,7 @@ Method: direct read of `apps/api/Collections/`, `apps/web/src/api/`,
 | P2-A bug-fix half — Bucket provisioning out of upload | `MinioMediaStorageService.UploadAsync` no longer touches bucket policy. Provisioning lives in `MediaStorageInitializer`. |
 | P0-1 — Mobile typecheck reproducibility | `npm run typecheck:mobile` and `npm run test:mobile` (78 tests / 12 suites) pass locally. |
 | P0-2 — `verify` script parity with CI | Root `verify` chains `dotnet test`, `build:web`, `test:web`, `typecheck:mobile`, `test:mobile`. |
+| Finding B — `primaryImageUrl` storage-key vs URL mismatch | Repository now returns `ItemSummaryProjection` carrying `PrimaryImageStorageKey`; `ListItemsService` maps to public URL via `IMediaStorageService.GetPublicUrl`. New integration test `GetItems_ShouldReturnPrimaryImageUrl_PrefixedWithPublicBaseUrlAndBucket` locks in URL composition end-to-end. |
 
 ## What's Open
 
@@ -36,47 +37,42 @@ Sorted by recommended sequence, not by original priority label.
 
 ### Tier 1 — Do before any new feature work
 
-1. **`primaryImageUrl` storage-key vs URL mismatch (Finding B, promoted to P1).**
-   `ItemSummaryDto.PrimaryImageUrl` is currently populated with a raw storage
-   key, not a public URL. Verify on the live web client; if image src is
-   broken when `PublicBaseUrl` is non-trivial, fix before any new feature lands
-   that surfaces images.
-2. **PUT endpoints for tags / locations / attribute defs (Finding A, promoted to P1).**
+1. **PUT endpoints for tags / locations / attribute defs (Finding A, promoted to P1).**
    One-afternoon CRUD gap. Pain compounds with every day of real data.
 
 ### Tier 2 — Foundation for the next feature wave
 
-3. **Transaction boundaries (P2-B).** Wrap multi-step writes in
+2. **Transaction boundaries (P2-B).** Wrap multi-step writes in
    `BeginTransactionAsync`. Sequence this **before** Milestone 3 (acquisition /
    valuation / condition) so the new entities don't lock in non-atomic patterns.
-4. **Media privacy decision + orphaned-media cleanup on delete (P2-A product half + Finding E).**
+3. **Media privacy decision + orphaned-media cleanup on delete (P2-A product half + Finding E).**
    Decide: signed URLs, authenticated proxy, or stay public-by-default.
    Pair with the cleanup pass in `DeleteCollectionService` since both touch
    `IMediaStorageService`. Must land before any feature targeting insurance /
    valuation users.
-5. **Web design system (P2-D).** Sequence before importing/valuation/loan/sharing
+4. **Web design system (P2-D).** Sequence before importing/valuation/loan/sharing
    UI lands; otherwise each new workflow accretes ad-hoc styles.
-6. **`ItemRepository.ListByCollectionAsync` streaming/paged refactor.** The
+5. **`ItemRepository.ListByCollectionAsync` streaming/paged refactor.** The
    export path loads the entire collection into memory. Promote to P1 before
    CSV import (Milestone 1) ships, since round-trip workflows will OOM on large
    collections.
 
 ### Tier 3 — Long-tail correctness and scale
 
-7. **Machine-readable error codes (long tail).** Duplicate-name codes are done
+6. **Machine-readable error codes (long tail).** Duplicate-name codes are done
    (`duplicate_tag`, `duplicate_location`). Still open: `required_attribute_missing`,
    `item_type_deleted_while_editing`, `media_rejected`, plus surfacing field-level
    errors in the web UI beyond the first message.
-8. **`SavedView.FiltersJson` validation (Finding D).** Add structural JSON
+7. **`SavedView.FiltersJson` validation (Finding D).** Add structural JSON
    validation in `CreateSavedViewService` / its FluentValidation validator.
-9. **`attributeFilters[]` query-string encoding (Finding C).** Replace with
+8. **`attributeFilters[]` query-string encoding (Finding C).** Replace with
    typed query params or JSON-encoded list when the next advanced-filter UX
    lands.
-10. **Cursor pagination + virtualized lists** (web and mobile).
-11. **Route-level code splitting** on web; the 512 kB chunk warning still applies.
-12. **OpenAPI generation** for typed clients once the API is stable.
-13. **PostgreSQL/Testcontainers query-shape tests** for `ItemQueryBuilder`.
-14. **Encoding artifacts in docs/comments** (P0-3, downgraded to P3).
+9. **Cursor pagination + virtualized lists** (web and mobile).
+10. **Route-level code splitting** on web; the 512 kB chunk warning still applies.
+11. **OpenAPI generation** for typed clients once the API is stable.
+12. **PostgreSQL/Testcontainers query-shape tests** for `ItemQueryBuilder`.
+13. **Encoding artifacts in docs/comments** (P0-3, downgraded to P3).
 
 ## Next Feature Priorities (Refined 2026-05-31)
 
@@ -85,7 +81,7 @@ refactors with feature work \u2014 this is the actual order to ship in.
 
 | # | Item | Source | Why now |
 |---|------|--------|---------|
-| 1 | Tier 1 refactors above (primary image URL, PUT endpoints) | This doc | Cheap; remove ongoing pain. |
+| 1 | Tier 1 refactor above (PUT endpoints) | This doc | Cheap; remove ongoing pain. |
 | 2 | Restore deleted item / collection (recycle bin UX) | Roadmap M0 | Trust prerequisite for everything else. |
 | 3 | Streaming / paged on-demand export with media manifest | Roadmap M0 + refactor | Trust + perf prerequisite for import. |
 | 4 | Transaction boundaries (P2-B) | Refactor | Prerequisite for M3 entities. |

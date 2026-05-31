@@ -233,7 +233,7 @@ public sealed class UploadItemMediaServiceTests
         public Task SoftDeleteByCollectionAsync(Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.CompletedTask;
 
-        public Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
-            => Task.FromResult(new PagedResult<ItemSummaryDto>([], 0, 1, 50));
+        public Task<PagedResult<ItemSummaryProjection>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
+            => Task.FromResult(new PagedResult<ItemSummaryProjection>([], 0, 1, 50));
     }
 }

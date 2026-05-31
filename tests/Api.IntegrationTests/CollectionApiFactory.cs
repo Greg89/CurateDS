@@ -16,7 +16,11 @@ public sealed class CollectionApiFactory : WebApplicationFactory<Program>
             configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Testing:UseInMemoryDatabase"] = "true",
-                ["Testing:DatabaseName"] = $"curateds-api-tests-{Guid.NewGuid()}"
+                ["Testing:DatabaseName"] = $"curateds-api-tests-{Guid.NewGuid()}",
+                // Storage settings used by MinioMediaStorageService.GetPublicUrl. Endpoint/AccessKey/SecretKey
+                // are not exercised in tests because no upload network calls are made; only URL composition matters.
+                ["Storage:PublicBaseUrl"] = "https://cdn.test.example",
+                ["Storage:BucketName"] = "test-bucket"
             });
         });
         builder.ConfigureServices(services =>
