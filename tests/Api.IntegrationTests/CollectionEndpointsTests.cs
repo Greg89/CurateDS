@@ -356,7 +356,27 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         problem.Errors.Should().ContainKey("Name");
         problem.Errors["Name"].Should().Contain("A tag with this name already exists.");
         problem.Extensions.Should().ContainKey("code");
-        problem.Extensions["code"]?.ToString().Should().Be("validation_error");
+        problem.Extensions["code"]?.ToString().Should().Be("duplicate_tag");
+    }
+
+    [Fact]
+    public async Task PostLocations_ShouldReturnValidationProblem_WithDuplicateLocationCode_WhenDuplicateNameIsSubmitted()
+    {
+        var locationName = UniqueName("Office");
+
+        var firstResponse = await _client.PostAsJsonAsync("/locations", new { name = locationName, description = "First" });
+        var duplicateResponse = await _client.PostAsJsonAsync("/locations", new { name = locationName, description = "Second" });
+
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        duplicateResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await duplicateResponse.Content.ReadFromJsonAsync<ValidationProblemDetails>(JsonOptions);
+
+        problem.Should().NotBeNull();
+        problem!.Errors.Should().ContainKey("Name");
+        problem.Errors["Name"].Should().Contain("A location with this name already exists.");
+        problem.Extensions.Should().ContainKey("code");
+        problem.Extensions["code"]?.ToString().Should().Be("duplicate_location");
     }
 
     [Fact]

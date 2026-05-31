@@ -29,6 +29,9 @@ public sealed class CreateTagService
         {
             throw new ValidationException([
                 new ValidationFailure(nameof(CreateTagCommand.Name), "A tag with this name already exists.")
+                {
+                    ErrorCode = "duplicate_tag"
+                }
             ]);
         }
 

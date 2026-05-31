@@ -17,5 +17,9 @@ internal sealed class ItemTagConfiguration : IEntityTypeConfiguration<ItemTag>
 
         builder.Property(itemTag => itemTag.TagId)
             .IsRequired();
+
+        // Reverse-direction index for "items that have this tag" lookups
+        // (full-text search by tag name + filter-by-tag joins).
+        builder.HasIndex(itemTag => new { itemTag.TagId, itemTag.ItemId });
     }
 }

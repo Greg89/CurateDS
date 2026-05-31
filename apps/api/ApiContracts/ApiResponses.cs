@@ -17,7 +17,13 @@ internal static class ApiResponses
                 group => group.Key,
                 group => group.Select(error => error.ErrorMessage).ToArray());
 
-        return Validation(errors, "validation_error");
+        // If any failure carries an explicit ErrorCode, surface the first one as the
+        // machine-readable problem code. Falls back to the generic validation_error.
+        var code = exception.Errors
+            .Select(error => error.ErrorCode)
+            .FirstOrDefault(c => !string.IsNullOrWhiteSpace(c)) ?? "validation_error";
+
+        return Validation(errors, code);
     }
 
     public static IResult Conflict(string fieldName, string message, string code = "conflict")

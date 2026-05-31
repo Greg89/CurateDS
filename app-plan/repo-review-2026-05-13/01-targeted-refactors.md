@@ -8,15 +8,17 @@ This list is ordered by leverage. The first group should be handled before major
 
 ## P0 - Stabilize The Development Baseline
 
-1. **[OPEN]** Fix mobile dependency/typecheck reproducibility.
+1. **[DONE]** Fix mobile dependency/typecheck reproducibility.
 
    `npm.cmd run typecheck:mobile` currently fails locally because mobile dependencies such as React Navigation, Expo Camera, NetInfo, zod, and React Query persistence are not resolved from the installed workspace. Confirm whether `node_modules` is stale, whether workspace install is incomplete, or whether package versions are incompatible with the root overrides. The target state is that `npm ci`, `npm run typecheck:mobile`, and `npm run test:mobile` work from a clean clone.
 
-2. **[PARTIAL]** Add a single `verify` script at the repo root.
+   2026-05-31: Re-verified locally — `npm run typecheck:mobile` passes with no errors and `npm run test:mobile` reports 78/78 passing across 12 suites. The original failure was tied to a stale workspace install state that has since been resolved.
+
+2. **[DONE]** Add a single `verify` script at the repo root.
 
    Suggested command set: backend tests, web build, web tests, mobile typecheck, mobile tests. This makes local confidence match CI expectations.
 
-   2026-05-31: A `verify` script exists in the root `package.json` but it only runs backend tests, web build, and web tests. Mobile typecheck/tests are not chained. Either add them or rename the script to `verify:web` to avoid implying parity with CI.
+   2026-05-31: `npm run verify` now chains `dotnet test`, `build:web`, `test:web -- --run`, `typecheck:mobile`, and `test:mobile`.
 
 3. **[OPEN]** Fix mojibake/encoding artifacts in docs and comments.
 
@@ -70,16 +72,19 @@ Why this matters:
 - Item type behavior is central to the product.
 - Future features such as templates, bulk import, barcode import, and mobile offline drafts will all need the same validation rules.
 
-## P1 - Move Query Construction Out Of `ItemRepository` — [PARTIAL]
+## P1 - Move Query Construction Out Of `ItemRepository` — [DONE]
 
 2026-05-31: `ItemQueryBuilder` extracted to `packages/infrastructure/Persistence/ItemQueryBuilder.cs`. The composition concern is solved.
 
-Still open from this item:
+2026-05-31 follow-up (this branch):
 
-- Tag match mode (ALL vs ANY) is still implicit.
-- No new composite indexes on `Items(CollectionId, UpdatedUtc)` / `Items(CollectionId, CreatedUtc)`.
+- Tag match mode (ALL vs ANY) is now explicit. New `TagMatchMode` enum on `ListItemsQuery`; API request accepts `tagMatchMode=any|all` (default `all`, backwards-compatible).
+- New EF migration `AddItemQueryIndexes` adds composite indexes `Items(CollectionId, UpdatedUtc)` (default-sort path) and `ItemTags(TagId, ItemId)` (reverse direction for search-by-tag-name and ANY-mode tag joins).
+
+Still open:
+
 - No PostgreSQL/Testcontainers query-shape tests.
-- `ItemRepository.ListByCollectionAsync` (used by export) still loads the full collection without pagination — flagged in `04-cross-reference-and-assessment.md` but never assigned a priority. Promote to P1 before CSV import lands.
+- `ItemRepository.ListByCollectionAsync` (used by export) still loads the full collection without pagination — flagged in `04-cross-reference-and-assessment.md`. Promote to P1 before CSV import lands.
 
 Current hotspot: `packages/infrastructure/Persistence/Repositories/ItemRepository.cs`.
 
@@ -146,7 +151,17 @@ Acceptance criteria:
 
 ## P1 - Standardize Error Contracts And Client Error Handling — [PARTIAL]
 
-2026-05-31: Bare `Results.NotFound()` calls have been removed from API code; everything goes through `ApiResponses.NotFound("...")`. Web `readValidationMessage` exists in `apps/web/src/api/http.ts`. Still open: machine-readable error codes for targeted UX (duplicate name, required attribute missing, item type deleted while editing, media rejected) and consistent client field-level error display.
+2026-05-31: Bare `Results.NotFound()` calls have been removed from API code; everything goes through `ApiResponses.NotFound("...")`. Web `readValidationMessage` exists in `apps/web/src/api/http.ts`.
+
+2026-05-31 follow-up (this branch):
+
+- `ApiResponses.Validation(ValidationException)` now reads `ValidationFailure.ErrorCode` and surfaces the first non-empty value as the problem `code`. Generic failures still emit `validation_error`.
+- Duplicate-name failures from `CreateTagService` and `CreateLocationService` are now tagged with `duplicate_tag` / `duplicate_location` codes.
+- Removed the dead `DbUpdateException → Conflict` catch in tags (the validation check fires first; the catch was unreachable).
+- New web client helper `readProblemDetails` in `apps/web/src/api/http.ts` returns a typed `{ message, code, errors }` shape; `readValidationMessage` is preserved as a thin wrapper for backwards compatibility. Covered by 13 unit tests.
+- New API integration test asserts duplicate-location returns `code: duplicate_location`.
+
+Still open: machine-readable codes for the remaining targeted UX cases (required-attribute-missing, item-type-deleted-while-editing, media-rejected) and surfacing field-level errors in the web UI beyond the first message.
 
 Current state:
 

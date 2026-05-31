@@ -47,7 +47,10 @@ public static class ItemEndpoints
                         CreatedBefore: request.CreatedBefore,
                         HasNoLocation: request.HasNoLocation ?? false,
                         HasNoTags: request.HasNoTags ?? false,
-                        ItemTypeId: request.ItemTypeId),
+                        ItemTypeId: request.ItemTypeId,
+                        TagMatchMode: string.Equals(request.TagMatchMode, "any", StringComparison.OrdinalIgnoreCase)
+                            ? TagMatchMode.Any
+                            : TagMatchMode.All),
                     cancellationToken);
 
                 return Results.Ok(new PagedItemsResponse(
