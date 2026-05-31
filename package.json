@@ -19,6 +19,8 @@
     "test:mobile:coverage": "npm run test:coverage --workspace @curateds/mobile"
   },
   "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-test-renderer": "19.2.3",
     "uuid": "^14.0.0",
     "xcode": {
