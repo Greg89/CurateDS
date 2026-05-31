@@ -5,7 +5,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@app": fileURLToPath(new URL("../../apps/web/src", import.meta.url))
-    }
+    },
+    dedupe: ["react", "react-dom", "react-router", "react-router-dom", "@tanstack/react-query"]
   },
   test: {
     environment: "jsdom",
