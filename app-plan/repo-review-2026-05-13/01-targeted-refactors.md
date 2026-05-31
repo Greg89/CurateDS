@@ -1,24 +1,30 @@
 # Targeted Refactors
 
-Date: 2026-05-13
+Date: 2026-05-13 (original) — Status pass: 2026-05-31
 
 This list is ordered by leverage. The first group should be handled before major new features because those features will otherwise compound current hotspots.
 
+**Status legend:** [DONE] — implemented and verified by code inspection. [PARTIAL] — partially done, see notes. [OPEN] — not yet started.
+
 ## P0 - Stabilize The Development Baseline
 
-1. Fix mobile dependency/typecheck reproducibility.
+1. **[OPEN]** Fix mobile dependency/typecheck reproducibility.
 
    `npm.cmd run typecheck:mobile` currently fails locally because mobile dependencies such as React Navigation, Expo Camera, NetInfo, zod, and React Query persistence are not resolved from the installed workspace. Confirm whether `node_modules` is stale, whether workspace install is incomplete, or whether package versions are incompatible with the root overrides. The target state is that `npm ci`, `npm run typecheck:mobile`, and `npm run test:mobile` work from a clean clone.
 
-2. Add a single `verify` script at the repo root.
+2. **[PARTIAL]** Add a single `verify` script at the repo root.
 
    Suggested command set: backend tests, web build, web tests, mobile typecheck, mobile tests. This makes local confidence match CI expectations.
 
-3. Fix mojibake/encoding artifacts in docs and comments.
+   2026-05-31: A `verify` script exists in the root `package.json` but it only runs backend tests, web build, and web tests. Mobile typecheck/tests are not chained. Either add them or rename the script to `verify:web` to avoid implying parity with CI.
+
+3. **[OPEN]** Fix mojibake/encoding artifacts in docs and comments.
 
    Several files display corrupted characters for arrows, ellipses, and dashes in PowerShell output. Standardize Markdown and source files on UTF-8 and replace corrupted text. This is low risk but improves professionalism and searchability.
 
-## P1 - Decompose API Endpoint Registration
+## P1 - Decompose API Endpoint Registration — [DONE]
+
+2026-05-31: Split into `CollectionCrudEndpoints.cs`, `ItemEndpoints.cs`, `AttributeDefinitionEndpoints.cs`, `ItemTypeEndpoints.cs`, `SavedViewEndpoints.cs`, `OrganizationEndpoints.cs`, `CollectionReportEndpoints.cs`, `MediaEndpoints.cs`, plus `CollectionResponseMappers.cs`. The original 854-line file is gone. Integration tests remain green.
 
 Current hotspot: `apps/api/Collections/CollectionEndpoints.cs`.
 
@@ -42,7 +48,9 @@ Acceptance criteria:
 - Route paths stay stable.
 - Endpoint files can be reasoned about by feature area.
 
-## P1 - Extract Shared Item Attribute Validation
+## P1 - Extract Shared Item Attribute Validation — [DONE]
+
+2026-05-31: Implemented as `ItemAttributeValueValidator` in `packages/application/Collections/Shared/`. Both `CreateItemService` and `UpdateItemService` now delegate to it. Covered by `ItemAttributeValueValidatorTests`.
 
 Current hotspots:
 
@@ -62,7 +70,16 @@ Why this matters:
 - Item type behavior is central to the product.
 - Future features such as templates, bulk import, barcode import, and mobile offline drafts will all need the same validation rules.
 
-## P1 - Move Query Construction Out Of `ItemRepository`
+## P1 - Move Query Construction Out Of `ItemRepository` — [PARTIAL]
+
+2026-05-31: `ItemQueryBuilder` extracted to `packages/infrastructure/Persistence/ItemQueryBuilder.cs`. The composition concern is solved.
+
+Still open from this item:
+
+- Tag match mode (ALL vs ANY) is still implicit.
+- No new composite indexes on `Items(CollectionId, UpdatedUtc)` / `Items(CollectionId, CreatedUtc)`.
+- No PostgreSQL/Testcontainers query-shape tests.
+- `ItemRepository.ListByCollectionAsync` (used by export) still loads the full collection without pagination — flagged in `04-cross-reference-and-assessment.md` but never assigned a priority. Promote to P1 before CSV import lands.
 
 Current hotspot: `packages/infrastructure/Persistence/Repositories/ItemRepository.cs`.
 
@@ -79,7 +96,9 @@ Follow-up:
 
 - Consider PostgreSQL full-text search or trigram search once collections reach enough size to make `LOWER(...).Contains(...)` expensive.
 
-## P1 - Establish Shared API Contracts
+## P1 - Establish Shared API Contracts — [PARTIAL]
+
+2026-05-31: Web `api.ts` is split by feature (`apps/web/src/api/{collections,items,tags,locations,attributes,item-types,saved-views,media}.ts`) and every module imports zod for response validation. The short-term recommendation is met. OpenAPI generation is still open.
 
 Current hotspots:
 
@@ -100,7 +119,9 @@ Recommended path:
 - Short term: split `apps/web/src/api.ts` by feature and add zod parsing to web responses.
 - Medium term: generate clients from OpenAPI once endpoint modules are decomposed.
 
-## P1 - Split `ItemsPage` Into Workflow Components
+## P1 - Split `ItemsPage` Into Workflow Components — [DONE]
+
+2026-05-31: `useItemMutations`, `ItemDetailDrawer`, `ItemFormDrawer`, and `ItemsToolbar` are all extracted. Filtering/form/saved-view hooks were already in place. The page is now orchestration.
 
 Current hotspot: `apps/web/src/catalog/pages/ItemsPage.tsx`.
 
@@ -123,7 +144,9 @@ Acceptance criteria:
 - Existing web tests remain green.
 - Drawer open/close and selected item behavior are covered.
 
-## P1 - Standardize Error Contracts And Client Error Handling
+## P1 - Standardize Error Contracts And Client Error Handling — [PARTIAL]
+
+2026-05-31: Bare `Results.NotFound()` calls have been removed from API code; everything goes through `ApiResponses.NotFound("...")`. Web `readValidationMessage` exists in `apps/web/src/api/http.ts`. Still open: machine-readable error codes for targeted UX (duplicate name, required attribute missing, item type deleted while editing, media rejected) and consistent client field-level error display.
 
 Current state:
 
@@ -144,7 +167,14 @@ High-value examples:
 - Item type deleted while editing.
 - Media upload size/content-type rejected.
 
-## P2 - Revisit Media Privacy And Storage Lifecycle
+## P2 - Revisit Media Privacy And Storage Lifecycle — [PARTIAL] (split into two tickets)
+
+2026-05-31: The active-bug half is fixed — `UploadAsync` no longer calls `EnsureBucketPublicAsync` on every upload. Bucket provisioning now lives in `MediaStorageInitializer` and runs once at startup.
+
+The product half is still open and should be tracked as its own item:
+
+- **Media privacy decision (NEW P1):** decide between signed URLs, an authenticated proxy endpoint, or keep public-by-default. The current bucket policy still grants anonymous `s3:GetObject` to `*`. This must be resolved before any feature that targets insurance/valuation users.
+- **Orphaned media on collection delete (NEW P1, was Finding E):** `DeleteCollectionService` does not remove media assets from object storage. Pair this work with the privacy decision since both touch `IMediaStorageService`.
 
 Current hotspot: `MinioMediaStorageService.EnsureBucketPublicAsync`.
 
@@ -157,7 +187,9 @@ Refactor target:
 - Move bucket provisioning/policy setup to infrastructure/deployment rather than per upload.
 - Add image size limits, thumbnail generation strategy, and content-type verification.
 
-## P2 - Add Transaction Boundaries For Multi-Step Writes
+## P2 - Add Transaction Boundaries For Multi-Step Writes — [OPEN]
+
+2026-05-31: No `BeginTransactionAsync` calls anywhere in `packages/`. Update flows still write item / tags / attributes / event without an explicit transaction. **Sequence this before P2-C (collector domain models)** — adding acquisition/valuation/condition entities will multiply multi-table writes; lock down transactions first to avoid writing the new features twice.
 
 Examples:
 
@@ -171,7 +203,9 @@ Refactor target:
 - Introduce explicit EF transactions where multiple database writes must succeed together.
 - For object storage plus DB, define compensation behavior or an outbox cleanup job for orphaned assets.
 
-## P2 - Improve Domain Modeling Around Collector Concepts
+## P2 - Improve Domain Modeling Around Collector Concepts — [OPEN] (tracked as roadmap M3)
+
+2026-05-31: This is a product/feature design decision rather than a refactor. The work is tracked under Milestone 3 in `02-feature-roadmap.md`. Schema design must precede implementation.
 
 Current model has item, attributes, media, tags, locations, and events. That is a strong base, but upcoming collector features should not be modeled as ad hoc custom attributes only.
 
@@ -184,7 +218,9 @@ Candidate first-class concepts:
 - Maintenance/reminders: cleaning, grading, certification, battery replacement, insurance review.
 - Wishlist/watchlist item: wanted but not owned.
 
-## P2 - Make Web UI More Systematic
+## P2 - Make Web UI More Systematic — [OPEN]
+
+2026-05-31: Not started. Should be sequenced before adding import/valuation/loan/sharing UI.
 
 Current web CSS and components work, but the app will benefit from a small design system before adding more workflows.
 
@@ -196,7 +232,9 @@ Targets:
 - Add loading skeletons or consistent loading states for dense views.
 - Add accessibility tests for dialogs, labels, and keyboard navigation.
 
-## P3 - Performance And Scale Hardening
+## P3 - Performance And Scale Hardening — [OPEN]
+
+2026-05-31: No new indexes, no cursor pagination, no route-level code splitting on web (the 512 kB chunk warning still applies), no virtualized lists. Export still loads the full collection eagerly.
 
 Add this before encouraging real users to catalog hundreds or thousands of items:
 
@@ -206,4 +244,32 @@ Add this before encouraging real users to catalog hundreds or thousands of items
 - Lazy load detail/media/event history.
 - Virtualized lists on web and mobile.
 - Bundle splitting for web route/workflow chunks.
+
+## NEW P1 - CRUD Gaps For Tags / Locations / Attribute Definitions — [OPEN]
+
+2026-05-31: Promoted from `04-cross-reference-and-assessment.md` Finding A.
+
+The API has `POST` and `DELETE` for tags, locations, and attribute definitions but no `PUT`/`PATCH`. A typo in a tag name today means delete + recreate + re-tag every item that referenced it. This is a one-afternoon CRUD gap with high real-user value, and the cost will compound as users accumulate data.
+
+Target endpoints:
+
+- `PUT /tags/{tagId}` — name only.
+- `PUT /locations/{locationId}` — name + description.
+- `PUT /collections/{id}/attribute-definitions/{id}` — name, isRequired, isFilterable. Do not allow changing `dataType` or `key` — those are structural and would require migration.
+
+Acceptance:
+
+- Validation rejects duplicate names within scope.
+- Existing references continue to resolve (renaming a tag does not orphan items).
+- Web/mobile API clients gain matching update functions and zod schemas.
+
+## Tracked Findings From `04-cross-reference-and-assessment.md`
+
+These were called out in the cross-reference document but never assigned priority lanes. As of 2026-05-31:
+
+- **Finding A — Update endpoints for tags / locations / attribute defs.** Promoted to P1 above.
+- **Finding B — `primaryImageUrl` storage-key vs URL mismatch.** [OPEN] Promote to P1 — this is a user-visible bug (broken image src) any time `PublicBaseUrl` is non-trivial.
+- **Finding C — Fragile `attributeFilters[]` query-string encoding.** [OPEN] P2. Tighten when implementing the next round of advanced filter UX.
+- **Finding D — Unvalidated `SavedView.FiltersJson` on write.** [OPEN] P2. Add structural JSON validation in `CreateSavedViewService` / its FluentValidation validator.
+- **Finding E — Orphaned media on collection delete.** [OPEN] Promoted to P1 alongside the media-privacy decision (see P2-A above).
 
