@@ -121,7 +121,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.changes.outputs.frontend == 'true'
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Audit npm dependencies
         if: steps.changes.outputs.frontend == 'true'
@@ -175,7 +175,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.changes.outputs.mobile == 'true'
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Typecheck mobile
         if: steps.changes.outputs.mobile == 'true'
@@ -235,7 +235,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Run frontend tests with coverage
         run: npm run test:web:coverage
