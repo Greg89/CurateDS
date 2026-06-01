@@ -38,8 +38,10 @@ public sealed class UpdateTagServiceTests
     {
         const string ownerId = "auth0|test-owner";
         var existing = Tag.Create(ownerId, "Wishlist", DateTime.UtcNow, "system");
-        // Add another tag with a colliding name to confirm we don't try to look up duplicates.
-        var repository = new FakeTagRepository(existing);
+        // Rival intentionally normalizes to the same key ("wishlist").
+        // If duplicate lookup runs for unchanged names, this test would fail.
+        var rival = Tag.Create(ownerId, "WishList", DateTime.UtcNow, "system");
+        var repository = new FakeTagRepository(existing, rival);
         var service = new UpdateTagService(repository, new FakeCurrentUserService(), new UpdateTagCommandValidator());
 
         var act = () => service.ExecuteAsync(
