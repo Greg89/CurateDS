@@ -31,6 +31,7 @@ export {
   AttributeDataTypeSchema,
   listAttributeDefinitions,
   createAttributeDefinition,
+  updateAttributeDefinition,
   deleteAttributeDefinition,
 } from "./attributes";
 
