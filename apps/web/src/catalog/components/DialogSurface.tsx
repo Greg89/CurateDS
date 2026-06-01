@@ -23,12 +23,16 @@ export function DialogSurface({
     return null;
   }
 
+  const dialogOpen = keepMounted ? true : isOpen;
+  const ariaHidden = keepMounted && !isOpen ? true : undefined;
+
   return (
     <dialog
-      open={isOpen}
+      open={dialogOpen}
       className={className}
       aria-label={ariaLabel}
       aria-labelledby={labelledBy}
+      aria-hidden={ariaHidden}
       onCancel={(event) => {
         event.preventDefault();
         if (!closeDisabled) onRequestClose?.();

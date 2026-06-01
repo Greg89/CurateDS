@@ -1373,6 +1373,7 @@ h1 {
   width: 480px;
   max-width: 100vw;
   background: oklch(0.97 0.005 260);
+  border: none;
   border-left: 1px solid var(--c-border);
   box-shadow: -24px 0 80px oklch(0.25 0.04 260 / 0.15);
   z-index: 101;
