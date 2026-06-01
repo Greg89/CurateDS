@@ -22,18 +22,15 @@ public sealed class UploadItemMediaService
     private readonly ICollectionRepository _collectionRepository;
     private readonly IItemRepository _itemRepository;
     private readonly IMediaStorageService _mediaStorageService;
-    private readonly ICurrentUserService _currentUserService;
 
     public UploadItemMediaService(
         ICollectionRepository collectionRepository,
         IItemRepository itemRepository,
-        IMediaStorageService mediaStorageService,
-        ICurrentUserService currentUserService)
+        IMediaStorageService mediaStorageService)
     {
         _collectionRepository = collectionRepository;
         _itemRepository = itemRepository;
         _mediaStorageService = mediaStorageService;
-        _currentUserService = currentUserService;
     }
 
     public async Task<MediaAssetDto> ExecuteAsync(
