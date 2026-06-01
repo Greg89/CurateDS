@@ -46,21 +46,30 @@ public sealed class MinioMediaStorageService : IMediaStorageService
         {
             using var client = CreateClient();
 
+            // The SDK refuses DisablePayloadSigning=true over plain HTTP. That's only
+            // a concern when we're talking to MinIO via Railway's *public* HTTPS edge
+            // proxy (which can't parse aws-chunked / streaming-signed payloads and
+            // returns 502). When the endpoint is HTTP — i.e. the *.railway.internal
+            // private hostname — there is no proxy in the path, so a normal signed
+            // PUT works and we leave payload signing on.
+            var endpointIsHttps = !string.IsNullOrEmpty(_options.Endpoint)
+                && _options.Endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+
             var request = new PutObjectRequest
             {
                 BucketName = _options.BucketName,
                 Key = key,
                 InputStream = uploadStream,
                 ContentType = contentType,
-                // MinIO behind Railway's HTTP proxy does not tolerate the AWS SDK's default
-                // SigV4 chunked-payload streaming upload (Content-Encoding: aws-chunked +
-                // STREAMING-AWS4-HMAC-SHA256-PAYLOAD). The proxy returns 502 BadGateway before
-                // the request ever reaches MinIO. Disable chunk encoding and payload signing
-                // so the SDK sends a plain fixed-length PUT with UNSIGNED-PAYLOAD. The S3
-                // request itself is still SigV4-signed; only the body bytes are unsigned.
+                // Always send a single fixed-Content-Length PUT instead of aws-chunked
+                // streaming. MinIO does not advertise full support for the AWS chunked
+                // upload format and Railway's edge proxy mangles it outright.
                 UseChunkEncoding = false,
-                DisablePayloadSigning = true,
-                DisableDefaultChecksumValidation = true
+                // Skip the default flexible-checksum (CRC32) header — MinIO rejects it.
+                DisableDefaultChecksumValidation = true,
+                // Only swap to UNSIGNED-PAYLOAD when we can satisfy the SDK's HTTPS
+                // requirement. This is the path that bypasses Railway's edge proxy.
+                DisablePayloadSigning = endpointIsHttps ? true : null
             };
 
             await client.PutObjectAsync(request, ct);
