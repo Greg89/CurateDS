@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Verify Trivy ignore files are in sync
         shell: bash
@@ -80,6 +82,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Extract Docker metadata
         id: meta
@@ -88,7 +92,7 @@ jobs:
           images: ghcr.io/greg89/curateds-api
           tags: |
             type=sha,prefix=sha-,format=long
-            type=ref,event=branch
+            type=raw,value=${{ github.event.workflow_run.head_branch }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
@@ -167,6 +171,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Extract Docker metadata
         id: meta
@@ -175,7 +181,7 @@ jobs:
           images: ghcr.io/greg89/curateds-web
           tags: |
             type=sha,prefix=sha-,format=long
-            type=ref,event=branch
+            type=raw,value=${{ github.event.workflow_run.head_branch }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
