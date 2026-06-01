@@ -1,9 +1,10 @@
-﻿import { FormEvent, useEffect, useState } from "react";
+﻿import { FormEvent, ReactElement, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createCollection,
-  listCollections
+  listCollections,
+  type Collection,
 } from "../api";
 import { CatalogSection } from "./types";
 import { readSidebarCollapsedState, sidebarStateStorageKey } from "./utils";
@@ -12,6 +13,245 @@ import { OverviewPage } from "./pages/OverviewPage";
 import { ItemsPage } from "./pages/ItemsPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+
+function getSectionTitle(section: CatalogSection): string {
+  switch (section) {
+    case "overview":
+      return "Collection Overview";
+    case "items":
+      return "Items Workspace";
+    case "reports":
+      return "Reports";
+    case "settings":
+      return "Collection Settings";
+  }
+}
+
+function getSectionDescription(section: CatalogSection): string {
+  switch (section) {
+    case "overview":
+      return "See the collection at a glance before drilling into items or settings.";
+    case "items":
+      return "Create, filter, sort, and refine catalog entries in one focused workspace.";
+    case "reports":
+      return "Breakdowns and activity across this collection.";
+    case "settings":
+      return "Manage custom fields, reusable tags, and locations for this collection.";
+  }
+}
+
+function renderSectionPage(section: CatalogSection, selectedCollection: Collection): ReactElement {
+  switch (section) {
+    case "overview":
+      return <OverviewPage selectedCollection={selectedCollection} />;
+    case "items":
+      return <ItemsPage selectedCollection={selectedCollection} />;
+    case "reports":
+      return <ReportsPage selectedCollection={selectedCollection} />;
+    case "settings":
+      return <SettingsPage selectedCollection={selectedCollection} />;
+  }
+}
+
+function CatalogSidebar({
+  collectionName,
+  collections,
+  collectionsErrorMessage,
+  isCreatingCollection,
+  isLoadingCollections,
+  isSidebarCollapsed,
+  selectedCollectionId,
+  createCollectionErrorMessage,
+  onCollectionNameChange,
+  onCollectionSubmit,
+  onSelectCollection,
+  onCollapse,
+  onExpand,
+  onCloseMobile,
+}: Readonly<{
+  collectionName: string;
+  collections: Collection[];
+  collectionsErrorMessage?: string;
+  isCreatingCollection: boolean;
+  isLoadingCollections: boolean;
+  isSidebarCollapsed: boolean;
+  selectedCollectionId: string;
+  createCollectionErrorMessage?: string;
+  onCollectionNameChange: (name: string) => void;
+  onCollectionSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSelectCollection: (collectionId: string) => void;
+  onCollapse: () => void;
+  onExpand: () => void;
+  onCloseMobile: () => void;
+}>) {
+  return (
+    <aside className={`sidebar panel${isSidebarCollapsed ? " sidebar-collapsed" : ""}`}>
+      {isSidebarCollapsed ? (
+        <div className="sidebar-collapsed-rail">
+          <button
+            aria-expanded={false}
+            aria-label="Expand collection sidebar"
+            className="secondary-button sidebar-toggle-icon sidebar-desktop-toggle"
+            onClick={onExpand}
+            type="button"
+          >
+            <span aria-hidden="true">&#8250;</span>
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="sidebar-top">
+            <div className="sidebar-header">
+              <p className="eyebrow">CurateDS</p>
+              <h1>Collections</h1>
+              <p className="copy">
+                Shape collections, switch context quickly, and keep the main workspace focused.
+              </p>
+            </div>
+
+            <div className="sidebar-controls">
+              <button
+                aria-expanded={true}
+                aria-label="Collapse collection sidebar"
+                className="secondary-button sidebar-toggle-icon sidebar-desktop-toggle"
+                onClick={onCollapse}
+                type="button"
+              >
+                <span aria-hidden="true">&#8249;</span>
+              </button>
+              <button
+                aria-label="Close collection sidebar"
+                className="secondary-button sidebar-toggle sidebar-close-button"
+                onClick={onCloseMobile}
+                type="button"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+
+          <div className="sidebar-body">
+            <form className="collection-form" onSubmit={onCollectionSubmit}>
+              <label className="field">
+                <span>New Collection</span>
+                <input
+                  value={collectionName}
+                  onChange={(event) => onCollectionNameChange(event.target.value)}
+                  placeholder="Board Games"
+                  maxLength={100}
+                />
+              </label>
+
+              <button
+                className="primary-button"
+                disabled={isCreatingCollection}
+                type="submit"
+              >
+                {isCreatingCollection ? "Creating..." : "Create Collection"}
+              </button>
+
+              {createCollectionErrorMessage ? (
+                <p className="message error">{createCollectionErrorMessage}</p>
+              ) : null}
+            </form>
+
+            {isLoadingCollections ? <p className="message">Loading collections...</p> : null}
+            {collectionsErrorMessage ? (
+              <p className="message error">{collectionsErrorMessage}</p>
+            ) : null}
+
+            <CollectionList
+              collections={collections}
+              selectedCollectionId={selectedCollectionId}
+              onSelect={onSelectCollection}
+            />
+          </div>
+        </>
+      )}
+    </aside>
+  );
+}
+
+function CatalogHeader({
+  section,
+  selectedCollection,
+  isSidebarMobileOpen,
+  onOpenMobileSidebar,
+}: Readonly<{
+  section: CatalogSection;
+  selectedCollection: Collection | null;
+  isSidebarMobileOpen: boolean;
+  onOpenMobileSidebar: () => void;
+}>) {
+  return (
+    <header className="panel top-bar">
+      <div className="top-bar-main">
+        <div className="top-bar-title-row">
+          <button
+            aria-expanded={isSidebarMobileOpen}
+            aria-label="Open collection sidebar"
+            className="secondary-button mobile-sidebar-toggle"
+            onClick={onOpenMobileSidebar}
+            type="button"
+          >
+            Collections
+          </button>
+
+          <div>
+            <p className="eyebrow subtle">
+              {selectedCollection ? selectedCollection.name : "No collection selected"}
+            </p>
+            <h2>{getSectionTitle(section)}</h2>
+          </div>
+        </div>
+
+        <p className="panel-copy top-bar-copy">
+          {selectedCollection
+            ? getSectionDescription(section)
+            : "Create or choose a collection from the sidebar to begin."}
+        </p>
+      </div>
+
+      {selectedCollection ? (
+        <nav className="tab-nav">
+          <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/overview`}>
+            Overview
+          </NavLink>
+          <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/items`}>
+            Items
+          </NavLink>
+          <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/reports`}>
+            Reports
+          </NavLink>
+          <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/settings`}>
+            Settings
+          </NavLink>
+        </nav>
+      ) : null}
+    </header>
+  );
+}
+
+function CatalogContent({
+  section,
+  selectedCollection,
+}: Readonly<{
+  section: CatalogSection;
+  selectedCollection: Collection | null;
+}>) {
+  if (!selectedCollection) {
+    return (
+      <section className="panel">
+        <div className="empty-state">
+          <p>No collection selected.</p>
+          <p>Create a collection from the sidebar to start shaping the catalog.</p>
+        </div>
+      </section>
+    );
+  }
+
+  return renderSectionPage(section, selectedCollection);
+}
 
 export function CatalogApp({
   section
@@ -83,176 +323,36 @@ export function CatalogApp({
         type="button"
       />
 
-      <aside className={`sidebar panel${isSidebarCollapsed ? " sidebar-collapsed" : ""}`}>
-        {isSidebarCollapsed ? (
-          <div className="sidebar-collapsed-rail">
-            <button
-              aria-expanded={false}
-              aria-label="Expand collection sidebar"
-              className="secondary-button sidebar-toggle-icon sidebar-desktop-toggle"
-              onClick={() => setIsSidebarCollapsed(false)}
-              type="button"
-            >
-              <span aria-hidden="true">&#8250;</span>
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="sidebar-top">
-              <div className="sidebar-header">
-                <p className="eyebrow">CurateDS</p>
-                <h1>Collections</h1>
-                <p className="copy">
-                  Shape collections, switch context quickly, and keep the main workspace focused.
-                </p>
-              </div>
-
-              <div className="sidebar-controls">
-                <button
-                  aria-expanded={true}
-                  aria-label="Collapse collection sidebar"
-                  className="secondary-button sidebar-toggle-icon sidebar-desktop-toggle"
-                  onClick={() => setIsSidebarCollapsed(true)}
-                  type="button"
-                >
-                  <span aria-hidden="true">&#8249;</span>
-                </button>
-                <button
-                  aria-label="Close collection sidebar"
-                  className="secondary-button sidebar-toggle sidebar-close-button"
-                  onClick={() => setIsSidebarMobileOpen(false)}
-                  type="button"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-
-            <div className="sidebar-body">
-              <form className="collection-form" onSubmit={handleCollectionSubmit}>
-                <label className="field">
-                  <span>New Collection</span>
-                  <input
-                    value={collectionName}
-                    onChange={(event) => setCollectionName(event.target.value)}
-                    placeholder="Board Games"
-                    maxLength={100}
-                  />
-                </label>
-
-                <button
-                  className="primary-button"
-                  disabled={createCollectionMutation.isPending}
-                  type="submit"
-                >
-                  {createCollectionMutation.isPending ? "Creating..." : "Create Collection"}
-                </button>
-
-                {createCollectionMutation.error ? (
-                  <p className="message error">{createCollectionMutation.error.message}</p>
-                ) : null}
-              </form>
-
-              {collectionsQuery.isLoading ? <p className="message">Loading collections...</p> : null}
-              {collectionsQuery.isError ? (
-                <p className="message error">{collectionsQuery.error.message}</p>
-              ) : null}
-
-              <CollectionList
-                collections={collectionsQuery.data ?? []}
-                selectedCollectionId={selectedCollectionId}
-                onSelect={(collectionId) => {
-                  setIsSidebarMobileOpen(false);
-                  navigateToCollection(collectionId);
-                }}
-              />
-            </div>
-          </>
-        )}
-      </aside>
+      <CatalogSidebar
+        collectionName={collectionName}
+        collections={collectionsQuery.data ?? []}
+        collectionsErrorMessage={collectionsQuery.isError ? collectionsQuery.error.message : undefined}
+        createCollectionErrorMessage={createCollectionMutation.error?.message}
+        isCreatingCollection={createCollectionMutation.isPending}
+        isLoadingCollections={collectionsQuery.isLoading}
+        isSidebarCollapsed={isSidebarCollapsed}
+        selectedCollectionId={selectedCollectionId}
+        onCollectionNameChange={setCollectionName}
+        onCollectionSubmit={handleCollectionSubmit}
+        onSelectCollection={(collectionId) => {
+          setIsSidebarMobileOpen(false);
+          navigateToCollection(collectionId);
+        }}
+        onCollapse={() => setIsSidebarCollapsed(true)}
+        onExpand={() => setIsSidebarCollapsed(false)}
+        onCloseMobile={() => setIsSidebarMobileOpen(false)}
+      />
 
       <section className="workspace-shell">
-        <header className="panel top-bar">
-          <div className="top-bar-main">
-            <div className="top-bar-title-row">
-              <button
-                aria-expanded={isSidebarMobileOpen}
-                aria-label="Open collection sidebar"
-                className="secondary-button mobile-sidebar-toggle"
-                onClick={() => setIsSidebarMobileOpen(true)}
-                type="button"
-              >
-                Collections
-              </button>
-
-              <div>
-                <p className="eyebrow subtle">
-                  {selectedCollection ? selectedCollection.name : "No collection selected"}
-                </p>
-                <h2>
-                  {section === "overview"
-                    ? "Collection Overview"
-                    : section === "items"
-                      ? "Items Workspace"
-                      : section === "reports"
-                        ? "Reports"
-                        : "Collection Settings"}
-                </h2>
-              </div>
-            </div>
-
-            <p className="panel-copy top-bar-copy">
-              {selectedCollection
-                ? section === "overview"
-                  ? "See the collection at a glance before drilling into items or settings."
-                  : section === "items"
-                    ? "Create, filter, sort, and refine catalog entries in one focused workspace."
-                    : section === "reports"
-                      ? "Breakdowns and activity across this collection."
-                      : "Manage custom fields, reusable tags, and locations for this collection."
-                : "Create or choose a collection from the sidebar to begin."}
-            </p>
-          </div>
-
-          {selectedCollection ? (
-            <nav className="tab-nav">
-              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/overview`}>
-                Overview
-              </NavLink>
-              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/items`}>
-                Items
-              </NavLink>
-              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/reports`}>
-                Reports
-              </NavLink>
-              <NavLink className={({ isActive }) => `tab-link${isActive ? " active" : ""}`} to={`/collections/${selectedCollection.id}/settings`}>
-                Settings
-              </NavLink>
-            </nav>
-          ) : null}
-        </header>
+        <CatalogHeader
+          section={section}
+          selectedCollection={selectedCollection}
+          isSidebarMobileOpen={isSidebarMobileOpen}
+          onOpenMobileSidebar={() => setIsSidebarMobileOpen(true)}
+        />
 
         <section className="content-shell">
-          {!selectedCollection ? (
-            <section className="panel">
-              <div className="empty-state">
-                <p>No collection selected.</p>
-                <p>Create a collection from the sidebar to start shaping the catalog.</p>
-              </div>
-            </section>
-          ) : section === "overview" ? (
-            <OverviewPage
-              selectedCollection={selectedCollection}
-            />
-          ) : section === "items" ? (
-            <ItemsPage
-              selectedCollection={selectedCollection}
-            />
-          ) : section === "reports" ? (
-            <ReportsPage selectedCollection={selectedCollection} />
-          ) : (
-            <SettingsPage selectedCollection={selectedCollection} />
-          )}
+          <CatalogContent section={section} selectedCollection={selectedCollection} />
         </section>
       </section>
     </main>
