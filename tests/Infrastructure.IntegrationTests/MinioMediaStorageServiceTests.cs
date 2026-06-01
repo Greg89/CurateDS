@@ -63,15 +63,21 @@ public sealed class MinioMediaStorageServiceTests
                 }
                 catch (HttpListenerException)
                 {
-                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { }
+                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); }
+                    catch (HttpListenerException) { }
+                    catch (ObjectDisposedException) { }
                 }
                 catch (ObjectDisposedException)
                 {
-                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { }
+                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); }
+                    catch (HttpListenerException) { }
+                    catch (ObjectDisposedException) { }
                 }
                 catch (InvalidOperationException)
                 {
-                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { }
+                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); }
+                    catch (HttpListenerException) { }
+                    catch (ObjectDisposedException) { }
                 }
             }
         });
