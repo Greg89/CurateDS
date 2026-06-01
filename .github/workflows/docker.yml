@@ -12,9 +12,64 @@ on:
 permissions: {}
 
 jobs:
+  guard-trivy-ignore-sync:
+    name: guard trivy ignore sync
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' }}
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Verify Trivy ignore files are in sync
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          yaml_file=".trivyignore.yaml"
+          text_file=".trivyignore"
+
+          if [ ! -f "$yaml_file" ] || [ ! -f "$text_file" ]; then
+            echo "Expected both $yaml_file and $text_file to exist."
+            exit 1
+          fi
+
+          yaml_ids="$(mktemp)"
+          text_ids="$(mktemp)"
+          only_yaml="$(mktemp)"
+          only_text="$(mktemp)"
+
+          trap 'rm -f "$yaml_ids" "$text_ids" "$only_yaml" "$only_text"' EXIT
+
+          sed -n 's/^\s*-\s*id:\s*\([A-Za-z0-9._-]\+\)\s*$/\1/p' "$yaml_file" | sort -u > "$yaml_ids"
+          sed -e 's/#.*$//' -e 's/^\s*//' -e 's/\s*$//' "$text_file" | sed '/^$/d' | sort -u > "$text_ids"
+
+          comm -23 "$yaml_ids" "$text_ids" > "$only_yaml"
+          comm -13 "$yaml_ids" "$text_ids" > "$only_text"
+
+          if [ -s "$only_yaml" ] || [ -s "$only_text" ]; then
+            echo "Trivy ignore files are out of sync."
+            if [ -s "$only_yaml" ]; then
+              echo "IDs present only in $yaml_file:"
+              cat "$only_yaml"
+            fi
+            if [ -s "$only_text" ]; then
+              echo "IDs present only in $text_file:"
+              cat "$only_text"
+            fi
+            echo "Keep rationale in $yaml_file and ID list in $text_file synchronized."
+            exit 1
+          fi
+
+          echo "Trivy ignore files are in sync."
+
   build-api:
     name: build & push api
     runs-on: ubuntu-latest
+    needs: [guard-trivy-ignore-sync]
     if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
@@ -68,7 +123,7 @@ jobs:
           output: trivy-api.sarif
           severity: CRITICAL,HIGH
           exit-code: "0"
-          trivyignores: .trivyignore.yaml
+          trivyignores: .trivyignore
 
       - name: Upload Trivy API scan results
         if: always()
@@ -85,7 +140,7 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true
-          trivyignores: .trivyignore.yaml
+          trivyignores: .trivyignore
 
       - name: Push API image to GHCR
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
@@ -101,6 +156,7 @@ jobs:
   build-web:
     name: build & push web
     runs-on: ubuntu-latest
+    needs: [guard-trivy-ignore-sync]
     if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
@@ -157,7 +213,7 @@ jobs:
           output: trivy-web.sarif
           severity: CRITICAL,HIGH
           exit-code: "0"
-          trivyignores: .trivyignore.yaml
+          trivyignores: .trivyignore
 
       - name: Upload Trivy web scan results
         if: always()
@@ -174,7 +230,7 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true
-          trivyignores: .trivyignore.yaml
+          trivyignores: .trivyignore
 
       - name: Push web image to GHCR
         run: |
