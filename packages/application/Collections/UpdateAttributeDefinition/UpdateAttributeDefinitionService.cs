@@ -34,11 +34,13 @@ public sealed class UpdateAttributeDefinitionService
     {
         await _validator.ValidateAndThrowAsync(command, cancellationToken);
 
-        var collection = await _collectionRepository.GetByIdAndOwnerAsync(
-            command.CollectionId,
-            command.OwnerId,
-            cancellationToken)
-            ?? throw new NotFoundException("Collection was not found.");
+        if (await _collectionRepository.GetByIdAndOwnerAsync(
+                command.CollectionId,
+                command.OwnerId,
+                cancellationToken) is null)
+        {
+            throw new NotFoundException("Collection was not found.");
+        }
 
         var attributeDefinition = await _attributeDefinitionRepository.GetByIdAndCollectionAsync(
             command.AttributeDefinitionId,
