@@ -95,8 +95,9 @@ export async function listItems(
   const searchParams = buildListItemsSearchParams(filters, page, pageSize);
 
   const qs = searchParams.toString();
+  const querySuffix = qs ? `?${qs}` : "";
   const response = await fetch(
-    `${apiBase}/collections/${collectionId}/items${qs ? `?${qs}` : ""}`,
+    `${apiBase}/collections/${collectionId}/items${querySuffix}`,
     { headers: await authHeader() }
   );
 
