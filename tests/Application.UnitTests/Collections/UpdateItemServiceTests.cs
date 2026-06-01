@@ -539,6 +539,14 @@ public sealed class UpdateItemServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid attributeDefinitionId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task<AttributeDefinition?> GetByIdAndCollectionAsync(Guid attributeDefinitionId, Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult(_attributeDefinitions.SingleOrDefault(d => d.Id == attributeDefinitionId && d.CollectionId == collectionId));
+
+        public Task<bool> ExistsByKeyExcludingAsync(Guid collectionId, string key, Guid excludeAttributeDefinitionId, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakeItemRepository : IItemRepository
@@ -629,6 +637,9 @@ public sealed class UpdateItemServiceTests
         public Task<bool> ExistsByNameAsync(string ownerId, string name, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
+        public Task<bool> ExistsByNameExcludingAsync(string ownerId, string name, Guid excludeLocationId, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
         public Task<Location?> GetByIdAndOwnerAsync(Guid locationId, string ownerId, CancellationToken cancellationToken)
             => Task.FromResult<Location?>(null);
 
@@ -637,6 +648,8 @@ public sealed class UpdateItemServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid locationId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakeTagRepository : ITagRepository
@@ -646,6 +659,12 @@ public sealed class UpdateItemServiceTests
         public Task<bool> ExistsByKeyAsync(string ownerId, string key, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
+        public Task<bool> ExistsByKeyExcludingAsync(string ownerId, string key, Guid excludeTagId, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
+        public Task<Tag?> GetByIdAndOwnerAsync(Guid tagId, string ownerId, CancellationToken cancellationToken)
+            => Task.FromResult<Tag?>(null);
+
         public Task<IReadOnlyList<Tag>> ListByIdsAsync(string ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Tag>>([]);
 
@@ -654,6 +673,8 @@ public sealed class UpdateItemServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
 }

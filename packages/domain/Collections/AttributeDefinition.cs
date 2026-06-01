@@ -93,6 +93,35 @@ public sealed class AttributeDefinition : AuditableEntity
             createdBy);
     }
 
+    /// <summary>
+    /// Updates the editable fields of an attribute definition. <see cref="DataType"/> is intentionally
+    /// immutable post-creation because existing item attribute values may not validate against a new type.
+    /// </summary>
+    public void Update(
+        string name,
+        bool isRequired,
+        bool isFilterable,
+        Guid? itemTypeId,
+        DateTime updatedUtc,
+        string updatedBy)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+
+        var normalizedName = name.Trim();
+
+        if (normalizedName.Length is < 2 or > 60)
+        {
+            throw new ArgumentException("Attribute name must be between 2 and 60 characters.", nameof(name));
+        }
+
+        Name = normalizedName;
+        Key = BuildKey(normalizedName);
+        IsRequired = isRequired;
+        IsFilterable = isFilterable;
+        ItemTypeId = itemTypeId;
+        SetUpdated(updatedUtc, updatedBy);
+    }
+
     private static string BuildKey(string name)
     {
         var characters = name

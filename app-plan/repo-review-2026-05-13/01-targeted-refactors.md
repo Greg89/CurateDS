@@ -260,9 +260,10 @@ Add this before encouraging real users to catalog hundreds or thousands of items
 - Virtualized lists on web and mobile.
 - Bundle splitting for web route/workflow chunks.
 
-## NEW P1 - CRUD Gaps For Tags / Locations / Attribute Definitions — [OPEN]
+## NEW P1 - CRUD Gaps For Tags / Locations / Attribute Definitions — [DONE]
 
 2026-05-31: Promoted from `04-cross-reference-and-assessment.md` Finding A.
+2026-06-01: Implemented. Domain methods `Tag.Rename`, `Location.Update`, `AttributeDefinition.Update` (DataType intentionally immutable — would invalidate existing `ItemAttributeValue` rows). Application services `UpdateTagService`, `UpdateLocationService`, `UpdateAttributeDefinitionService` with duplicate-name detection emitting `duplicate_tag` / `duplicate_location` / `duplicate_attribute` error codes. Endpoints `PUT /tags/{id}`, `PUT /locations/{id}`, `PUT /collections/{id}/attribute-definitions/{id}`. Web client adds `updateTag`, `updateLocation`, `updateAttributeDefinition`. 7 domain tests, 12 application tests, 10 integration tests cover happy path, idempotency, name collision (400), and missing entity (404).
 
 The API has `POST` and `DELETE` for tags, locations, and attribute definitions but no `PUT`/`PATCH`. A typo in a tag name today means delete + recreate + re-tag every item that referenced it. This is a one-afternoon CRUD gap with high real-user value, and the cost will compound as users accumulate data.
 
@@ -282,7 +283,7 @@ Acceptance:
 
 These were called out in the cross-reference document but never assigned priority lanes. As of 2026-05-31:
 
-- **Finding A — Update endpoints for tags / locations / attribute defs.** Promoted to P1 above.
+- **Finding A — Update endpoints for tags / locations / attribute defs.** [DONE] 2026-06-01. See P1 entry above.
 - **Finding B — `primaryImageUrl` storage-key vs URL mismatch.** [DONE] 2026-05-31: `ListItemsService` maps storage keys to public URLs at the application boundary. Repository now returns `ItemSummaryProjection` with `PrimaryImageStorageKey` instead of misusing the `PrimaryImageUrl` field on the DTO — the named-mismatch trap is removed. New integration test `GetItems_ShouldReturnPrimaryImageUrl_PrefixedWithPublicBaseUrlAndBucket` locks in the expected URL composition.
 - **Finding C — Fragile `attributeFilters[]` query-string encoding.** [OPEN] P2. Tighten when implementing the next round of advanced filter UX.
 - **Finding D — Unvalidated `SavedView.FiltersJson` on write.** [OPEN] P2. Add structural JSON validation in `CreateSavedViewService` / its FluentValidation validator.

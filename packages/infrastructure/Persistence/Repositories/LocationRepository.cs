@@ -26,6 +26,13 @@ public sealed class LocationRepository : ILocationRepository
             cancellationToken);
     }
 
+    public Task<bool> ExistsByNameExcludingAsync(string ownerId, string name, Guid excludeLocationId, CancellationToken cancellationToken)
+    {
+        return _dbContext.Locations.AnyAsync(
+            location => location.OwnerId == ownerId && location.Name == name && location.Id != excludeLocationId,
+            cancellationToken);
+    }
+
     public async Task<Location?> GetByIdAndOwnerAsync(Guid locationId, string ownerId, CancellationToken cancellationToken)
     {
         return await _dbContext.Locations
@@ -59,5 +66,10 @@ public sealed class LocationRepository : ILocationRepository
         location.SoftDelete(deletedUtc, deletedBy);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

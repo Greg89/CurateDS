@@ -89,3 +89,34 @@ export async function deleteAttributeDefinition(input: {
 
   if (!response.ok) throw new Error("Failed to delete attribute definition.");
 }
+
+export async function updateAttributeDefinition(input: {
+  collectionId: string;
+  attributeDefinitionId: string;
+  name: string;
+  isRequired: boolean;
+  isFilterable: boolean;
+  itemTypeId?: string | null;
+}): Promise<AttributeDefinition> {
+  const response = await fetch(
+    `${apiBase}/collections/${input.collectionId}/attribute-definitions/${input.attributeDefinitionId}`,
+    {
+      method: "PUT",
+      headers: { ...await authHeader(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: input.name,
+        isRequired: input.isRequired,
+        isFilterable: input.isFilterable,
+        itemTypeId: input.itemTypeId ?? null,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      (await readValidationMessage(response)) ?? "Failed to update attribute definition."
+    );
+  }
+
+  return AttributeDefinitionSchema.parse(await response.json());
+}

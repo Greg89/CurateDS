@@ -71,6 +71,16 @@ public sealed class CreateTagServiceTests
             return Task.FromResult(_tags.Any(tag => tag.OwnerId == ownerId && tag.Key == key));
         }
 
+        public Task<bool> ExistsByKeyExcludingAsync(string ownerId, string key, Guid excludeTagId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(_tags.Any(tag => tag.OwnerId == ownerId && tag.Key == key && tag.Id != excludeTagId));
+        }
+
+        public Task<Tag?> GetByIdAndOwnerAsync(Guid tagId, string ownerId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(_tags.SingleOrDefault(tag => tag.Id == tagId && tag.OwnerId == ownerId));
+        }
+
         public Task<IReadOnlyList<Tag>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyList<Tag>>(
@@ -85,5 +95,7 @@ public sealed class CreateTagServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

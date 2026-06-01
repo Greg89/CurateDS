@@ -30,6 +30,7 @@ Method: direct read of `apps/api/Collections/`, `apps/web/src/api/`,
 | P0-1 — Mobile typecheck reproducibility | `npm run typecheck:mobile` and `npm run test:mobile` (78 tests / 12 suites) pass locally. |
 | P0-2 — `verify` script parity with CI | Root `verify` chains `dotnet test`, `build:web`, `test:web`, `typecheck:mobile`, `test:mobile`. |
 | Finding B — `primaryImageUrl` storage-key vs URL mismatch | Repository now returns `ItemSummaryProjection` carrying `PrimaryImageStorageKey`; `ListItemsService` maps to public URL via `IMediaStorageService.GetPublicUrl`. New integration test `GetItems_ShouldReturnPrimaryImageUrl_PrefixedWithPublicBaseUrlAndBucket` locks in URL composition end-to-end. |
+| Finding A — PUT endpoints for tags / locations / attribute defs | `Tag.Rename`, `Location.Update`, `AttributeDefinition.Update` (DataType intentionally immutable). New `UpdateTagService`, `UpdateLocationService`, `UpdateAttributeDefinitionService` with duplicate-name detection (`duplicate_tag`, `duplicate_location`, `duplicate_attribute` error codes). Endpoints `PUT /tags/{id}`, `PUT /locations/{id}`, `PUT /collections/{id}/attribute-definitions/{id}`. Web client exposes `updateTag`, `updateLocation`, `updateAttributeDefinition`. Covered by 7 domain tests, 12 application tests, 10 integration tests. |
 
 ## What's Open
 
@@ -37,8 +38,7 @@ Sorted by recommended sequence, not by original priority label.
 
 ### Tier 1 — Do before any new feature work
 
-1. **PUT endpoints for tags / locations / attribute defs (Finding A, promoted to P1).**
-   One-afternoon CRUD gap. Pain compounds with every day of real data.
+_All Tier 1 items complete._
 
 ### Tier 2 — Foundation for the next feature wave
 

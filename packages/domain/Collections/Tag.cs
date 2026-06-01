@@ -45,6 +45,25 @@ public sealed class Tag : AuditableEntity
         return new Tag(Guid.NewGuid(), ownerId.Trim(), normalizedName, BuildKey(normalizedName), createdUtc, createdBy);
     }
 
+    /// <summary>
+    /// Renames the tag, recomputing the Key from the new name and stamping the update audit.
+    /// </summary>
+    public void Rename(string name, DateTime updatedUtc, string updatedBy)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+
+        var normalizedName = name.Trim();
+
+        if (normalizedName.Length is < 2 or > 50)
+        {
+            throw new ArgumentException("Tag name must be between 2 and 50 characters.", nameof(name));
+        }
+
+        Name = normalizedName;
+        Key = BuildKey(normalizedName);
+        SetUpdated(updatedUtc, updatedBy);
+    }
+
     private static string BuildKey(string name)
     {
         var characters = name
