@@ -1670,9 +1670,10 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     [Fact]
     public async Task PutLocation_ShouldReturn404_WhenLocationDoesNotExist()
     {
+        string? description = null;
         var response = await _client.PutAsJsonAsync(
             $"/locations/{Guid.NewGuid()}",
-            new { name = "Anywhere", description = (string?)null });
+            new { name = "Anywhere", description });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
