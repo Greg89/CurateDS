@@ -29,14 +29,46 @@ public sealed class MinioMediaStorageService : IMediaStorageService
     {
         var key = $"{_environment}/collections/{collectionId}/items/{itemId}/{Guid.NewGuid()}.{fileExtension.TrimStart('.')}";
 
+        // Buffer non-seekable streams so the SDK can send a single fixed-Content-Length
+        // HTTP PUT. Streaming uploads with unknown length force Transfer-Encoding: chunked,
+        // which Railway's HTTP proxy in front of MinIO does not handle reliably (502).
+        // The buffer is owned by this method (not the caller's stream), so we wrap it
+        // in `using` so it's always disposed — including on exceptions inside the SDK.
+        using var buffer = content.CanSeek ? null : new MemoryStream();
+        Stream uploadStream = content;
+        if (buffer is not null)
+        {
+            await content.CopyToAsync(buffer, ct);
+            buffer.Position = 0;
+            uploadStream = buffer;
+        }
+
         using var client = CreateClient();
+
+        // The SDK refuses DisablePayloadSigning=true over plain HTTP. That's only
+        // a concern when we're talking to MinIO via Railway's *public* HTTPS edge
+        // proxy (which can't parse aws-chunked / streaming-signed payloads and
+        // returns 502). When the endpoint is HTTP — i.e. the *.railway.internal
+        // private hostname — there is no proxy in the path, so a normal signed
+        // PUT works and we leave payload signing on.
+        var endpointIsHttps = !string.IsNullOrEmpty(_options.Endpoint)
+            && _options.Endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
 
         var request = new PutObjectRequest
         {
             BucketName = _options.BucketName,
             Key = key,
-            InputStream = content,
-            ContentType = contentType
+            InputStream = uploadStream,
+            ContentType = contentType,
+            // Always send a single fixed-Content-Length PUT instead of aws-chunked
+            // streaming. MinIO does not advertise full support for the AWS chunked
+            // upload format and Railway's edge proxy mangles it outright.
+            UseChunkEncoding = false,
+            // Skip the default flexible-checksum (CRC32) header — MinIO rejects it.
+            DisableDefaultChecksumValidation = true,
+            // Only swap to UNSIGNED-PAYLOAD when we can satisfy the SDK's HTTPS
+            // requirement. This is the path that bypasses Railway's edge proxy.
+            DisablePayloadSigning = endpointIsHttps ? true : null
         };
 
         await client.PutObjectAsync(request, ct);
