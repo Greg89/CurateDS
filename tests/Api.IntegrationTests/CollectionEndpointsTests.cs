@@ -489,6 +489,51 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     }
 
     [Fact]
+    public async Task GetItems_ShouldMatchAnyRequestedTag_WhenTagMatchModeIsAny()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("TagAny"));
+        var tagA = await CreateTagAsync(UniqueName("TagA"));
+        var tagB = await CreateTagAsync(UniqueName("TagB"));
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Item A",
+                quantity = 1,
+                tagIds = new[] { tagA.Id }
+            });
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Item B",
+                quantity = 1,
+                tagIds = new[] { tagB.Id }
+            });
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Item C",
+                quantity = 1,
+                tagIds = Array.Empty<Guid>()
+            });
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?tagIds={tagA.Id}&tagIds={tagB.Id}&tagMatchMode=any");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var itemNames = paged!.Items.Select(item => item.Name).ToArray();
+
+        itemNames.Should().BeEquivalentTo(["Item A", "Item B"]);
+    }
+
+    [Fact]
     public async Task GetItems_ShouldFilterByCustomAttributeValue()
     {
         var collection = await CreateCollectionAsync("Movies");
