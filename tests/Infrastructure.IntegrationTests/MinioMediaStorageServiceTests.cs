@@ -35,7 +35,7 @@ public sealed class MinioMediaStorageServiceTests
         var requests = new List<HttpListenerRequestSnapshot>();
         // Pick a free port by binding a socket briefly.
         int port;
-        var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        using var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
         probe.Start();
         port = ((IPEndPoint)probe.LocalEndpoint).Port;
         probe.Stop();
@@ -52,7 +52,8 @@ public sealed class MinioMediaStorageServiceTests
             {
                 HttpListenerContext ctx;
                 try { ctx = await listener.GetContextAsync(); }
-                catch { return; }
+                catch (HttpListenerException) when (cts.IsCancellationRequested) { return; }
+                catch (ObjectDisposedException) when (cts.IsCancellationRequested) { return; }
 
                 var snapshot = HttpListenerRequestSnapshot.Capture(ctx.Request);
                 lock (requests) { requests.Add(snapshot); }
@@ -60,9 +61,23 @@ public sealed class MinioMediaStorageServiceTests
                 {
                     await handler(ctx, snapshot);
                 }
-                catch
+                catch (HttpListenerException)
                 {
-                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { }
+                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); }
+                    catch (HttpListenerException) { }
+                    catch (ObjectDisposedException) { }
+                }
+                catch (ObjectDisposedException)
+                {
+                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); }
+                    catch (HttpListenerException) { }
+                    catch (ObjectDisposedException) { }
+                }
+                catch (InvalidOperationException)
+                {
+                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); }
+                    catch (HttpListenerException) { }
+                    catch (ObjectDisposedException) { }
                 }
             }
         });
@@ -72,6 +87,7 @@ public sealed class MinioMediaStorageServiceTests
             cts.Cancel();
             try { listener.Stop(); } catch { }
             try { listener.Close(); } catch { }
+            try { cts.Dispose(); } catch { }
         });
 
         return (baseUrl.TrimEnd('/'), stop, requests);

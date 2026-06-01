@@ -85,6 +85,24 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
+      - name: Sanitize branch tag
+        id: branch_tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          branch="${{ github.event.workflow_run.head_branch }}"
+          sanitized="$(printf '%s' "$branch" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')"
+
+          if [ -z "$sanitized" ]; then
+            echo "Unable to derive a Docker-safe tag from branch '$branch'." >&2
+            exit 1
+          fi
+
+          echo "value=$sanitized" >> "$GITHUB_OUTPUT"
+
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
@@ -92,7 +110,7 @@ jobs:
           images: ghcr.io/greg89/curateds-api
           tags: |
             type=sha,prefix=sha-,format=long
-            type=raw,value=${{ github.event.workflow_run.head_branch }}
+            type=raw,value=${{ steps.branch_tag.outputs.value }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
@@ -174,6 +192,24 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
+      - name: Sanitize branch tag
+        id: branch_tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          branch="${{ github.event.workflow_run.head_branch }}"
+          sanitized="$(printf '%s' "$branch" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')"
+
+          if [ -z "$sanitized" ]; then
+            echo "Unable to derive a Docker-safe tag from branch '$branch'." >&2
+            exit 1
+          fi
+
+          echo "value=$sanitized" >> "$GITHUB_OUTPUT"
+
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
@@ -181,7 +217,7 @@ jobs:
           images: ghcr.io/greg89/curateds-web
           tags: |
             type=sha,prefix=sha-,format=long
-            type=raw,value=${{ github.event.workflow_run.head_branch }}
+            type=raw,value=${{ steps.branch_tag.outputs.value }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
