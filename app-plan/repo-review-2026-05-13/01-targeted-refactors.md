@@ -283,7 +283,7 @@ Acceptance:
 These were called out in the cross-reference document but never assigned priority lanes. As of 2026-05-31:
 
 - **Finding A — Update endpoints for tags / locations / attribute defs.** Promoted to P1 above.
-- **Finding B — `primaryImageUrl` storage-key vs URL mismatch.** [OPEN] Promote to P1 — this is a user-visible bug (broken image src) any time `PublicBaseUrl` is non-trivial.
+- **Finding B — `primaryImageUrl` storage-key vs URL mismatch.** [DONE] 2026-05-31: `ListItemsService` maps storage keys to public URLs at the application boundary. Repository now returns `ItemSummaryProjection` with `PrimaryImageStorageKey` instead of misusing the `PrimaryImageUrl` field on the DTO — the named-mismatch trap is removed. New integration test `GetItems_ShouldReturnPrimaryImageUrl_PrefixedWithPublicBaseUrlAndBucket` locks in the expected URL composition.
 - **Finding C — Fragile `attributeFilters[]` query-string encoding.** [OPEN] P2. Tighten when implementing the next round of advanced filter UX.
 - **Finding D — Unvalidated `SavedView.FiltersJson` on write.** [OPEN] P2. Add structural JSON validation in `CreateSavedViewService` / its FluentValidation validator.
 - **Finding E — Orphaned media on collection delete.** [OPEN] Promoted to P1 alongside the media-privacy decision (see P2-A above).

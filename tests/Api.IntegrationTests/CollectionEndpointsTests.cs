@@ -4,7 +4,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using CurateDS.Domain.Collections;
+using CurateDS.Infrastructure.Persistence;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CurateDS.Api.IntegrationTests;
 
@@ -15,10 +17,12 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         Converters = { new JsonStringEnumConverter() }
     };
 
+    private readonly CollectionApiFactory _factory;
     private readonly HttpClient _client;
 
     public CollectionEndpointsTests(CollectionApiFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -665,6 +669,45 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     }
 
     [Fact]
+    public async Task GetItems_ShouldReturnPrimaryImageUrl_PrefixedWithPublicBaseUrlAndBucket()
+    {
+        // Storage:PublicBaseUrl and Storage:BucketName are configured by CollectionApiFactory
+        // to known test values so URL composition is fully deterministic.
+        var collection = await CreateCollectionAsync(UniqueName("PrimaryImage"));
+        var item = await CreateItemAsync(collection.Id, "Item-With-Image");
+
+        const string storageKey = "test-env/collections/abc/items/def/image.jpg";
+        const string expectedUrl = "https://cdn.test.example/test-bucket/test-env/collections/abc/items/def/image.jpg";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+            var entity = await dbContext.Items.FindAsync(item.Id);
+            entity.Should().NotBeNull();
+
+            var asset = MediaAsset.Create(
+                entity!.Id,
+                entity.CollectionId,
+                storageKey,
+                "image/jpeg",
+                "image.jpg",
+                1024,
+                DateTime.UtcNow);
+            entity.AddMedia(asset);
+            dbContext.MediaAssets.Add(asset);
+            await dbContext.SaveChangesAsync();
+        }
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/items");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var summary = paged!.Items.Single(i => i.Id == item.Id);
+
+        summary.PrimaryImageUrl.Should().Be(expectedUrl);
+    }
+
+    [Fact]
     public async Task GetItems_CreatedBeforeFilter_ShouldReturnOnlyMatchingItems()
     {
         var collection = await CreateCollectionAsync(UniqueName("CreatedBefore"));
@@ -917,7 +960,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         IReadOnlyList<string> Tags,
         int AttributeValueCount,
         DateTime CreatedUtc,
-        DateTime? UpdatedUtc);
+        DateTime? UpdatedUtc,
+        string? PrimaryImageUrl);
 
     private sealed record PagedItemsResponse(
         IReadOnlyList<ItemSummaryResponse> Items,
