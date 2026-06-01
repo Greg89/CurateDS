@@ -1,4 +1,5 @@
 import { ItemDetail } from "../../api";
+import { DialogSurface } from "./DialogSurface";
 import { ItemDetailCard } from "./ItemDetailCard";
 
 interface ItemDetailDrawerProps {
@@ -31,12 +32,12 @@ export function ItemDetailDrawer({
   isUploadPending,
 }: Readonly<ItemDetailDrawerProps>) {
   return (
-    <div
-      aria-hidden={!isOpen}
-      aria-label="Item detail"
-      aria-modal={isOpen}
+    <DialogSurface
+      ariaLabel="Item detail"
       className={`item-drawer detail-drawer${isOpen ? " open" : ""}`}
-      role="dialog"
+      isOpen={isOpen}
+      keepMounted
+      onRequestClose={onClose}
     >
       <div className="drawer-header">
         <h2>Item Detail</h2>
@@ -61,6 +62,6 @@ export function ItemDetailDrawer({
         onSetPrimaryMedia={onSetPrimaryMedia}
         isUploadPending={isUploadPending}
       />
-    </div>
+    </DialogSurface>
   );
 }

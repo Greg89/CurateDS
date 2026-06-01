@@ -1,3 +1,5 @@
+import { DialogSurface } from "./DialogSurface";
+
 export function ConfirmDialog({
   title,
   message,
@@ -14,7 +16,12 @@ export function ConfirmDialog({
   onCancel: () => void;
 }>) {
   return (
-    <div className="confirm-dialog-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+    <DialogSurface
+      className="confirm-dialog-backdrop"
+      labelledBy="confirm-dialog-title"
+      closeDisabled={isPending}
+      onRequestClose={onCancel}
+    >
       <div className="confirm-dialog">
         <h3 id="confirm-dialog-title">{title}</h3>
         <p>{message}</p>
@@ -27,6 +34,6 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </DialogSurface>
   );
 }
