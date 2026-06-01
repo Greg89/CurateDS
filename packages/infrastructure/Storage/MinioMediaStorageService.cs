@@ -25,7 +25,7 @@ public sealed class MinioMediaStorageService : IMediaStorageService
         Stream content,
         string contentType,
         string fileExtension,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var key = $"{_environment}/collections/{collectionId}/items/{itemId}/{Guid.NewGuid()}.{fileExtension.TrimStart('.')}";
 
@@ -38,7 +38,7 @@ public sealed class MinioMediaStorageService : IMediaStorageService
         Stream uploadStream = content;
         if (buffer is not null)
         {
-            await content.CopyToAsync(buffer, ct);
+            await content.CopyToAsync(buffer, cancellationToken);
             buffer.Position = 0;
             uploadStream = buffer;
         }
@@ -71,16 +71,16 @@ public sealed class MinioMediaStorageService : IMediaStorageService
             DisablePayloadSigning = endpointIsHttps ? true : null
         };
 
-        await client.PutObjectAsync(request, ct);
+        await client.PutObjectAsync(request, cancellationToken);
         return key;
     }
 
-    public async Task DeleteAsync(string storageKey, CancellationToken ct)
+    public async Task DeleteAsync(string storageKey, CancellationToken cancellationToken)
     {
         try
         {
             using var client = CreateClient();
-            await client.DeleteObjectAsync(_options.BucketName, storageKey, ct);
+            await client.DeleteObjectAsync(_options.BucketName, storageKey, cancellationToken);
         }
         catch (AmazonS3Exception ex) when (ex.ErrorCode == "NoSuchKey")
         {
