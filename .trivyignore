@@ -1,0 +1,12 @@
+# Plaintext fallback that the trivy-action entrypoint picks up
+# unconditionally from the workspace root. Keep in sync with
+# .trivyignore.yaml — every line MUST be justified in that file.
+#
+# Re-evaluate any time the web image's nginx base Alpine is bumped, or by
+# 2026-09-01 at the latest.
+
+# CVE-2026-6732 — libxml2 DoS via crafted XSD-validated document.
+# Reachable only via nginx's ngx_http_xslt_module (xslt_stylesheet directive).
+# apps/web/nginx.conf serves static files only, so the code path is dead here.
+# Alpine 3.21 mirrors do not yet ship the fixed 2.13.9-r1.
+CVE-2026-6732
