@@ -140,6 +140,38 @@ public sealed class UpdateAttributeDefinitionServiceTests
             .WithMessage("*Item type was not found in this collection*");
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ShouldUpdateAttribute_WhenItemTypeExists()
+    {
+        var collection = Collection.Create("auth0|test-owner", "Board Games", DateTime.UtcNow, "system");
+        var attribute = AttributeDefinition.Create(
+            collection.Id,
+            "Publisher",
+            AttributeDataType.Text,
+            isRequired: false,
+            isFilterable: false,
+            sortOrder: 0,
+            createdUtc: DateTime.UtcNow,
+            createdBy: "system");
+        var itemType = ItemType.Create(collection.Id, "Expansion", 0, DateTime.UtcNow, "system");
+        var service = BuildService(collection, [attribute], [itemType]);
+
+        var result = await service.ExecuteAsync(
+            new UpdateAttributeDefinitionCommand(
+                collection.OwnerId,
+                collection.Id,
+                attribute.Id,
+                "Publisher",
+                IsRequired: true,
+                IsFilterable: true,
+                ItemTypeId: itemType.Id),
+            CancellationToken.None);
+
+        result.ItemTypeId.Should().Be(itemType.Id);
+        result.IsRequired.Should().BeTrue();
+        result.IsFilterable.Should().BeTrue();
+    }
+
     private sealed class FakeCollectionRepository : ICollectionRepository
     {
         private readonly List<Collection> _collections;
