@@ -29,18 +29,47 @@ public sealed class MinioMediaStorageService : IMediaStorageService
     {
         var key = $"{_environment}/collections/{collectionId}/items/{itemId}/{Guid.NewGuid()}.{fileExtension.TrimStart('.')}";
 
-        using var client = CreateClient();
-
-        var request = new PutObjectRequest
+        // Buffer non-seekable streams so the SDK can send a single fixed-Content-Length
+        // HTTP PUT. Streaming uploads with unknown length force Transfer-Encoding: chunked,
+        // which Railway's HTTP proxy in front of MinIO does not handle reliably (502).
+        Stream uploadStream = content;
+        MemoryStream? buffer = null;
+        if (!content.CanSeek)
         {
-            BucketName = _options.BucketName,
-            Key = key,
-            InputStream = content,
-            ContentType = contentType
-        };
+            buffer = new MemoryStream();
+            await content.CopyToAsync(buffer, ct);
+            buffer.Position = 0;
+            uploadStream = buffer;
+        }
 
-        await client.PutObjectAsync(request, ct);
-        return key;
+        try
+        {
+            using var client = CreateClient();
+
+            var request = new PutObjectRequest
+            {
+                BucketName = _options.BucketName,
+                Key = key,
+                InputStream = uploadStream,
+                ContentType = contentType,
+                // MinIO behind Railway's HTTP proxy does not tolerate the AWS SDK's default
+                // SigV4 chunked-payload streaming upload (Content-Encoding: aws-chunked +
+                // STREAMING-AWS4-HMAC-SHA256-PAYLOAD). The proxy returns 502 BadGateway before
+                // the request ever reaches MinIO. Disable chunk encoding and payload signing
+                // so the SDK sends a plain fixed-length PUT with UNSIGNED-PAYLOAD. The S3
+                // request itself is still SigV4-signed; only the body bytes are unsigned.
+                UseChunkEncoding = false,
+                DisablePayloadSigning = true,
+                DisableDefaultChecksumValidation = true
+            };
+
+            await client.PutObjectAsync(request, ct);
+            return key;
+        }
+        finally
+        {
+            buffer?.Dispose();
+        }
     }
 
     public async Task DeleteAsync(string storageKey, CancellationToken ct)
