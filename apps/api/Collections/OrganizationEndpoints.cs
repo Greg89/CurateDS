@@ -19,6 +19,20 @@ public static class OrganizationEndpoints
 {
     public static IEndpointRouteBuilder MapOrganizationEndpoints(this IEndpointRouteBuilder app)
     {
+        MapListTags(app);
+        MapCreateTag(app);
+        MapDeleteTag(app);
+        MapUpdateTag(app);
+        MapListLocations(app);
+        MapCreateLocation(app);
+        MapDeleteLocation(app);
+        MapUpdateLocation(app);
+
+        return app;
+    }
+
+    private static void MapListTags(IEndpointRouteBuilder app)
+    {
         app.MapGet("/tags", async (
             ListTagsService service,
             ICurrentUserService currentUserService,
@@ -28,7 +42,10 @@ public static class OrganizationEndpoints
             var tags = await service.ExecuteAsync(new ListTagsQuery(ownerId), cancellationToken);
             return Results.Ok(tags.Select(tag => new TagResponse(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)));
         }).RequireAuthorization();
+    }
 
+    private static void MapCreateTag(IEndpointRouteBuilder app)
+    {
         app.MapPost("/tags", async (
             CreateTagRequest request,
             CreateTagService service,
@@ -55,7 +72,10 @@ public static class OrganizationEndpoints
                 ]));
             }
         }).RequireAuthorization();
+    }
 
+    private static void MapDeleteTag(IEndpointRouteBuilder app)
+    {
         app.MapDelete("/tags/{tagId:guid}", async (
             Guid tagId,
             DeleteTagService service,
@@ -73,7 +93,10 @@ public static class OrganizationEndpoints
                 return ApiResponses.NotFound("Tag was not found.");
             }
         }).RequireAuthorization();
+    }
 
+    private static void MapUpdateTag(IEndpointRouteBuilder app)
+    {
         app.MapPut("/tags/{tagId:guid}", async (
             Guid tagId,
             UpdateTagRequest request,
@@ -98,7 +121,10 @@ public static class OrganizationEndpoints
                 return ApiResponses.NotFound("Tag was not found.");
             }
         }).RequireAuthorization();
+    }
 
+    private static void MapListLocations(IEndpointRouteBuilder app)
+    {
         app.MapGet("/locations", async (
             ListLocationsService service,
             ICurrentUserService currentUserService,
@@ -112,7 +138,10 @@ public static class OrganizationEndpoints
                 location.Description,
                 location.CreatedUtc)));
         }).RequireAuthorization();
+    }
 
+    private static void MapCreateLocation(IEndpointRouteBuilder app)
+    {
         app.MapPost("/locations", async (
             CreateLocationRequest request,
             CreateLocationService service,
@@ -135,7 +164,10 @@ public static class OrganizationEndpoints
                 return ApiResponses.Validation(exception);
             }
         }).RequireAuthorization();
+    }
 
+    private static void MapDeleteLocation(IEndpointRouteBuilder app)
+    {
         app.MapDelete("/locations/{locationId:guid}", async (
             Guid locationId,
             DeleteLocationService service,
@@ -153,7 +185,10 @@ public static class OrganizationEndpoints
                 return ApiResponses.NotFound("Location was not found.");
             }
         }).RequireAuthorization();
+    }
 
+    private static void MapUpdateLocation(IEndpointRouteBuilder app)
+    {
         app.MapPut("/locations/{locationId:guid}", async (
             Guid locationId,
             UpdateLocationRequest request,
@@ -178,7 +213,5 @@ public static class OrganizationEndpoints
                 return ApiResponses.NotFound("Location was not found.");
             }
         }).RequireAuthorization();
-
-        return app;
     }
 }
