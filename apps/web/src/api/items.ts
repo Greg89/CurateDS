@@ -92,40 +92,7 @@ export async function listItems(
   page = 1,
   pageSize = 50
 ): Promise<PagedItems> {
-  const searchParams = new URLSearchParams();
-
-  const searchText = filters?.searchText?.trim();
-  if (searchText) searchParams.set("searchText", searchText);
-
-  const locationId = filters?.locationId?.trim();
-  if (locationId) searchParams.set("locationId", locationId);
-
-  for (const tagId of filters?.tagIds ?? []) {
-    if (tagId.trim().length > 0) searchParams.append("tagIds", tagId);
-  }
-
-  for (const [attributeKey, value] of Object.entries(filters?.attributeFilters ?? {})) {
-    const normalizedKey = attributeKey.trim();
-    const normalizedValue = value.trim();
-    if (normalizedKey.length > 0 && normalizedValue.length > 0) {
-      searchParams.append("attributeFilters", `${normalizedKey}=${normalizedValue}`);
-    }
-  }
-
-  if (filters?.sortBy) searchParams.set("sortBy", filters.sortBy);
-  if (filters?.sortDirection) searchParams.set("sortDirection", filters.sortDirection);
-  if (filters?.minQuantity != null) searchParams.set("minQuantity", String(filters.minQuantity));
-  if (filters?.maxQuantity != null) searchParams.set("maxQuantity", String(filters.maxQuantity));
-  if (filters?.createdAfter) searchParams.set("createdAfter", filters.createdAfter);
-  if (filters?.createdBefore) searchParams.set("createdBefore", filters.createdBefore);
-  if (filters?.hasNoLocation) searchParams.set("hasNoLocation", "true");
-  if (filters?.hasNoTags) searchParams.set("hasNoTags", "true");
-
-  const itemTypeId = filters?.itemTypeId?.trim();
-  if (itemTypeId) searchParams.set("itemTypeId", itemTypeId);
-
-  searchParams.set("page", String(page));
-  searchParams.set("pageSize", String(pageSize));
+  const searchParams = buildListItemsSearchParams(filters, page, pageSize);
 
   const qs = searchParams.toString();
   const response = await fetch(
@@ -136,6 +103,59 @@ export async function listItems(
   if (!response.ok) throw new Error("Failed to load items.");
 
   return PagedItemsSchema.parse(await response.json());
+}
+
+function buildListItemsSearchParams(
+  filters: Readonly<ItemFilters> | undefined,
+  page: number,
+  pageSize: number
+): URLSearchParams {
+  const searchParams = new URLSearchParams();
+
+  setTrimmedParam(searchParams, "searchText", filters?.searchText);
+  setTrimmedParam(searchParams, "locationId", filters?.locationId);
+  appendTagIds(searchParams, filters?.tagIds);
+  appendAttributeFilters(searchParams, filters?.attributeFilters);
+
+  if (filters?.sortBy) searchParams.set("sortBy", filters.sortBy);
+  if (filters?.sortDirection) searchParams.set("sortDirection", filters.sortDirection);
+  if (filters?.minQuantity != null) searchParams.set("minQuantity", String(filters.minQuantity));
+  if (filters?.maxQuantity != null) searchParams.set("maxQuantity", String(filters.maxQuantity));
+  if (filters?.createdAfter) searchParams.set("createdAfter", filters.createdAfter);
+  if (filters?.createdBefore) searchParams.set("createdBefore", filters.createdBefore);
+  if (filters?.hasNoLocation) searchParams.set("hasNoLocation", "true");
+  if (filters?.hasNoTags) searchParams.set("hasNoTags", "true");
+
+  setTrimmedParam(searchParams, "itemTypeId", filters?.itemTypeId);
+  searchParams.set("page", String(page));
+  searchParams.set("pageSize", String(pageSize));
+
+  return searchParams;
+}
+
+function setTrimmedParam(searchParams: URLSearchParams, key: string, value?: string): void {
+  const trimmed = value?.trim();
+  if (trimmed) searchParams.set(key, trimmed);
+}
+
+function appendTagIds(searchParams: URLSearchParams, tagIds?: readonly string[]): void {
+  for (const tagId of tagIds ?? []) {
+    const normalizedTagId = tagId.trim();
+    if (normalizedTagId.length > 0) searchParams.append("tagIds", normalizedTagId);
+  }
+}
+
+function appendAttributeFilters(
+  searchParams: URLSearchParams,
+  attributeFilters?: Readonly<Record<string, string>>
+): void {
+  for (const [attributeKey, value] of Object.entries(attributeFilters ?? {})) {
+    const normalizedKey = attributeKey.trim();
+    const normalizedValue = value.trim();
+    if (normalizedKey.length > 0 && normalizedValue.length > 0) {
+      searchParams.append("attributeFilters", `${normalizedKey}=${normalizedValue}`);
+    }
+  }
 }
 
 export async function getItemDetail(
