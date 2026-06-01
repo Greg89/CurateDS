@@ -12,11 +12,6 @@ namespace CurateDS.Application.UnitTests.Collections;
 
 public sealed class UploadItemMediaServiceTests
 {
-    private sealed class FakeCurrentUserService : ICurrentUserService
-    {
-        public string GetCurrentUser() => "system";
-    }
-
     [Fact]
     public async Task ExecuteAsync_ShouldUploadAndAddMedia_WhenValidImageProvided()
     {
@@ -27,8 +22,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             itemRepository,
-            storageService,
-            new FakeCurrentUserService());
+            storageService);
 
         using var stream = new MemoryStream(new byte[1024]);
         var result = await service.ExecuteAsync(
@@ -58,8 +52,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(item),
-            new FakeMediaStorageService(),
-            new FakeCurrentUserService());
+            new FakeMediaStorageService());
 
         using var stream = new MemoryStream(new byte[512]);
         var result = await service.ExecuteAsync(
@@ -77,8 +70,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(item),
-            new FakeMediaStorageService(),
-            new FakeCurrentUserService());
+            new FakeMediaStorageService());
 
         using var stream = new MemoryStream(new byte[1024]);
         var act = () => service.ExecuteAsync(
@@ -96,8 +88,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(item),
-            new FakeMediaStorageService(),
-            new FakeCurrentUserService());
+            new FakeMediaStorageService());
 
         var overLimit = UploadItemMediaService.MaxFileSizeBytes + 1;
         using var stream = new MemoryStream(new byte[1024]);
@@ -114,8 +105,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(),
             new FakeItemRepository(),
-            new FakeMediaStorageService(),
-            new FakeCurrentUserService());
+            new FakeMediaStorageService());
 
         using var stream = new MemoryStream(new byte[512]);
         var act = () => service.ExecuteAsync(
@@ -132,8 +122,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(),
-            new FakeMediaStorageService(),
-            new FakeCurrentUserService());
+            new FakeMediaStorageService());
 
         using var stream = new MemoryStream(new byte[512]);
         var act = () => service.ExecuteAsync(
