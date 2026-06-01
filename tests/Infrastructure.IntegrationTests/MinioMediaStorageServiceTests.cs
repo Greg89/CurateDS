@@ -52,7 +52,8 @@ public sealed class MinioMediaStorageServiceTests
             {
                 HttpListenerContext ctx;
                 try { ctx = await listener.GetContextAsync(); }
-                catch { return; }
+                catch (HttpListenerException) when (cts.IsCancellationRequested) { return; }
+                catch (ObjectDisposedException) when (cts.IsCancellationRequested) { return; }
 
                 var snapshot = HttpListenerRequestSnapshot.Capture(ctx.Request);
                 lock (requests) { requests.Add(snapshot); }
