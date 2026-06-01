@@ -1613,10 +1613,11 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     {
         var first = await CreateLocationAsync(UniqueName("Loc First"), "");
         var second = await CreateLocationAsync(UniqueName("Loc Second"), "");
+        string? description = null;
 
         var response = await _client.PutAsJsonAsync(
             $"/locations/{second.Id}",
-            new { name = first.Name, description = (string?)null });
+            new { name = first.Name, description });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
