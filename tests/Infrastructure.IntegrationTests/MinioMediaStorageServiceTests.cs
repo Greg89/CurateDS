@@ -35,7 +35,7 @@ public sealed class MinioMediaStorageServiceTests
         var requests = new List<HttpListenerRequestSnapshot>();
         // Pick a free port by binding a socket briefly.
         int port;
-        var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        using var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
         probe.Start();
         port = ((IPEndPoint)probe.LocalEndpoint).Port;
         probe.Stop();
