@@ -76,5 +76,12 @@ internal sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
             item.CollectionId,
             item.CreatedUtc
         });
+
+        // Default item-list sort is by UpdatedUtc desc within a collection.
+        builder.HasIndex(item => new
+        {
+            item.CollectionId,
+            item.UpdatedUtc
+        });
     }
 }

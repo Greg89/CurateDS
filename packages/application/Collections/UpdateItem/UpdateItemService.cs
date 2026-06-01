@@ -108,7 +108,7 @@ public sealed class UpdateItemService
             _tagRepository,
             cancellationToken);
 
-        ValidateAttributeValues(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup, command.ItemTypeId);
+        ItemAttributeValueValidator.Validate(command.AttributeValues, attributeDefinitions, attributeDefinitionLookup, command.ItemTypeId);
 
         var attributeValues = command.AttributeValues
             .Select(attributeValue =>
@@ -174,13 +174,6 @@ public sealed class UpdateItemService
             })
             .ToArray();
     }
-
-    private static void ValidateAttributeValues(
-        IReadOnlyList<AttributeValueInput> attributeValues,
-        IReadOnlyList<AttributeDefinition> attributeDefinitions,
-        IReadOnlyDictionary<Guid, AttributeDefinition> attributeDefinitionLookup,
-        Guid? itemTypeId)
-        => ItemAttributeValueValidator.Validate(attributeValues, attributeDefinitions, attributeDefinitionLookup, itemTypeId);
 
     private static string? BuildChangeNotes(
         Item item,

@@ -8,7 +8,7 @@
     "tests/EndToEndTests"
   ],
   "scripts": {
-    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web -- --run",
+    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web -- --run && npm run typecheck:mobile && npm run test:mobile",
     "build:web": "npm run build --workspace @curateds/web",
     "test:web": "npm run test --workspace @curateds/web-tests",
     "test:web:coverage": "npm run test:coverage --workspace @curateds/web-tests",
@@ -19,8 +19,9 @@
     "test:mobile:coverage": "npm run test:coverage --workspace @curateds/mobile"
   },
   "overrides": {
-    "react-test-renderer": "19.2.6",
-    "@react-native-async-storage/async-storage": "^1.24.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-test-renderer": "19.2.3",
     "uuid": "^14.0.0",
     "xcode": {
       "uuid": "^14.0.0"
@@ -30,10 +31,14 @@
     },
     "@expo/metro-config": {
       "postcss": "^8.5.10"
+    },
+    "@expo/cli": {
+      "ws": "^8.20.1",
+      "brace-expansion": "^5.0.6"
     }
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.6",
+    "@vitest/coverage-v8": "^4.1.7",
     "uuid": "^14.0.0",
     "vitest": "^4.1.6"
   }

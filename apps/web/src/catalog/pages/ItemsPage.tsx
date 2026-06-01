@@ -11,11 +11,11 @@ import {
   listTags
 } from "../../api";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { DynamicAttributeFields } from "../components/DynamicAttributeFields";
-import { ItemDetailCard } from "../components/ItemDetailCard";
+import { ItemDetailDrawer } from "../components/ItemDetailDrawer";
 import { ItemFiltersPanel } from "../components/ItemFiltersPanel";
+import { ItemFormDrawer } from "../components/ItemFormDrawer";
 import { ItemList } from "../components/ItemList";
-import { TagSelector } from "../components/TagMultiSelect";
+import { ItemsToolbar } from "../components/ItemsToolbar";
 import { useItemFilters } from "../hooks/useItemFilters";
 import { useItemForm } from "../hooks/useItemForm";
 import { useItemMutations } from "../hooks/useItemMutations";
@@ -313,56 +313,17 @@ export function ItemsPage({
 
   return (
     <section className="items-workspace">
-      {/* Toolbar */}
-      <div className="panel items-toolbar">
-        <input
-          className="items-toolbar-search"
-          placeholder="Search items"
-          value={itemSearchText}
-          onChange={(e) => { setItemPage(1); setItemSearchText(e.target.value); }}
-        />
-        <button
-          className={`secondary-button filters-toggle${isFiltersOpen ? " active" : ""}`}
-          onClick={() => setIsFiltersOpen((f) => !f)}
-          type="button"
-        >
-          Filters
-          {activeFilterCount > 0 && (
-            <span className="filter-badge">{activeFilterCount}</span>
-          )}
-        </button>
-        <div className="view-toggle" role="group" aria-label="View mode">
-          <button
-            aria-label="Card view"
-            aria-pressed={viewMode === "cards"}
-            className={`secondary-button view-toggle-btn${viewMode === "cards" ? " active" : ""}`}
-            onClick={() => setViewMode("cards")}
-            title="Card view"
-            type="button"
-          >
-            &#9646;&#9646;
-          </button>
-          <button
-            aria-label="Table view"
-            aria-pressed={viewMode === "table"}
-            className={`secondary-button view-toggle-btn${viewMode === "table" ? " active" : ""}`}
-            onClick={() => setViewMode("table")}
-            title="Table view"
-            type="button"
-          >
-            &#9776;
-          </button>
-        </div>
-        <button
-          className="primary-button"
-          onClick={handleAddItem}
-          type="button"
-        >
-          + Add Item
-        </button>
-      </div>
+      <ItemsToolbar
+        searchText={itemSearchText}
+        onSearchTextChange={(v) => { setItemPage(1); setItemSearchText(v); }}
+        isFiltersOpen={isFiltersOpen}
+        onToggleFilters={() => setIsFiltersOpen((f) => !f)}
+        activeFilterCount={activeFilterCount}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onAddItem={handleAddItem}
+      />
 
-      {/* Collapsible filters panel */}
       {isFiltersOpen && (
         <div className="filters-collapsible panel">
           <ItemFiltersPanel
@@ -451,7 +412,6 @@ export function ItemsPage({
         )}
       </section>
 
-      {/* Drawer backdrop */}
       {anyDrawerOpen && (
         <button
           aria-label="Close panel"
@@ -464,178 +424,54 @@ export function ItemsPage({
         />
       )}
 
-      {/* Detail drawer */}
-      <div
-        aria-hidden={!isDetailDrawerOpen}
-        aria-label="Item detail"
-        aria-modal={isDetailDrawerOpen}
-        className={`item-drawer detail-drawer${isDetailDrawerOpen ? " open" : ""}`}
-        role="dialog"
-      >
-        <div className="drawer-header">
-          <h2>Item Detail</h2>
-          <button
-            aria-label="Close item detail"
-            className="secondary-button"
-            onClick={() => setIsDetailDrawerOpen(false)}
-            type="button"
-          >
-            &#x2715;
-          </button>
-        </div>
-        {itemDetailQuery.isLoading && <p className="message">Loading item detail...</p>}
-        <ItemDetailCard
-          item={itemDetail}
-          isEditing={isEditing && itemDetail?.id === selectedItemId}
-          onEdit={handleEditFromDetail}
-          onDelete={() => setShowDeleteItemConfirm(true)}
-          selectedCollectionName={selectedCollection.name}
-          onUploadMedia={(file) =>
-            uploadItemMediaMutation.mutate({ collectionId, itemId: selectedItemId, file })
-          }
-          onDeleteMedia={(mediaAssetId) =>
-            deleteItemMediaMutation.mutate({ collectionId, itemId: selectedItemId, mediaAssetId })
-          }
-          onSetPrimaryMedia={(mediaAssetId) =>
-            setPrimaryItemMediaMutation.mutate({ collectionId, itemId: selectedItemId, mediaAssetId })
-          }
-          isUploadPending={uploadItemMediaMutation.isPending}
-        />
-      </div>
+      <ItemDetailDrawer
+        isOpen={isDetailDrawerOpen}
+        onClose={() => setIsDetailDrawerOpen(false)}
+        isLoading={itemDetailQuery.isLoading}
+        item={itemDetail}
+        isEditing={isEditing && itemDetail?.id === selectedItemId}
+        selectedCollectionName={selectedCollection.name}
+        onEdit={handleEditFromDetail}
+        onDelete={() => setShowDeleteItemConfirm(true)}
+        onUploadMedia={(file) =>
+          uploadItemMediaMutation.mutate({ collectionId, itemId: selectedItemId, file })
+        }
+        onDeleteMedia={(mediaAssetId) =>
+          deleteItemMediaMutation.mutate({ collectionId, itemId: selectedItemId, mediaAssetId })
+        }
+        onSetPrimaryMedia={(mediaAssetId) =>
+          setPrimaryItemMediaMutation.mutate({ collectionId, itemId: selectedItemId, mediaAssetId })
+        }
+        isUploadPending={uploadItemMediaMutation.isPending}
+      />
 
-      {/* Form drawer */}
-      <div
-        aria-hidden={!isFormDrawerOpen}
-        aria-label={isEditing ? "Edit item" : "Create item"}
-        aria-modal={isFormDrawerOpen}
-        className={`item-drawer form-drawer${isFormDrawerOpen ? " open" : ""}`}
-        role="dialog"
-      >
-        <div className="drawer-header">
-          <h2>{isEditing ? "Edit Item" : "Create Item"}</h2>
-          <button
-            aria-label="Close item form"
-            className="secondary-button"
-            onClick={handleCancelForm}
-            type="button"
-          >
-            &#x2715;
-          </button>
-        </div>
-
-        <form className="collection-form" onSubmit={handleItemSubmit}>
-          <div className="form-mode-row">
-            <p className="message">
-              {isEditing ? "Editing the selected item." : "Creating a new item draft."}
-            </p>
-            {isEditing ? (
-              <button className="secondary-button" onClick={resetItemForm} type="button">
-                Start New Item
-              </button>
-            ) : null}
-          </div>
-
-          <label className="field">
-            <span>Name</span>
-            <input
-              value={itemName}
-              onChange={(event) => setItemName(event.target.value)}
-              placeholder="Kind of Blue"
-              maxLength={120}
-            />
-          </label>
-
-          <label className="field">
-            <span>Description</span>
-            <textarea
-              className="field-textarea"
-              value={itemDescription}
-              onChange={(event) => setItemDescription(event.target.value)}
-              placeholder="Original mono pressing with clean sleeve."
-              maxLength={2000}
-              rows={3}
-            />
-          </label>
-
-          <label className="field">
-            <span>Quantity</span>
-            <input
-              value={itemQuantity}
-              onChange={(event) => setItemQuantity(event.target.value)}
-              inputMode="numeric"
-              min={1}
-              max={9999}
-              type="number"
-            />
-          </label>
-
-          <label className="field">
-            <span>Location</span>
-            <select
-              value={itemLocationId}
-              onChange={(event) => setItemLocationId(event.target.value)}
-            >
-              <option value="">No location</option>
-              {locations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {itemTypes.length > 0 && (
-            <label className="field">
-              <span>Item Type</span>
-              <select
-                value={itemTypeId}
-                onChange={(event) => setItemTypeId(event.target.value)}
-              >
-                <option value="">No type</option>
-                {itemTypes.map((itemType) => (
-                  <option key={itemType.id} value={itemType.id}>
-                    {itemType.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          <TagSelector
-            disabled={false}
-            selectedTagIds={itemTagIds}
-            tags={tags}
-            onToggle={toggleItemTag}
-          />
-
-          <DynamicAttributeFields
-            attributeDefinitions={attributeDefinitions.filter(
-              (d) => d.itemTypeId === null || d.itemTypeId === (itemTypeId || null)
-            )}
-            disabled={false}
-            values={itemAttributeValues}
-            onChange={handleAttributeValueChange}
-          />
-
-          <button
-            className="primary-button"
-            disabled={createItemMutation.isPending || updateItemMutation.isPending}
-            type="submit"
-          >
-            {createItemMutation.isPending || updateItemMutation.isPending
-              ? "Saving Item..."
-              : isEditing
-                ? "Save Item Changes"
-                : "Create Item"}
-          </button>
-
-          {createItemMutation.error || updateItemMutation.error ? (
-            <p className="message error">
-              {createItemMutation.error?.message ?? updateItemMutation.error?.message}
-            </p>
-          ) : null}
-        </form>
-      </div>
+      <ItemFormDrawer
+        isOpen={isFormDrawerOpen}
+        isEditing={isEditing}
+        onClose={handleCancelForm}
+        onSubmit={handleItemSubmit}
+        onResetForm={resetItemForm}
+        isPending={createItemMutation.isPending || updateItemMutation.isPending}
+        error={createItemMutation.error ?? updateItemMutation.error ?? null}
+        name={itemName}
+        description={itemDescription}
+        quantity={itemQuantity}
+        locationId={itemLocationId}
+        itemTypeId={itemTypeId}
+        tagIds={itemTagIds}
+        attributeValues={itemAttributeValues}
+        onNameChange={setItemName}
+        onDescriptionChange={setItemDescription}
+        onQuantityChange={setItemQuantity}
+        onLocationIdChange={setItemLocationId}
+        onItemTypeIdChange={setItemTypeId}
+        onToggleTag={toggleItemTag}
+        onAttributeValueChange={handleAttributeValueChange}
+        locations={locations}
+        itemTypes={itemTypes}
+        tags={tags}
+        attributeDefinitions={attributeDefinitions}
+      />
 
       {showDeleteItemConfirm && itemDetail ? (
         <ConfirmDialog

@@ -156,6 +156,14 @@ public sealed class CreateAttributeDefinitionServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid attributeDefinitionId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task<AttributeDefinition?> GetByIdAndCollectionAsync(Guid attributeDefinitionId, Guid collectionId, CancellationToken cancellationToken)
+            => Task.FromResult(AttributeDefinitions.SingleOrDefault(definition => definition.Id == attributeDefinitionId && definition.CollectionId == collectionId));
+
+        public Task<bool> ExistsByKeyExcludingAsync(Guid collectionId, string key, Guid excludeAttributeDefinitionId, CancellationToken cancellationToken)
+            => Task.FromResult(AttributeDefinitions.Any(definition => definition.CollectionId == collectionId && definition.Key == key && definition.Id != excludeAttributeDefinitionId));
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
 }

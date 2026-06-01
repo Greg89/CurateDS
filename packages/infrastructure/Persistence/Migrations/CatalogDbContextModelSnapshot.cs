@@ -17,7 +17,7 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -189,6 +189,8 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CollectionId", "CreatedUtc");
 
+                    b.HasIndex("CollectionId", "UpdatedUtc");
+
                     b.ToTable("items", (string)null);
                 });
 
@@ -276,6 +278,8 @@ namespace CurateDS.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("ItemId", "TagId");
+
+                    b.HasIndex("TagId", "ItemId");
 
                     b.ToTable("item_tags", (string)null);
                 });

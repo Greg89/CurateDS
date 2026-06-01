@@ -9,6 +9,12 @@ public sealed record CreateAttributeDefinitionRequest(
     bool IsFilterable,
     Guid? ItemTypeId = null);
 
+public sealed record UpdateAttributeDefinitionRequest(
+    string Name,
+    bool IsRequired,
+    bool IsFilterable,
+    Guid? ItemTypeId = null);
+
 public sealed record AttributeDefinitionResponse(
     Guid Id,
     Guid CollectionId,

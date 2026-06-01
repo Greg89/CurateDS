@@ -31,4 +31,9 @@ public sealed class ListItemsRequest
     public bool? HasNoTags { get; init; }
 
     public Guid? ItemTypeId { get; init; }
+
+    /// <summary>
+    /// How to combine multiple tag filters. "all" (default) requires every tag; "any" matches at least one.
+    /// </summary>
+    public string? TagMatchMode { get; init; }
 }

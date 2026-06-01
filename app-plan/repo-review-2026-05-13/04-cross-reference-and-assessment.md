@@ -1,6 +1,6 @@
 # Cross-Reference Assessment Of Targeted Refactors
 
-Date: 2026-05-13  
+Date: 2026-05-13 (original) — Status pass: 2026-05-31  
 Reviewer: Independent code inspection against the actual repo state on the same date.
 
 This document cross-references each item in `01-targeted-refactors.md` against the live source code and adds supplementary findings not captured in the original review.
@@ -9,22 +9,27 @@ This document cross-references each item in `01-targeted-refactors.md` against t
 
 ## Verdict Summary
 
-| Ref | Title | Confirmed by code? | Do it? | Priority adjustment |
-|-----|-------|--------------------|--------|---------------------|
-| P0-1 | Fix mobile typecheck | Yes | Yes | Keep P0 |
-| P0-2 | Add `verify` script | Not verifiable by static read | Yes | Keep P0 |
-| P0-3 | Fix encoding artifacts | Partially | Low urgency | Downgrade to P3 |
-| P1-A | Decompose `CollectionEndpoints.cs` | **Strongly confirmed** | Yes | Keep P1 |
-| P1-B | Extract `ItemAttributeValueValidator` | **Exactly confirmed** | Yes | Keep P1 |
-| P1-C | Extract `ItemQueryBuilder` | Confirmed | Yes | Keep P1 |
-| P1-D | Shared API contracts / zod on web | Confirmed | Yes | Keep P1 |
-| P1-E | Split `ItemsPage` | Partially confirmed | Partial | Narrow scope (see below) |
-| P1-F | Standardize error contracts | Confirmed | Yes | Keep P1 |
-| P2-A | Media privacy and storage lifecycle | **Critical bug found** | Upgrade to P1 | Upgrade to P1 |
-| P2-B | Transaction boundaries | Confirmed | Yes | Keep P2 |
-| P2-C | Collector domain modeling | Product design, not code | Yes | Feature roadmap |
-| P2-D | Systematic web UI | Valid | Yes | Keep P2 |
-| P3 | Performance and scale hardening | Confirmed | Yes | Keep P3 |
+| Ref | Title | Confirmed by code? | Do it? | Priority adjustment | Status 2026-05-31 |
+|-----|-------|--------------------|--------|---------------------|-------------------|
+| P0-1 | Fix mobile typecheck | Yes | Yes | Keep P0 | DONE |
+| P0-2 | Add `verify` script | Not verifiable by static read | Yes | Keep P0 | DONE |
+| P0-3 | Fix encoding artifacts | Partially | Low urgency | Downgrade to P3 | OPEN |
+| P1-A | Decompose `CollectionEndpoints.cs` | **Strongly confirmed** | Yes | Keep P1 | **DONE** |
+| P1-B | Extract `ItemAttributeValueValidator` | **Exactly confirmed** | Yes | Keep P1 | **DONE** |
+| P1-C | Extract `ItemQueryBuilder` | Confirmed | Yes | Keep P1 | DONE (composition + tag mode + indexes); PostgreSQL test coverage OPEN |
+| P1-D | Shared API contracts / zod on web | Confirmed | Yes | Keep P1 | DONE (zod); OpenAPI OPEN |
+| P1-E | Split `ItemsPage` | Partially confirmed | Partial | Narrow scope (see below) | **DONE** |
+| P1-F | Standardize error contracts | Confirmed | Yes | Keep P1 | PARTIAL (duplicate-name codes done; required-attribute / item-type-deleted / media-rejected OPEN) |
+| P2-A | Media privacy and storage lifecycle | **Critical bug found** | Upgrade to P1 | Upgrade to P1 | DONE (bug fix); privacy decision OPEN |
+| P2-B | Transaction boundaries | Confirmed | Yes | Keep P2 | OPEN — sequence before P2-C |
+| P2-C | Collector domain modeling | Product design, not code | Yes | Feature roadmap | OPEN (tracked under M3) |
+| P2-D | Systematic web UI | Valid | Yes | Keep P2 | OPEN |
+| P3 | Performance and scale hardening | Confirmed | Yes | Keep P3 | OPEN |
+| Finding A | Update endpoints for tags / locations / attribute defs | Confirmed | Yes | Implemented (2026-06-01) — see `01-targeted-refactors.md` | DONE |
+| Finding B | `primaryImageUrl` storage-key vs URL mismatch | Confirmed | Yes | **Promoted to P1** (2026-05-31) | DONE (2026-05-31) |
+| Finding C | Fragile `attributeFilters[]` encoding | Confirmed | Yes | P2 | OPEN |
+| Finding D | Unvalidated `SavedView.FiltersJson` | Confirmed | Yes | P2 | OPEN |
+| Finding E | Orphaned media on collection delete | Confirmed | Yes | **Promoted to P1** alongside media privacy | OPEN |
 
 ---
 
@@ -200,6 +205,17 @@ When endpoint decomposition happens, consider replacing this with a typed query 
 ---
 
 ## Overall Assessment Of The Original Review
+
+### 2026-05-31 Progress Note
+
+As of 2026-05-31, all P1 refactors from this document are at least partially complete and most are fully done. Specifically:
+
+- P1-A, P1-B, P1-E are fully done.
+- P1-C, P1-D, P1-F, and P2-A (the bug-fix half) are done in their highest-leverage form; remaining work is the long-tail items called out in the table.
+- The five "Additional Findings" (A–E) were never assigned a priority lane in the original document. The 2026-05-31 pass promotes A, B, and E to P1 and parks C and D at P2 inside `01-targeted-refactors.md`.
+- See `05-progress-and-next-priorities.md` for the consolidated work order that combines remaining refactors with the refined feature roadmap.
+
+### Original Assessment
 
 The original review at `00-repo-overview-and-rating.md` through `03-open-questions-and-decisions.md` is accurate, well-targeted, and based on genuine code inspection rather than surface-level pattern matching. The 7.4/10 overall rating is fair.
 

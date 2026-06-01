@@ -29,6 +29,24 @@ public sealed class AttributeDefinitionRepository : IAttributeDefinitionReposito
         return (nextSortOrder ?? -1) + 1;
     }
 
+    public async Task<AttributeDefinition?> GetByIdAndCollectionAsync(Guid attributeDefinitionId, Guid collectionId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.AttributeDefinitions
+            .SingleOrDefaultAsync(
+                attributeDefinition => attributeDefinition.Id == attributeDefinitionId
+                    && attributeDefinition.CollectionId == collectionId,
+                cancellationToken);
+    }
+
+    public Task<bool> ExistsByKeyExcludingAsync(Guid collectionId, string key, Guid excludeAttributeDefinitionId, CancellationToken cancellationToken)
+    {
+        return _dbContext.AttributeDefinitions.AnyAsync(
+            attributeDefinition => attributeDefinition.CollectionId == collectionId
+                && attributeDefinition.Key == key
+                && attributeDefinition.Id != excludeAttributeDefinitionId,
+            cancellationToken);
+    }
+
     public async Task<IReadOnlyList<AttributeDefinition>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
     {
         return await _dbContext.AttributeDefinitions
@@ -54,5 +72,10 @@ public sealed class AttributeDefinitionRepository : IAttributeDefinitionReposito
         attributeDefinition.SoftDelete(deletedUtc, deletedBy);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

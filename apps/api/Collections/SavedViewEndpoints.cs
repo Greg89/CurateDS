@@ -1,6 +1,7 @@
 using CurateDS.Api.ApiContracts;
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Collections.CreateSavedView;
+using FluentValidation;
 using CurateDS.Application.Collections.DeleteSavedView;
 using CurateDS.Application.Collections.ListSavedViews;
 using CurateDS.Application.Common;
@@ -52,6 +53,10 @@ public static class SavedViewEndpoints
                 return Results.Created(
                     $"/collections/{collectionId}/saved-views/{view.Id}",
                     new SavedViewResponse(view.Id, view.CollectionId, view.Name, view.FiltersJson, view.CreatedUtc));
+            }
+            catch (ValidationException exception)
+            {
+                return ApiResponses.Validation(exception);
             }
             catch (NotFoundException)
             {

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
+import { Auth0Provider, useAuth0, type AppState } from "@auth0/auth0-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, useNavigate } from "react-router-dom";
 import { App } from "./App";
@@ -35,7 +35,7 @@ function Auth0ProviderWithNavigate({ children }: { children: React.ReactNode }) 
         redirect_uri: window.location.origin,
         audience: appConfig.auth0Audience
       }}
-      onRedirectCallback={(appState) => {
+        onRedirectCallback={(appState: AppState | undefined) => {
         navigate(appState?.returnTo ?? "/", { replace: true });
       }}
     >

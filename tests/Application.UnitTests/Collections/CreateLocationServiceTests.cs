@@ -101,6 +101,9 @@ public sealed class CreateLocationServiceTests
             return Task.FromResult(_existing.Any(e => e.ownerId == ownerId && e.Name == name));
         }
 
+        public Task<bool> ExistsByNameExcludingAsync(string ownerId, string name, Guid excludeLocationId, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
         public Task<Location?> GetByIdAndOwnerAsync(Guid locationId, string ownerId, CancellationToken cancellationToken)
             => Task.FromResult<Location?>(null);
 
@@ -109,5 +112,7 @@ public sealed class CreateLocationServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid locationId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

@@ -6,9 +6,10 @@ using CurateDS.Application.Collections.DeleteLocation;
 using CurateDS.Application.Collections.DeleteTag;
 using CurateDS.Application.Collections.ListLocations;
 using CurateDS.Application.Collections.ListTags;
+using CurateDS.Application.Collections.UpdateLocation;
+using CurateDS.Application.Collections.UpdateTag;
 using CurateDS.Application.Common;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 
 namespace CurateDS.Api.Collections;
 
@@ -42,13 +43,6 @@ public static class OrganizationEndpoints
             {
                 return ApiResponses.Validation(exception);
             }
-            catch (DbUpdateException)
-            {
-                return ApiResponses.Conflict(
-                    nameof(CreateTagRequest.Name),
-                    "A tag with this name already exists.",
-                    "duplicate_tag");
-            }
         }).RequireAuthorization();
 
         app.MapDelete("/tags/{tagId:guid}", async (
@@ -62,6 +56,31 @@ public static class OrganizationEndpoints
             {
                 await service.ExecuteAsync(new DeleteTagCommand(ownerId, tagId), cancellationToken);
                 return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Tag was not found.");
+            }
+        }).RequireAuthorization();
+
+        app.MapPut("/tags/{tagId:guid}", async (
+            Guid tagId,
+            UpdateTagRequest request,
+            UpdateTagService service,
+            ICurrentUserService currentUserService,
+            CancellationToken cancellationToken) =>
+        {
+            var ownerId = currentUserService.GetCurrentUser();
+            try
+            {
+                var result = await service.ExecuteAsync(
+                    new UpdateTagCommand(ownerId, tagId, request.Name),
+                    cancellationToken);
+                return Results.Ok(new TagResponse(result.Id, result.Name, result.Key, result.CreatedUtc));
+            }
+            catch (ValidationException exception)
+            {
+                return ApiResponses.Validation(exception);
             }
             catch (NotFoundException)
             {
@@ -117,6 +136,31 @@ public static class OrganizationEndpoints
             {
                 await service.ExecuteAsync(new DeleteLocationCommand(ownerId, locationId), cancellationToken);
                 return Results.NoContent();
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Location was not found.");
+            }
+        }).RequireAuthorization();
+
+        app.MapPut("/locations/{locationId:guid}", async (
+            Guid locationId,
+            UpdateLocationRequest request,
+            UpdateLocationService service,
+            ICurrentUserService currentUserService,
+            CancellationToken cancellationToken) =>
+        {
+            var ownerId = currentUserService.GetCurrentUser();
+            try
+            {
+                var result = await service.ExecuteAsync(
+                    new UpdateLocationCommand(ownerId, locationId, request.Name, request.Description),
+                    cancellationToken);
+                return Results.Ok(new LocationResponse(result.Id, result.Name, result.Description, result.CreatedUtc));
+            }
+            catch (ValidationException exception)
+            {
+                return ApiResponses.Validation(exception);
             }
             catch (NotFoundException)
             {

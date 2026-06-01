@@ -24,8 +24,15 @@ ENV VITE_AUTH0_AUDIENCE=$VITE_AUTH0_AUDIENCE
 
 RUN npm run build --workspace @curateds/web
 
-FROM nginx:1.27-alpine AS final
-RUN apk upgrade --no-cache
+FROM nginx:1.31-alpine AS final
+# Cache-busting ARG: forces the apk upgrade layer to re-run on every build so
+# we always pick up the latest Alpine security patches (e.g. libxml2 fixes)
+# rather than reusing a stale layer from the GHA Docker build cache.
+ARG APK_UPGRADE_CACHEBUST=1
+RUN echo "cachebust=${APK_UPGRADE_CACHEBUST}" \
+    && apk update \
+    && apk upgrade --no-cache \
+    && rm -rf /var/cache/apk/*
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 

@@ -4,7 +4,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using CurateDS.Domain.Collections;
+using CurateDS.Infrastructure.Persistence;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CurateDS.Api.IntegrationTests;
 
@@ -15,10 +17,12 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         Converters = { new JsonStringEnumConverter() }
     };
 
+    private readonly CollectionApiFactory _factory;
     private readonly HttpClient _client;
 
     public CollectionEndpointsTests(CollectionApiFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -356,7 +360,27 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         problem.Errors.Should().ContainKey("Name");
         problem.Errors["Name"].Should().Contain("A tag with this name already exists.");
         problem.Extensions.Should().ContainKey("code");
-        problem.Extensions["code"]?.ToString().Should().Be("validation_error");
+        problem.Extensions["code"]?.ToString().Should().Be("duplicate_tag");
+    }
+
+    [Fact]
+    public async Task PostLocations_ShouldReturnValidationProblem_WithDuplicateLocationCode_WhenDuplicateNameIsSubmitted()
+    {
+        var locationName = UniqueName("Office");
+
+        var firstResponse = await _client.PostAsJsonAsync("/locations", new { name = locationName, description = "First" });
+        var duplicateResponse = await _client.PostAsJsonAsync("/locations", new { name = locationName, description = "Second" });
+
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        duplicateResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await duplicateResponse.Content.ReadFromJsonAsync<ValidationProblemDetails>(JsonOptions);
+
+        problem.Should().NotBeNull();
+        problem!.Errors.Should().ContainKey("Name");
+        problem.Errors["Name"].Should().Contain("A location with this name already exists.");
+        problem.Extensions.Should().ContainKey("code");
+        problem.Extensions["code"]?.ToString().Should().Be("duplicate_location");
     }
 
     [Fact]
@@ -551,6 +575,152 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         items.Should().NotBeNull();
         items!.Select(item => item.Name).Should().ContainInOrder("Animal Crossing", "Zelda");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldSortByNameDescending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortNameDesc"));
+        await CreateItemAsync(collection.Id, "Zelda");
+        await CreateItemAsync(collection.Id, "Animal Crossing");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=name&sortDirection=desc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("Zelda", "Animal Crossing");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldSortByQuantityAscending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortQty"));
+        await CreateItemWithQuantityAsync(collection.Id, "High", 10);
+        await CreateItemWithQuantityAsync(collection.Id, "Low", 1);
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=quantity&sortDirection=asc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("Low", "High");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldSortByQuantityDescending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortQtyDesc"));
+        await CreateItemWithQuantityAsync(collection.Id, "High", 10);
+        await CreateItemWithQuantityAsync(collection.Id, "Low", 1);
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=quantity&sortDirection=desc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("High", "Low");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldSortByCreatedUtcDescending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortCreated"));
+        await CreateItemAsync(collection.Id, "First");
+        await CreateItemAsync(collection.Id, "Second");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=createdutc&sortDirection=desc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("Second", "First");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldSortByCreatedUtcAscending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortCreatedAsc"));
+        await CreateItemAsync(collection.Id, "First");
+        await CreateItemAsync(collection.Id, "Second");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortBy=createdutc&sortDirection=asc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("First", "Second");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldDefaultSortByUpdatedAscending()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SortDefault"));
+        await CreateItemAsync(collection.Id, "Alpha");
+        await CreateItemAsync(collection.Id, "Beta");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?sortDirection=asc");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        // asc default: earliest-updated first
+        result!.Items.Select(i => i.Name).Should().ContainInOrder("Alpha", "Beta");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldReturnPrimaryImageUrl_PrefixedWithPublicBaseUrlAndBucket()
+    {
+        // Storage:PublicBaseUrl and Storage:BucketName are configured by CollectionApiFactory
+        // to known test values so URL composition is fully deterministic.
+        var collection = await CreateCollectionAsync(UniqueName("PrimaryImage"));
+        var item = await CreateItemAsync(collection.Id, "Item-With-Image");
+
+        const string storageKey = "test-env/collections/abc/items/def/image.jpg";
+        const string expectedUrl = "https://cdn.test.example/test-bucket/test-env/collections/abc/items/def/image.jpg";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+            var entity = await dbContext.Items.FindAsync(item.Id);
+            entity.Should().NotBeNull();
+
+            var asset = MediaAsset.Create(
+                entity!.Id,
+                entity.CollectionId,
+                storageKey,
+                "image/jpeg",
+                "image.jpg",
+                1024,
+                DateTime.UtcNow);
+            entity.AddMedia(asset);
+            dbContext.MediaAssets.Add(asset);
+            await dbContext.SaveChangesAsync();
+        }
+
+        var response = await _client.GetAsync($"/collections/{collection.Id}/items");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var summary = paged!.Items.Single(i => i.Id == item.Id);
+
+        summary.PrimaryImageUrl.Should().Be(expectedUrl);
+    }
+
+    [Fact]
+    public async Task GetItems_CreatedBeforeFilter_ShouldReturnOnlyMatchingItems()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("CreatedBefore"));
+        await CreateItemAsync(collection.Id, "Existing");
+
+        var yesterday = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?createdBefore={yesterday}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        paged!.Items.Should().BeEmpty();
     }
 
     [Fact]
@@ -790,7 +960,8 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         IReadOnlyList<string> Tags,
         int AttributeValueCount,
         DateTime CreatedUtc,
-        DateTime? UpdatedUtc);
+        DateTime? UpdatedUtc,
+        string? PrimaryImageUrl);
 
     private sealed record PagedItemsResponse(
         IReadOnlyList<ItemSummaryResponse> Items,
@@ -1375,6 +1546,137 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         var result = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
         result!.Items.Should().HaveCount(2);
         result.Items.Select(i => i.Name).Should().BeEquivalentTo(["Item A1", "Item A2"]);
+    }
+
+    [Fact]
+    public async Task PutTag_ShouldRenameTag()
+    {
+        var tag = await CreateTagAsync(UniqueName("Old Tag"));
+
+        var response = await _client.PutAsJsonAsync($"/tags/{tag.Id}", new { name = "Renamed Tag" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<TagResponse>(JsonOptions);
+        updated!.Name.Should().Be("Renamed Tag");
+        updated.Key.Should().Be("renamed-tag");
+    }
+
+    [Fact]
+    public async Task PutTag_ShouldBeIdempotent_WhenNameUnchanged()
+    {
+        var tagName = UniqueName("Idem Tag");
+        var tag = await CreateTagAsync(tagName);
+
+        var response = await _client.PutAsJsonAsync($"/tags/{tag.Id}", new { name = tagName });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task PutTag_ShouldReturnBadRequest_WhenNameCollides()
+    {
+        var first = await CreateTagAsync(UniqueName("First"));
+        var second = await CreateTagAsync(UniqueName("Second"));
+
+        var response = await _client.PutAsJsonAsync($"/tags/{second.Id}", new { name = first.Name });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(JsonOptions);
+        problem!.Errors.Should().ContainKey("Name");
+    }
+
+    [Fact]
+    public async Task PutTag_ShouldReturn404_WhenTagDoesNotExist()
+    {
+        var response = await _client.PutAsJsonAsync($"/tags/{Guid.NewGuid()}", new { name = "Whatever" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task PutLocation_ShouldUpdateLocation()
+    {
+        var location = await CreateLocationAsync(UniqueName("Old Loc"), "Old description");
+
+        var response = await _client.PutAsJsonAsync(
+            $"/locations/{location.Id}",
+            new { name = "Renamed Loc", description = "New description" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<LocationResponse>(JsonOptions);
+        updated!.Name.Should().Be("Renamed Loc");
+        updated.Description.Should().Be("New description");
+    }
+
+    [Fact]
+    public async Task PutLocation_ShouldReturnBadRequest_WhenNameCollides()
+    {
+        var first = await CreateLocationAsync(UniqueName("Loc First"), "");
+        var second = await CreateLocationAsync(UniqueName("Loc Second"), "");
+        string? description = null;
+
+        var response = await _client.PutAsJsonAsync(
+            $"/locations/{second.Id}",
+            new { name = first.Name, description });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task PutLocation_ShouldReturn404_WhenLocationDoesNotExist()
+    {
+        var response = await _client.PutAsJsonAsync(
+            $"/locations/{Guid.NewGuid()}",
+            new { name = "Anywhere", description = (string?)null });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task PutAttributeDefinition_ShouldUpdateAttribute()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("AttrUpd"));
+        var attribute = await CreateAttributeDefinitionAsync(collection.Id, "Publisher", AttributeDataType.Text, false);
+
+        var response = await _client.PutAsJsonAsync(
+            $"/collections/{collection.Id}/attribute-definitions/{attribute.Id}",
+            new { name = "Studio", isRequired = true, isFilterable = true });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<AttributeDefinitionResponse>(JsonOptions);
+        updated!.Name.Should().Be("Studio");
+        updated.Key.Should().Be("studio");
+        updated.IsRequired.Should().BeTrue();
+        updated.IsFilterable.Should().BeTrue();
+        updated.DataType.Should().Be(AttributeDataType.Text);
+    }
+
+    [Fact]
+    public async Task PutAttributeDefinition_ShouldReturnBadRequest_WhenKeyCollides()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("AttrUpdDup"));
+        var first = await CreateAttributeDefinitionAsync(collection.Id, "Publisher", AttributeDataType.Text, false);
+        var second = await CreateAttributeDefinitionAsync(collection.Id, "Studio", AttributeDataType.Text, false);
+
+        var response = await _client.PutAsJsonAsync(
+            $"/collections/{collection.Id}/attribute-definitions/{second.Id}",
+            new { name = first.Name, isRequired = false, isFilterable = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(JsonOptions);
+        problem!.Errors.Should().ContainKey("Name");
+    }
+
+    [Fact]
+    public async Task PutAttributeDefinition_ShouldReturn404_WhenAttributeMissing()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("AttrUpd404"));
+
+        var response = await _client.PutAsJsonAsync(
+            $"/collections/{collection.Id}/attribute-definitions/{Guid.NewGuid()}",
+            new { name = "Studio", isRequired = false, isFilterable = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
 }

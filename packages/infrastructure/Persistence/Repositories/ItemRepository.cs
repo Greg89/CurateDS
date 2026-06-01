@@ -79,115 +79,19 @@ public sealed class ItemRepository : IItemRepository
         return _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
+    public async Task<PagedResult<ItemSummaryProjection>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
     {
         var q = _dbContext.Items
             .Where(i => i.CollectionId == query.CollectionId)
-            .AsQueryable();
-
-        // Location filter
-        if (query.LocationId.HasValue)
-        {
-            q = q.Where(i => i.LocationId == query.LocationId.Value);
-        }
-
-        // Tag filter — item must have ALL requested tag ids
-        foreach (var tagId in query.TagIds)
-        {
-            var capturedId = tagId;
-            q = q.Where(i => _dbContext.ItemTags.Any(it => it.ItemId == i.Id && it.TagId == capturedId));
-        }
-
-        // Attribute filters
-        foreach (var filter in query.AttributeFilters)
-        {
-            if (string.IsNullOrWhiteSpace(filter.AttributeKey) || string.IsNullOrWhiteSpace(filter.Value))
-                continue;
-
-            var key = filter.AttributeKey.Trim();
-            var value = filter.Value.Trim().ToLower();
-
-            q = q.Where(i => _dbContext.ItemAttributeValues
-                .Join(
-                    _dbContext.AttributeDefinitions.Where(ad => ad.CollectionId == query.CollectionId && ad.Key == key),
-                    iav => iav.AttributeDefinitionId,
-                    ad => ad.Id,
-                    (iav, ad) => new { iav, ad })
-                .Any(joined =>
-                    joined.iav.ItemId == i.Id &&
-                    (joined.iav.ValueText != null && joined.iav.ValueText.ToLower().Contains(value))));
-        }
-
-        // Full-text search across name, description, location name, tag names, attribute text values
-        if (!string.IsNullOrWhiteSpace(query.SearchText))
-        {
-            var search = query.SearchText.Trim().ToLower();
-            q = q.Where(i =>
-                i.Name.ToLower().Contains(search) ||
-                (i.Description != null && i.Description.ToLower().Contains(search)) ||
-                (i.LocationId != null && _dbContext.Locations.Any(l =>
-                    l.Id == i.LocationId &&
-                    (l.Name.ToLower().Contains(search) ||
-                     (l.Description != null && l.Description.ToLower().Contains(search))))) ||
-                _dbContext.ItemTags
-                    .Join(_dbContext.Tags.Where(t => t.Name.ToLower().Contains(search)),
-                        it => it.TagId, t => t.Id, (it, t) => it.ItemId)
-                    .Any(itemId => itemId == i.Id) ||
-                _dbContext.ItemAttributeValues.Any(iav =>
-                    iav.ItemId == i.Id &&
-                    iav.ValueText != null &&
-                    iav.ValueText.ToLower().Contains(search)));
-        }
-
-        // Quantity range
-        if (query.MinQuantity.HasValue)
-            q = q.Where(i => i.Quantity >= query.MinQuantity.Value);
-
-        if (query.MaxQuantity.HasValue)
-            q = q.Where(i => i.Quantity <= query.MaxQuantity.Value);
-
-        // Created date range
-        if (query.CreatedAfter.HasValue)
-            q = q.Where(i => i.CreatedUtc >= query.CreatedAfter.Value);
-
-        if (query.CreatedBefore.HasValue)
-            q = q.Where(i => i.CreatedUtc <= query.CreatedBefore.Value);
-
-        // No-location / no-tags quick filters
-        if (query.HasNoLocation)
-            q = q.Where(i => i.LocationId == null);
-
-        if (query.HasNoTags)
-            q = q.Where(i => !_dbContext.ItemTags.Any(it => it.ItemId == i.Id));
-
-        // Item type filter
-        if (query.ItemTypeId.HasValue)
-            q = q.Where(i => i.ItemTypeId == query.ItemTypeId.Value);
+            .ApplyFilters(query, _dbContext);
 
         var totalCount = await q.CountAsync(cancellationToken);
-
-        // Sorting
-        var descending = !string.Equals(query.SortDirection, "asc", StringComparison.OrdinalIgnoreCase);
-        q = query.SortBy?.Trim().ToLowerInvariant() switch
-        {
-            "name" => descending
-                ? q.OrderByDescending(i => i.Name).ThenByDescending(i => i.CreatedUtc)
-                : q.OrderBy(i => i.Name).ThenBy(i => i.CreatedUtc),
-            "quantity" => descending
-                ? q.OrderByDescending(i => i.Quantity).ThenByDescending(i => i.CreatedUtc)
-                : q.OrderBy(i => i.Quantity).ThenBy(i => i.CreatedUtc),
-            "createdutc" or "created" => descending
-                ? q.OrderByDescending(i => i.CreatedUtc)
-                : q.OrderBy(i => i.CreatedUtc),
-            _ => descending
-                ? q.OrderByDescending(i => i.UpdatedUtc ?? i.CreatedUtc).ThenByDescending(i => i.CreatedUtc)
-                : q.OrderBy(i => i.UpdatedUtc ?? i.CreatedUtc).ThenBy(i => i.CreatedUtc)
-        };
 
         var page = Math.Max(1, query.Page);
         var pageSize = Math.Clamp(query.PageSize, 1, 200);
 
         var items = await q
+            .ApplySort(query)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(i => new
@@ -218,7 +122,7 @@ public sealed class ItemRepository : IItemRepository
             })
             .ToListAsync(cancellationToken);
 
-        var dtos = items.Select(i => new ItemSummaryDto(
+        var dtos = items.Select(i => new ItemSummaryProjection(
             i.Id,
             i.CollectionId,
             i.Name,
@@ -230,10 +134,10 @@ public sealed class ItemRepository : IItemRepository
             i.AttributeValueCount,
             i.CreatedUtc,
             i.UpdatedUtc,
-            PrimaryImageUrl: i.PrimaryImageStorageKey))
+            PrimaryImageStorageKey: i.PrimaryImageStorageKey))
             .ToArray();
 
-        return new PagedResult<ItemSummaryDto>(dtos, totalCount, page, pageSize);
+        return new PagedResult<ItemSummaryProjection>(dtos, totalCount, page, pageSize);
     }
 
     public async Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
