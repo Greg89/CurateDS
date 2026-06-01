@@ -1,0 +1,25 @@
+# Trivy ignore policy for image scans.
+#
+# Each entry MUST cite:
+#   - the CVE / advisory ID
+#   - which image(s) it applies to
+#   - the reachability rationale (why the vuln is not exploitable here)
+#   - an expiry date so the suppression cannot rot indefinitely
+#
+# When `Fixed Version` is available in our base image's repo, prefer upgrading
+# the base instead of adding to this file.
+
+vulnerabilities:
+  - id: CVE-2026-6732
+    paths:
+      - "usr/lib/libxml2.so*"
+    statement: >-
+      libxml2 DoS via crafted XSD-validated document.
+      Reachable only through nginx's ngx_http_xslt_module (xslt_stylesheet
+      directive). Our web image's nginx.conf serves static files only and
+      never invokes XSLT/XSD processing on request bodies, so this code
+      path is unreachable. Alpine 3.21 advisory lists 2.13.9-r1 as fixed
+      but the package is not yet published to the 3.21 main/community
+      mirrors as of this writing; revisit when nginx base image is bumped
+      to an Alpine release where `apk upgrade` actually pulls r1+.
+    expired_at: 2026-09-01T00:00:00Z
