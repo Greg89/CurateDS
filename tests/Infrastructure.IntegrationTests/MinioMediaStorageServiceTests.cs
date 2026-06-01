@@ -72,6 +72,7 @@ public sealed class MinioMediaStorageServiceTests
             cts.Cancel();
             try { listener.Stop(); } catch { }
             try { listener.Close(); } catch { }
+            try { cts.Dispose(); } catch { }
         });
 
         return (baseUrl.TrimEnd('/'), stop, requests);
