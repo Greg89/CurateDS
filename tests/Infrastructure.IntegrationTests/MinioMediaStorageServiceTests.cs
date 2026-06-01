@@ -61,7 +61,15 @@ public sealed class MinioMediaStorageServiceTests
                 {
                     await handler(ctx, snapshot);
                 }
-                catch
+                catch (HttpListenerException)
+                {
+                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { }
+                }
+                catch (ObjectDisposedException)
+                {
+                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { }
+                }
+                catch (InvalidOperationException)
                 {
                     try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { }
                 }
