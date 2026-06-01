@@ -599,8 +599,8 @@ public sealed class UpdateItemServiceTests
 
         public void AddMediaAsset(MediaAsset asset) { }
 
-        public Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
-            => Task.FromResult(new PagedResult<ItemSummaryDto>([], 0, 1, 50));
+        public Task<PagedResult<ItemSummaryProjection>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
+            => Task.FromResult(new PagedResult<ItemSummaryProjection>([], 0, 1, 50));
     }
 
     private sealed class FakeItemEventRepository : IItemEventRepository

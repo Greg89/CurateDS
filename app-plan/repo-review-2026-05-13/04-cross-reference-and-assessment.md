@@ -26,7 +26,7 @@ This document cross-references each item in `01-targeted-refactors.md` against t
 | P2-D | Systematic web UI | Valid | Yes | Keep P2 | OPEN |
 | P3 | Performance and scale hardening | Confirmed | Yes | Keep P3 | OPEN |
 | Finding A | Update endpoints for tags / locations / attribute defs | Confirmed | Yes | **Promoted to P1** (2026-05-31) | OPEN |
-| Finding B | `primaryImageUrl` storage-key vs URL mismatch | Confirmed | Yes | **Promoted to P1** (2026-05-31) | OPEN |
+| Finding B | `primaryImageUrl` storage-key vs URL mismatch | Confirmed | Yes | **Promoted to P1** (2026-05-31) | DONE (2026-05-31) |
 | Finding C | Fragile `attributeFilters[]` encoding | Confirmed | Yes | P2 | OPEN |
 | Finding D | Unvalidated `SavedView.FiltersJson` | Confirmed | Yes | P2 | OPEN |
 | Finding E | Orphaned media on collection delete | Confirmed | Yes | **Promoted to P1** alongside media privacy | OPEN |

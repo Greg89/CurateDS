@@ -79,7 +79,7 @@ public sealed class ItemRepository : IItemRepository
         return _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
+    public async Task<PagedResult<ItemSummaryProjection>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
     {
         var q = _dbContext.Items
             .Where(i => i.CollectionId == query.CollectionId)
@@ -122,7 +122,7 @@ public sealed class ItemRepository : IItemRepository
             })
             .ToListAsync(cancellationToken);
 
-        var dtos = items.Select(i => new ItemSummaryDto(
+        var dtos = items.Select(i => new ItemSummaryProjection(
             i.Id,
             i.CollectionId,
             i.Name,
@@ -134,10 +134,10 @@ public sealed class ItemRepository : IItemRepository
             i.AttributeValueCount,
             i.CreatedUtc,
             i.UpdatedUtc,
-            PrimaryImageUrl: i.PrimaryImageStorageKey))
+            PrimaryImageStorageKey: i.PrimaryImageStorageKey))
             .ToArray();
 
-        return new PagedResult<ItemSummaryDto>(dtos, totalCount, page, pageSize);
+        return new PagedResult<ItemSummaryProjection>(dtos, totalCount, page, pageSize);
     }
 
     public async Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)

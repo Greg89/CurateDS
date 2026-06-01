@@ -37,11 +37,23 @@ public sealed class ListItemsService
 
         var result = await _itemRepository.QueryAsync(query, cancellationToken);
 
-        // Repository stores raw storage key in PrimaryImageUrl; map to public URL here.
-        var remapped = result.Items.Select(dto => dto.PrimaryImageUrl is not null
-            ? dto with { PrimaryImageUrl = _mediaStorageService.GetPublicUrl(dto.PrimaryImageUrl) }
-            : dto).ToArray();
+        // Repository returns storage keys; map to public URLs at the application boundary.
+        var dtos = result.Items.Select(projection => new ItemSummaryDto(
+            projection.Id,
+            projection.CollectionId,
+            projection.Name,
+            projection.Description,
+            projection.Quantity,
+            projection.LocationId,
+            projection.LocationName,
+            projection.Tags,
+            projection.AttributeValueCount,
+            projection.CreatedUtc,
+            projection.UpdatedUtc,
+            projection.PrimaryImageStorageKey is null
+                ? null
+                : _mediaStorageService.GetPublicUrl(projection.PrimaryImageStorageKey))).ToArray();
 
-        return new PagedResult<ItemSummaryDto>(remapped, result.TotalCount, result.Page, result.PageSize);
+        return new PagedResult<ItemSummaryDto>(dtos, result.TotalCount, result.Page, result.PageSize);
     }
 }

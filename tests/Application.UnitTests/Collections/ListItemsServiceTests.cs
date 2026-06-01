@@ -16,8 +16,8 @@ public sealed class ListItemsServiceTests
     private static ListItemsQuery BuildQuery() =>
         new(OwnerId, CollectionId, null, null, [], [], null, null, 1, 20);
 
-    private static ItemSummaryDto BuildDto(string? primaryImageUrl) =>
-        new(Guid.NewGuid(), CollectionId, "Item", null, 1, null, null, [], 0, DateTime.UtcNow, null, primaryImageUrl);
+    private static ItemSummaryProjection BuildProjection(string? primaryImageStorageKey) =>
+        new(Guid.NewGuid(), CollectionId, "Item", null, 1, null, null, [], 0, DateTime.UtcNow, null, primaryImageStorageKey);
 
     [Fact]
     public async Task ExecuteAsync_ShouldRemapStorageKeyToPublicUrl()
@@ -28,7 +28,7 @@ public sealed class ListItemsServiceTests
         var collection = Collection.Create(OwnerId, "My Collection", DateTime.UtcNow, "system");
         var service = new ListItemsService(
             new FakeCollectionRepository(collection),
-            new FakeItemRepository(BuildDto(storageKey)),
+            new FakeItemRepository(BuildProjection(storageKey)),
             new FakeMediaStorageService());
 
         var result = await service.ExecuteAsync(BuildQuery() with { CollectionId = collection.Id }, CancellationToken.None);
@@ -42,7 +42,7 @@ public sealed class ListItemsServiceTests
         var collection = Collection.Create(OwnerId, "My Collection", DateTime.UtcNow, "system");
         var service = new ListItemsService(
             new FakeCollectionRepository(collection),
-            new FakeItemRepository(BuildDto(null)),
+            new FakeItemRepository(BuildProjection(null)),
             new FakeMediaStorageService());
 
         var result = await service.ExecuteAsync(BuildQuery() with { CollectionId = collection.Id }, CancellationToken.None);
@@ -86,12 +86,12 @@ public sealed class ListItemsServiceTests
 
     private sealed class FakeItemRepository : IItemRepository
     {
-        private readonly ItemSummaryDto[] _items;
+        private readonly ItemSummaryProjection[] _items;
 
-        public FakeItemRepository(params ItemSummaryDto[] items) => _items = items;
+        public FakeItemRepository(params ItemSummaryProjection[] items) => _items = items;
 
-        public Task<PagedResult<ItemSummaryDto>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
-            => Task.FromResult(new PagedResult<ItemSummaryDto>(_items, _items.Length, query.Page, query.PageSize));
+        public Task<PagedResult<ItemSummaryProjection>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
+            => Task.FromResult(new PagedResult<ItemSummaryProjection>(_items, _items.Length, query.Page, query.PageSize));
 
         public Task AddAsync(Item item, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task ReplaceAttributeValuesAsync(Guid itemId, IReadOnlyList<ItemAttributeValue> attributeValues, CancellationToken cancellationToken) => Task.CompletedTask;
