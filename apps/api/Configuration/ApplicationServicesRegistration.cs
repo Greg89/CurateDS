@@ -29,6 +29,9 @@ using CurateDS.Application.Collections.ListLocations;
 using CurateDS.Application.Collections.ListTags;
 using CurateDS.Application.Collections.SetPrimaryItemMedia;
 using CurateDS.Application.Collections.UpdateItem;
+using CurateDS.Application.Collections.UpdateAttributeDefinition;
+using CurateDS.Application.Collections.UpdateLocation;
+using CurateDS.Application.Collections.UpdateTag;
 using CurateDS.Application.Collections.UploadItemMedia;
 using CurateDS.Infrastructure;
 using CurateDS.Infrastructure.Storage;
@@ -52,6 +55,9 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<IValidator<CreateTagCommand>, CreateTagCommandValidator>();
         services.AddScoped<IValidator<CreateSavedViewCommand>, CreateSavedViewCommandValidator>();
         services.AddScoped<IValidator<UpdateItemCommand>, UpdateItemCommandValidator>();
+        services.AddScoped<IValidator<UpdateTagCommand>, UpdateTagCommandValidator>();
+        services.AddScoped<IValidator<UpdateLocationCommand>, UpdateLocationCommandValidator>();
+        services.AddScoped<IValidator<UpdateAttributeDefinitionCommand>, UpdateAttributeDefinitionCommandValidator>();
 
         // Command/query services
         services.AddScoped<CreateAttributeDefinitionService>();
@@ -79,6 +85,9 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<ListLocationsService>();
         services.AddScoped<ListTagsService>();
         services.AddScoped<UpdateItemService>();
+        services.AddScoped<UpdateTagService>();
+        services.AddScoped<UpdateLocationService>();
+        services.AddScoped<UpdateAttributeDefinitionService>();
 
         // Item type services
         services.AddScoped<CreateItemTypeService>();

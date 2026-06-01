@@ -50,4 +50,30 @@ public sealed class Location : AuditableEntity
 
         return new Location(Guid.NewGuid(), ownerId.Trim(), normalizedName, normalizedDescription, createdUtc, createdBy);
     }
+
+    /// <summary>
+    /// Updates the location's name and description, stamping the update audit.
+    /// </summary>
+    public void Update(string name, string? description, DateTime updatedUtc, string updatedBy)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+
+        var normalizedName = name.Trim();
+
+        if (normalizedName.Length is < 2 or > 80)
+        {
+            throw new ArgumentException("Location name must be between 2 and 80 characters.", nameof(name));
+        }
+
+        var normalizedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+
+        if (normalizedDescription?.Length > 240)
+        {
+            throw new ArgumentException("Location description must be 240 characters or fewer.", nameof(description));
+        }
+
+        Name = normalizedName;
+        Description = normalizedDescription;
+        SetUpdated(updatedUtc, updatedBy);
+    }
 }

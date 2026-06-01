@@ -34,11 +34,12 @@ Original P1 refactors are **complete**:
 - Mobile typecheck/test reproducibility (P0-1) — verified passing.
 - Root `verify` script extended to include mobile (P0-2) — done.
 - `primaryImageUrl` storage-key vs URL mismatch (Finding B) — done; repository now returns `ItemSummaryProjection` and the application layer maps to the public URL.
+- PUT endpoints for tags / locations / attribute defs (Finding A, promoted to P1) — done; `Tag.Rename`, `Location.Update`, `AttributeDefinition.Update` (DataType immutable) with duplicate-name detection and matching web client surface.
 
 Still open: media-privacy product decision (P2-A long tail), transaction
 boundaries (P2-B), collector domain models (P2-C → roadmap M3), web design
 system (P2-D), perf hardening (P3), OpenAPI generation (P1-D long tail),
-and the five gap findings (A–E) from `04-cross-reference-and-assessment.md`.
+and findings C / D / E from `04-cross-reference-and-assessment.md`.
 
 See `05-progress-and-next-priorities.md` for full detail and the refined work
 order.

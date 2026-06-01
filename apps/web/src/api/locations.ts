@@ -46,6 +46,25 @@ export async function createLocation(input: {
   return LocationSchema.parse(await response.json());
 }
 
+export async function updateLocation(
+  locationId: string,
+  input: { name: string; description: string | null }
+): Promise<Location> {
+  const response = await fetch(`${apiBase}/locations/${locationId}`, {
+    method: "PUT",
+    headers: { ...await authHeader(), "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      (await readValidationMessage(response)) ?? "Failed to update location."
+    );
+  }
+
+  return LocationSchema.parse(await response.json());
+}
+
 export async function deleteLocation(locationId: string): Promise<void> {
   const response = await fetch(`${apiBase}/locations/${locationId}`, {
     method: "DELETE",

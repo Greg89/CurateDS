@@ -26,6 +26,19 @@ public sealed class TagRepository : ITagRepository
             cancellationToken);
     }
 
+    public Task<bool> ExistsByKeyExcludingAsync(string ownerId, string key, Guid excludeTagId, CancellationToken cancellationToken)
+    {
+        return _dbContext.Tags.AnyAsync(
+            tag => tag.OwnerId == ownerId && tag.Key == key && tag.Id != excludeTagId,
+            cancellationToken);
+    }
+
+    public async Task<Tag?> GetByIdAndOwnerAsync(Guid tagId, string ownerId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.Tags
+            .SingleOrDefaultAsync(tag => tag.Id == tagId && tag.OwnerId == ownerId, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Tag>> ListByIdsAsync(string ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
     {
         return await _dbContext.Tags
@@ -58,5 +71,10 @@ public sealed class TagRepository : ITagRepository
         tag.SoftDelete(deletedUtc, deletedBy);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

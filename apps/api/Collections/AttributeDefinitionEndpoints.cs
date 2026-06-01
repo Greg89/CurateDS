@@ -4,6 +4,7 @@ using CurateDS.Application.Collections;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.DeleteAttributeDefinition;
 using CurateDS.Application.Collections.ListAttributeDefinitions;
+using CurateDS.Application.Collections.UpdateAttributeDefinition;
 using CurateDS.Application.Common;
 using FluentValidation;
 
@@ -101,6 +102,50 @@ public static class AttributeDefinitionEndpoints
                 return ApiResponses.NotFound("Attribute definition was not found.");
             }
         }).RequireAuthorization();
+
+        group.MapPut("/{collectionId:guid}/attribute-definitions/{attributeDefinitionId:guid}", async (
+            Guid collectionId,
+            Guid attributeDefinitionId,
+            UpdateAttributeDefinitionRequest request,
+            UpdateAttributeDefinitionService service,
+            ICurrentUserService currentUserService,
+            CancellationToken cancellationToken) =>
+        {
+            var ownerId = currentUserService.GetCurrentUser();
+            try
+            {
+                var result = await service.ExecuteAsync(
+                    new UpdateAttributeDefinitionCommand(
+                        ownerId,
+                        collectionId,
+                        attributeDefinitionId,
+                        request.Name,
+                        request.IsRequired,
+                        request.IsFilterable,
+                        request.ItemTypeId),
+                    cancellationToken);
+
+                return Results.Ok(CollectionResponseMappers.ToAttributeDefinitionResponse(new AttributeDefinitionDto(
+                    result.Id,
+                    result.CollectionId,
+                    result.Name,
+                    result.Key,
+                    result.DataType,
+                    result.IsRequired,
+                    result.IsFilterable,
+                    result.SortOrder,
+                    result.ItemTypeId,
+                    result.CreatedUtc)));
+            }
+            catch (ValidationException exception)
+            {
+                return ApiResponses.Validation(exception);
+            }
+            catch (NotFoundException exception)
+            {
+                return ApiResponses.NotFound(exception.Message);
+            }
+        });
 
         return app;
     }

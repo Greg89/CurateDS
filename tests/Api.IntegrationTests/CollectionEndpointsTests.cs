@@ -1548,4 +1548,135 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         result.Items.Select(i => i.Name).Should().BeEquivalentTo(["Item A1", "Item A2"]);
     }
 
+    [Fact]
+    public async Task PutTag_ShouldRenameTag()
+    {
+        var tag = await CreateTagAsync(UniqueName("Old Tag"));
+
+        var response = await _client.PutAsJsonAsync($"/tags/{tag.Id}", new { name = "Renamed Tag" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<TagResponse>(JsonOptions);
+        updated!.Name.Should().Be("Renamed Tag");
+        updated.Key.Should().Be("renamed-tag");
+    }
+
+    [Fact]
+    public async Task PutTag_ShouldBeIdempotent_WhenNameUnchanged()
+    {
+        var tagName = UniqueName("Idem Tag");
+        var tag = await CreateTagAsync(tagName);
+
+        var response = await _client.PutAsJsonAsync($"/tags/{tag.Id}", new { name = tagName });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task PutTag_ShouldReturnBadRequest_WhenNameCollides()
+    {
+        var first = await CreateTagAsync(UniqueName("First"));
+        var second = await CreateTagAsync(UniqueName("Second"));
+
+        var response = await _client.PutAsJsonAsync($"/tags/{second.Id}", new { name = first.Name });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(JsonOptions);
+        problem!.Errors.Should().ContainKey("Name");
+    }
+
+    [Fact]
+    public async Task PutTag_ShouldReturn404_WhenTagDoesNotExist()
+    {
+        var response = await _client.PutAsJsonAsync($"/tags/{Guid.NewGuid()}", new { name = "Whatever" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task PutLocation_ShouldUpdateLocation()
+    {
+        var location = await CreateLocationAsync(UniqueName("Old Loc"), "Old description");
+
+        var response = await _client.PutAsJsonAsync(
+            $"/locations/{location.Id}",
+            new { name = "Renamed Loc", description = "New description" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<LocationResponse>(JsonOptions);
+        updated!.Name.Should().Be("Renamed Loc");
+        updated.Description.Should().Be("New description");
+    }
+
+    [Fact]
+    public async Task PutLocation_ShouldReturnBadRequest_WhenNameCollides()
+    {
+        var first = await CreateLocationAsync(UniqueName("Loc First"), "");
+        var second = await CreateLocationAsync(UniqueName("Loc Second"), "");
+        string? description = null;
+
+        var response = await _client.PutAsJsonAsync(
+            $"/locations/{second.Id}",
+            new { name = first.Name, description });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task PutLocation_ShouldReturn404_WhenLocationDoesNotExist()
+    {
+        var response = await _client.PutAsJsonAsync(
+            $"/locations/{Guid.NewGuid()}",
+            new { name = "Anywhere", description = (string?)null });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task PutAttributeDefinition_ShouldUpdateAttribute()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("AttrUpd"));
+        var attribute = await CreateAttributeDefinitionAsync(collection.Id, "Publisher", AttributeDataType.Text, false);
+
+        var response = await _client.PutAsJsonAsync(
+            $"/collections/{collection.Id}/attribute-definitions/{attribute.Id}",
+            new { name = "Studio", isRequired = true, isFilterable = true });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<AttributeDefinitionResponse>(JsonOptions);
+        updated!.Name.Should().Be("Studio");
+        updated.Key.Should().Be("studio");
+        updated.IsRequired.Should().BeTrue();
+        updated.IsFilterable.Should().BeTrue();
+        updated.DataType.Should().Be(AttributeDataType.Text);
+    }
+
+    [Fact]
+    public async Task PutAttributeDefinition_ShouldReturnBadRequest_WhenKeyCollides()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("AttrUpdDup"));
+        var first = await CreateAttributeDefinitionAsync(collection.Id, "Publisher", AttributeDataType.Text, false);
+        var second = await CreateAttributeDefinitionAsync(collection.Id, "Studio", AttributeDataType.Text, false);
+
+        var response = await _client.PutAsJsonAsync(
+            $"/collections/{collection.Id}/attribute-definitions/{second.Id}",
+            new { name = first.Name, isRequired = false, isFilterable = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(JsonOptions);
+        problem!.Errors.Should().ContainKey("Name");
+    }
+
+    [Fact]
+    public async Task PutAttributeDefinition_ShouldReturn404_WhenAttributeMissing()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("AttrUpd404"));
+
+        var response = await _client.PutAsJsonAsync(
+            $"/collections/{collection.Id}/attribute-definitions/{Guid.NewGuid()}",
+            new { name = "Studio", isRequired = false, isFilterable = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
 }
