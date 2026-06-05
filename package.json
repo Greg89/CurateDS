@@ -19,9 +19,9 @@
     "test:mobile:coverage": "npm run test:coverage --workspace @curateds/mobile"
   },
   "overrides": {
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-test-renderer": "19.2.3",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-test-renderer": "19.2.7",
     "uuid": "^14.0.0",
     "xcode": {
       "uuid": "^14.0.0"
@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.8",
+    "react-test-renderer": "19.2.7",
     "uuid": "^14.0.0",
     "vitest": "^4.1.6"
   }
