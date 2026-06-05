@@ -1,5 +1,6 @@
 import { FormEvent } from "react";
 import { AttributeDefinition, ItemType, Location, Tag } from "../../api";
+import { DialogSurface } from "./DialogSurface";
 import { DynamicAttributeFields } from "./DynamicAttributeFields";
 import { TagSelector } from "./TagMultiSelect";
 
@@ -62,12 +63,12 @@ export function ItemFormDrawer({
   attributeDefinitions,
 }: Readonly<ItemFormDrawerProps>) {
   return (
-    <div
-      aria-hidden={!isOpen}
-      aria-label={isEditing ? "Edit item" : "Create item"}
-      aria-modal={isOpen}
+    <DialogSurface
+      ariaLabel={isEditing ? "Edit item" : "Create item"}
       className={`item-drawer form-drawer${isOpen ? " open" : ""}`}
-      role="dialog"
+      isOpen={isOpen}
+      keepMounted
+      onRequestClose={onClose}
     >
       <div className="drawer-header">
         <h2>{isEditing ? "Edit Item" : "Create Item"}</h2>
@@ -191,6 +192,6 @@ export function ItemFormDrawer({
           <p className="message error">{error.message}</p>
         ) : null}
       </form>
-    </div>
+    </DialogSurface>
   );
 }

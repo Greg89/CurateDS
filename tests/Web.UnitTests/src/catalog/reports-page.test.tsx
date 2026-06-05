@@ -76,7 +76,7 @@ describe("ReportsPage", () => {
     await user.click(locationButton);
 
     // After consuming the URL drill-in param, items page should be active
-    await screen.findByRole("button", { name: /Filters/i });
+    expect(await screen.findByRole("button", { name: /Filters/i })).toBeInTheDocument();
   });
 
   it("clicking a tag row navigates to items with the tagId query param", async () => {
@@ -90,7 +90,7 @@ describe("ReportsPage", () => {
     const tagButton = await screen.findByRole("button", { name: "Wishlist" });
     await user.click(tagButton);
 
-    await screen.findByRole("button", { name: /Filters/i });
+    expect(await screen.findByRole("button", { name: /Filters/i })).toBeInTheDocument();
   });
 
   it("each activity row has a 'View item' button that navigates to the items page", async () => {
@@ -107,6 +107,6 @@ describe("ReportsPage", () => {
 
     await user.click(viewButton);
 
-    await screen.findByRole("button", { name: /Filters/i });
+    expect(await screen.findByRole("button", { name: /Filters/i })).toBeInTheDocument();
   });
 });

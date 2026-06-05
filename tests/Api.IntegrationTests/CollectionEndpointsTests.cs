@@ -2,11 +2,14 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using CurateDS.Application.Abstractions.Persistence;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using CurateDS.Domain.Collections;
 using CurateDS.Infrastructure.Persistence;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace CurateDS.Api.IntegrationTests;
 
@@ -364,6 +367,31 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     }
 
     [Fact]
+    public async Task PostTags_ShouldReturnBadRequest_WhenRepositoryThrowsDuplicateDbUpdateException()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<ITagRepository>();
+                services.AddScoped<ITagRepository, DuplicateTagDbUpdateExceptionRepository>();
+            }));
+
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/tags", new { name = UniqueName("RaceTag") });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(JsonOptions);
+
+        problem.Should().NotBeNull();
+        problem!.Errors.Should().ContainKey("Name");
+        problem.Errors["Name"].Should().Contain("A tag with this name already exists.");
+        problem.Extensions.Should().ContainKey("code");
+        problem.Extensions["code"]?.ToString().Should().Be("duplicate_tag");
+    }
+
+    [Fact]
     public async Task PostLocations_ShouldReturnValidationProblem_WithDuplicateLocationCode_WhenDuplicateNameIsSubmitted()
     {
         var locationName = UniqueName("Office");
@@ -486,6 +514,51 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         items.Should().ContainSingle();
         items![0].Name.Should().Be("Dune");
+    }
+
+    [Fact]
+    public async Task GetItems_ShouldMatchAnyRequestedTag_WhenTagMatchModeIsAny()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("TagAny"));
+        var tagA = await CreateTagAsync(UniqueName("TagA"));
+        var tagB = await CreateTagAsync(UniqueName("TagB"));
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Item A",
+                quantity = 1,
+                tagIds = new[] { tagA.Id }
+            });
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Item B",
+                quantity = 1,
+                tagIds = new[] { tagB.Id }
+            });
+
+        await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/items",
+            new
+            {
+                name = "Item C",
+                quantity = 1,
+                tagIds = Array.Empty<Guid>()
+            });
+
+        var response = await _client.GetAsync(
+            $"/collections/{collection.Id}/items?tagIds={tagA.Id}&tagIds={tagB.Id}&tagMatchMode=any");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
+        var itemNames = paged!.Items.Select(item => item.Name).ToArray();
+
+        itemNames.Should().BeEquivalentTo(["Item A", "Item B"]);
     }
 
     [Fact]
@@ -1379,6 +1452,32 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
     private sealed record ItemTypeResponse(Guid Id, Guid CollectionId, string Name, int SortOrder, DateTime CreatedUtc);
 
+    private sealed class DuplicateTagDbUpdateExceptionRepository : ITagRepository
+    {
+        public Task AddAsync(Tag tag, CancellationToken cancellationToken)
+            => Task.FromException(new DbUpdateException("Unique constraint violation."));
+
+        public Task<bool> ExistsByKeyAsync(string ownerId, string key, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
+        public Task<bool> ExistsByKeyExcludingAsync(string ownerId, string key, Guid excludeTagId, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
+        public Task<Tag?> GetByIdAndOwnerAsync(Guid tagId, string ownerId, CancellationToken cancellationToken)
+            => Task.FromResult<Tag?>(null);
+
+        public Task<IReadOnlyList<Tag>> ListByOwnerAsync(string ownerId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Tag>>([]);
+
+        public Task<IReadOnlyList<Tag>> ListByIdsAsync(string ownerId, IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Tag>>([]);
+
+        public Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
+            => Task.FromResult(false);
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
     private sealed record ItemEventResponse(Guid Id, Guid ItemId, Guid CollectionId, string EventType, DateTime OccurredUtc, string OccurredBy, string? Notes);
 
     [Fact]
@@ -1625,9 +1724,10 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     [Fact]
     public async Task PutLocation_ShouldReturn404_WhenLocationDoesNotExist()
     {
+        string? description = null;
         var response = await _client.PutAsJsonAsync(
             $"/locations/{Guid.NewGuid()}",
-            new { name = "Anywhere", description = (string?)null });
+            new { name = "Anywhere", description });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

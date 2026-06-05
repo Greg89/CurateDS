@@ -19,6 +19,18 @@ public static class ItemEndpoints
     {
         var group = app.MapGroup("/collections").RequireAuthorization();
 
+        MapListItems(group);
+        MapCreateItem(group);
+        MapGetItemDetail(group);
+        MapListItemEvents(group);
+        MapUpdateItem(group);
+        MapDeleteItem(group);
+
+        return app;
+    }
+
+    private static void MapListItems(RouteGroupBuilder group)
+    {
         group.MapGet("/{collectionId:guid}/items", async (
             Guid collectionId,
             [AsParameters] ListItemsRequest request,
@@ -65,7 +77,10 @@ public static class ItemEndpoints
                 return ApiResponses.NotFound("Collection was not found.");
             }
         });
+    }
 
+    private static void MapCreateItem(RouteGroupBuilder group)
+    {
         group.MapPost("/{collectionId:guid}/items", async (
             Guid collectionId,
             CreateItemRequest request,
@@ -118,7 +133,10 @@ public static class ItemEndpoints
                 return ApiResponses.NotFound("Collection was not found.");
             }
         });
+    }
 
+    private static void MapGetItemDetail(RouteGroupBuilder group)
+    {
         group.MapGet("/{collectionId:guid}/items/{itemId:guid}", async (
             Guid collectionId,
             Guid itemId,
@@ -140,7 +158,10 @@ public static class ItemEndpoints
                 return ApiResponses.NotFound("Item was not found.");
             }
         });
+    }
 
+    private static void MapListItemEvents(RouteGroupBuilder group)
+    {
         group.MapGet("/{collectionId:guid}/items/{itemId:guid}/events", async (
             Guid collectionId,
             Guid itemId,
@@ -169,7 +190,10 @@ public static class ItemEndpoints
                 return ApiResponses.NotFound("Item or collection was not found.");
             }
         });
+    }
 
+    private static void MapUpdateItem(RouteGroupBuilder group)
+    {
         group.MapPut("/{collectionId:guid}/items/{itemId:guid}", async (
             Guid collectionId,
             Guid itemId,
@@ -222,7 +246,10 @@ public static class ItemEndpoints
                 return ApiResponses.NotFound("Item or collection was not found.");
             }
         });
+    }
 
+    private static void MapDeleteItem(RouteGroupBuilder group)
+    {
         group.MapDelete("/{collectionId:guid}/items/{itemId:guid}", async (
             Guid collectionId,
             Guid itemId,
@@ -244,7 +271,5 @@ public static class ItemEndpoints
                 return ApiResponses.NotFound("Item was not found.");
             }
         });
-
-        return app;
     }
 }

@@ -31,6 +31,7 @@ export {
   AttributeDataTypeSchema,
   listAttributeDefinitions,
   createAttributeDefinition,
+  updateAttributeDefinition,
   deleteAttributeDefinition,
 } from "./attributes";
 
@@ -59,10 +60,10 @@ export {
 } from "./media";
 
 export type { Tag } from "./tags";
-export { listTags, createTag, deleteTag } from "./tags";
+export { listTags, createTag, updateTag, deleteTag } from "./tags";
 
 export type { Location } from "./locations";
-export { listLocations, createLocation, deleteLocation } from "./locations";
+export { listLocations, createLocation, updateLocation, deleteLocation } from "./locations";
 
 export type { ItemType } from "./item-types";
 export { listItemTypes, createItemType, deleteItemType } from "./item-types";

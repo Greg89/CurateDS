@@ -128,7 +128,7 @@ describe("CatalogApp UI structure", () => {
     // Wait for toolbar to load with collection
     await user.click(await screen.findByRole("button", { name: /\+ Add Item/i }));
 
-    await screen.findByRole("dialog", { name: /create item/i });
+    expect(await screen.findByRole("dialog", { name: /create item/i })).toBeInTheDocument();
   });
 
   it("shows tag usage in settings organization summary when items are tagged", async () => {
@@ -209,7 +209,7 @@ describe("CatalogApp UI structure", () => {
     await screen.findByRole("heading", { name: "Collection Settings" });
 
     // OrganizationSummary renders a "Top Tags" heading
-    await screen.findByRole("heading", { name: "Top Tags" });
+    expect(await screen.findByRole("heading", { name: "Top Tags" })).toBeInTheDocument();
   });
 
   it("overview does not show the Organization Snapshot heading", async () => {
@@ -271,6 +271,6 @@ describe("CatalogApp UI structure", () => {
     const cell = await screen.findByRole("cell", { name: /Kind of Blue/i });
     await user.click(cell);
 
-    await screen.findByRole("dialog", { name: /item detail/i });
+    expect(await screen.findByRole("dialog", { name: /item detail/i })).toBeInTheDocument();
   });
 });
