@@ -211,21 +211,37 @@ export function ItemsPage({
     const drillTagId = searchParams.get("tagId");
     const drillLocationId = searchParams.get("locationId");
     const drillItemId = searchParams.get("itemId");
+    const drillHasNoLocation = parseDrillThroughFlag(searchParams.get("hasNoLocation"));
+    const drillHasNoTags = parseDrillThroughFlag(searchParams.get("hasNoTags"));
 
-    if (!drillTagId && !drillLocationId && !drillItemId) return;
+    if (
+      !drillTagId &&
+      !drillLocationId &&
+      !drillItemId &&
+      !drillHasNoLocation &&
+      !drillHasNoTags
+    ) {
+      return;
+    }
+
+    clearItemFilters();
 
     if (drillItemId) {
-      clearItemFilters();
       setSelectedItemId(drillItemId);
     }
+
     if (drillTagId) setItemFilterTagIds([drillTagId]);
     if (drillLocationId) setItemFilterLocationId(drillLocationId);
+    if (drillHasNoLocation) setItemFilterHasNoLocation(true);
+    if (drillHasNoTags) setItemFilterHasNoTags(true);
     setItemPage(1);
 
     const next = new URLSearchParams(searchParams);
     next.delete("tagId");
     next.delete("locationId");
     next.delete("itemId");
+    next.delete("hasNoLocation");
+    next.delete("hasNoTags");
     setSearchParams(next, { replace: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -481,4 +497,8 @@ export function ItemsPage({
       ) : null}
     </section>
   );
+}
+
+function parseDrillThroughFlag(value: string | null) {
+  return value === "1" || value?.toLowerCase() === "true";
 }
