@@ -44,6 +44,7 @@ export type {
   ItemFilters,
 } from "./items";
 export {
+  ItemFiltersSchema,
   listItems,
   getItemDetail,
   listItemEvents,

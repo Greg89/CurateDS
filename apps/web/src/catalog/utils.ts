@@ -1,4 +1,4 @@
-import { ItemFilters } from "../api";
+import { ItemFilters, ItemFiltersSchema } from "../api";
 import { SavedItemView, UsageEntry } from "./types";
 
 export const sidebarStateStorageKey = "curateds:sidebar-collapsed";
@@ -77,6 +77,14 @@ export function describeSort(
 export function normalizeTagIds(tagIds: readonly string[]) {
   return [...new Set(tagIds.map((tagId) => tagId.trim()).filter((tagId) => tagId.length > 0))]
     .sort((left, right) => left.localeCompare(right));
+}
+
+export function tryParseSavedViewFilters(filtersJson: string): ItemFilters | null {
+  try {
+    return ItemFiltersSchema.parse(JSON.parse(filtersJson));
+  } catch {
+    return null;
+  }
 }
 
 export function buildItemFiltersCacheKey(filters: Readonly<ItemFilters>) {

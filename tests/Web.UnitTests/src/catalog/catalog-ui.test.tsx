@@ -86,6 +86,43 @@ describe("CatalogApp UI structure", () => {
     await screen.findByRole("heading", { name: "Item Filters" });
   });
 
+  it("keeps rendering valid saved views when one saved-view payload is malformed", async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get(
+        `http://localhost:8080/collections/${defaultCollection.id}/saved-views`,
+        () =>
+          HttpResponse.json([
+            {
+              id: "view-valid",
+              collectionId: defaultCollection.id,
+              name: "Wishlist",
+              filtersJson: '{"hasNoTags":true}',
+              createdUtc: "2026-04-21T00:12:00Z"
+            },
+            {
+              id: "view-invalid",
+              collectionId: defaultCollection.id,
+              name: "Broken",
+              filtersJson: '{"tagIds":"not-an-array"}',
+              createdUtc: "2026-04-21T00:13:00Z"
+            }
+          ])
+      )
+    );
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    await user.click(await screen.findByRole("button", { name: /Filters/i }));
+
+    expect(await screen.findByRole("heading", { name: "Saved Views" })).toBeInTheDocument();
+    expect(await screen.findByText("Wishlist")).toBeInTheDocument();
+    expect(screen.queryByText("Broken")).not.toBeInTheDocument();
+  });
+
   it("Filters button shows a count badge when search text is applied", async () => {
     const user = userEvent.setup();
 

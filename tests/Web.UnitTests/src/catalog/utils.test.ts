@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildItemFiltersCacheKey, describeSavedView } from "@app/catalog/utils";
+import {
+  buildItemFiltersCacheKey,
+  describeSavedView,
+  tryParseSavedViewFilters
+} from "@app/catalog/utils";
 
 describe("catalog utils", () => {
   it("uses all active item filters in the cache key", () => {
@@ -84,5 +88,10 @@ describe("catalog utils", () => {
     });
 
     expect(description).toContain("Item type scoped");
+  });
+
+  it("returns null for malformed saved-view filters", () => {
+    expect(tryParseSavedViewFilters("{bad json")).toBeNull();
+    expect(tryParseSavedViewFilters('{"tagIds":"not-an-array"}')).toBeNull();
   });
 });

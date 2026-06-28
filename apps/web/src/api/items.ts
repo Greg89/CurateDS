@@ -66,21 +66,22 @@ export const ItemEventSchema = z.object({
 });
 export type ItemEvent = z.infer<typeof ItemEventSchema>;
 
-export interface ItemFilters {
-  searchText?: string;
-  locationId?: string;
-  itemTypeId?: string;
-  tagIds?: string[];
-  attributeFilters?: Record<string, string>;
-  sortBy?: "updatedUtc" | "createdUtc" | "name" | "quantity";
-  sortDirection?: "asc" | "desc";
-  minQuantity?: number;
-  maxQuantity?: number;
-  createdAfter?: string;
-  createdBefore?: string;
-  hasNoLocation?: boolean;
-  hasNoTags?: boolean;
-}
+export const ItemFiltersSchema = z.object({
+  searchText: z.string().optional(),
+  locationId: z.string().optional(),
+  itemTypeId: z.string().optional(),
+  tagIds: z.array(z.string()).optional(),
+  attributeFilters: z.record(z.string(), z.string()).optional(),
+  sortBy: z.enum(["updatedUtc", "createdUtc", "name", "quantity"]).optional(),
+  sortDirection: z.enum(["asc", "desc"]).optional(),
+  minQuantity: z.number().optional(),
+  maxQuantity: z.number().optional(),
+  createdAfter: z.string().optional(),
+  createdBefore: z.string().optional(),
+  hasNoLocation: z.boolean().optional(),
+  hasNoTags: z.boolean().optional()
+});
+export type ItemFilters = z.infer<typeof ItemFiltersSchema>;
 
 // ---------------------------------------------------------------------------
 // API functions
