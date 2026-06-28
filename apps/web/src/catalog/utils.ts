@@ -35,6 +35,10 @@ export function describeSavedView(filters: ItemFilters) {
     segments.push("Location scoped");
   }
 
+  if (filters.itemTypeId) {
+    segments.push("Item type scoped");
+  }
+
   if ((filters.tagIds?.length ?? 0) > 0) {
     segments.push(`${filters.tagIds!.length} tag filter${filters.tagIds!.length === 1 ? "" : "s"}`);
   }

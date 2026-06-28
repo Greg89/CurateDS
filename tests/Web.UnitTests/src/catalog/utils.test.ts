@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildItemFiltersCacheKey } from "@app/catalog/utils";
+import { buildItemFiltersCacheKey, describeSavedView } from "@app/catalog/utils";
 
 describe("catalog utils", () => {
   it("uses all active item filters in the cache key", () => {
@@ -74,5 +74,15 @@ describe("catalog utils", () => {
     });
 
     expect(left).toBe(right);
+  });
+
+  it("includes the item type in the saved view description", () => {
+    const description = describeSavedView({
+      itemTypeId: "vinyl",
+      sortBy: "updatedUtc",
+      sortDirection: "desc"
+    });
+
+    expect(description).toContain("Item type scoped");
   });
 });

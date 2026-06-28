@@ -83,6 +83,7 @@ export function useItemFilters(selectedCollectionId: string) {
   function applySavedView(view: SavedItemView) {
     setItemSearchText(view.filters.searchText ?? "");
     setItemFilterLocationId(view.filters.locationId ?? "");
+    setItemFilterTypeId(view.filters.itemTypeId ?? "");
     setItemFilterTagIds(view.filters.tagIds ?? []);
     setItemAttributeFilters(view.filters.attributeFilters ?? {});
     setItemSortBy(view.filters.sortBy ?? defaultSortBy);
