@@ -75,6 +75,29 @@ export function normalizeTagIds(tagIds: readonly string[]) {
     .sort((left, right) => left.localeCompare(right));
 }
 
+export function buildItemFiltersCacheKey(filters: Readonly<ItemFilters>) {
+  const normalizedAttributeFilters = Object.entries(filters.attributeFilters ?? {})
+    .map(([attributeKey, value]) => [attributeKey.trim(), value.trim()] as const)
+    .filter(([attributeKey, value]) => attributeKey.length > 0 && value.length > 0)
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
+
+  return JSON.stringify({
+    searchText: filters.searchText?.trim() || "",
+    locationId: filters.locationId?.trim() || "",
+    itemTypeId: filters.itemTypeId?.trim() || "",
+    tagIds: normalizeTagIds(filters.tagIds ?? []),
+    attributeFilters: normalizedAttributeFilters,
+    sortBy: filters.sortBy ?? "updatedUtc",
+    sortDirection: filters.sortDirection ?? "desc",
+    minQuantity: filters.minQuantity ?? null,
+    maxQuantity: filters.maxQuantity ?? null,
+    createdAfter: filters.createdAfter?.trim() || "",
+    createdBefore: filters.createdBefore?.trim() || "",
+    hasNoLocation: filters.hasNoLocation ?? false,
+    hasNoTags: filters.hasNoTags ?? false
+  });
+}
+
 export function getTopUsageEntries(
   availableNames: readonly string[],
   usedNames: readonly string[]

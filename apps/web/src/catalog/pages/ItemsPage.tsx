@@ -20,6 +20,7 @@ import { useItemFilters } from "../hooks/useItemFilters";
 import { useItemForm } from "../hooks/useItemForm";
 import { useItemMutations } from "../hooks/useItemMutations";
 import { useSavedViews } from "../hooks/useSavedViews";
+import { buildItemFiltersCacheKey } from "../utils";
 
 export function ItemsPage({
   selectedCollection
@@ -45,7 +46,6 @@ export function ItemsPage({
     itemPage,
     setItemPage,
     pageSize,
-    normalizedItemFilterTagIds,
     itemFilterMinQuantity,
     setItemFilterMinQuantity,
     itemFilterMaxQuantity,
@@ -120,18 +120,15 @@ export function ItemsPage({
     queryFn: () => listAttributeDefinitions(collectionId)
   });
 
+  const itemFiltersCacheKey = buildItemFiltersCacheKey(itemFilters);
+
   const itemsQuery = useQuery({
     queryKey: [
       "items",
       collectionId,
       itemPage,
-      itemSearchText,
-      itemFilterLocationId,
-      itemFilterTypeId,
-      itemSortBy,
-      itemSortDirection,
-      JSON.stringify(itemAttributeFilters),
-      ...normalizedItemFilterTagIds
+      pageSize,
+      itemFiltersCacheKey
     ],
     queryFn: () => listItems(collectionId, itemFilters, itemPage, pageSize)
   });
