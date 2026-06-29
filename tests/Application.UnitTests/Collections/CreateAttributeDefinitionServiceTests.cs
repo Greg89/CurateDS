@@ -22,10 +22,12 @@ public sealed class CreateAttributeDefinitionServiceTests
         var collection = Collection.Create("auth0|test-owner", "Board Games", DateTime.UtcNow, "system");
         var collectionRepository = new FakeCollectionRepository(collection);
         var attributeDefinitionRepository = new FakeAttributeDefinitionRepository();
+        var unitOfWork = new FakeCatalogUnitOfWork();
         var service = new CreateAttributeDefinitionService(
             collectionRepository,
             attributeDefinitionRepository,
             new FakeItemTypeRepository(),
+            unitOfWork,
             new FakeCurrentUserService(),
             new CreateAttributeDefinitionCommandValidator());
 
@@ -43,6 +45,7 @@ public sealed class CreateAttributeDefinitionServiceTests
         result.Key.Should().Be("publisher");
         result.SortOrder.Should().Be(0);
         attributeDefinitionRepository.AttributeDefinitions.Should().ContainSingle();
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -55,6 +58,7 @@ public sealed class CreateAttributeDefinitionServiceTests
             new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(),
             new FakeItemTypeRepository(), // empty — unknown type won't be found
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateAttributeDefinitionCommandValidator());
 
@@ -80,6 +84,7 @@ public sealed class CreateAttributeDefinitionServiceTests
             new FakeCollectionRepository(),
             new FakeAttributeDefinitionRepository(),
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateAttributeDefinitionCommandValidator());
 

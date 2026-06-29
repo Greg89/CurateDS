@@ -12,6 +12,7 @@ public sealed class CreateAttributeDefinitionService
     private readonly ICollectionRepository _collectionRepository;
     private readonly IAttributeDefinitionRepository _attributeDefinitionRepository;
     private readonly IItemTypeRepository _itemTypeRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<CreateAttributeDefinitionCommand> _validator;
 
@@ -19,12 +20,14 @@ public sealed class CreateAttributeDefinitionService
         ICollectionRepository collectionRepository,
         IAttributeDefinitionRepository attributeDefinitionRepository,
         IItemTypeRepository itemTypeRepository,
+        ICatalogUnitOfWork unitOfWork,
         ICurrentUserService currentUser,
         IValidator<CreateAttributeDefinitionCommand> validator)
     {
         _collectionRepository = collectionRepository;
         _attributeDefinitionRepository = attributeDefinitionRepository;
         _itemTypeRepository = itemTypeRepository;
+        _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -73,7 +76,9 @@ public sealed class CreateAttributeDefinitionService
             _currentUser.GetCurrentUser(),
             command.ItemTypeId);
 
-        await _attributeDefinitionRepository.AddAsync(attributeDefinition, cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            innerCancellationToken => _attributeDefinitionRepository.AddAsync(attributeDefinition, innerCancellationToken),
+            cancellationToken);
 
         return new CreateAttributeDefinitionResult(
             attributeDefinition.Id,
