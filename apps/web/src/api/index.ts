@@ -44,6 +44,16 @@ export type {
   ItemFilters,
 } from "./items";
 export {
+  ItemFiltersSchema,
+  normalizeTagIds,
+  normalizeItemFilters,
+  serializeItemFilters,
+  tryParseItemFilters,
+  tryParseSerializedItemFilters,
+  hasActiveItemFilters,
+  countActiveItemFilters,
+  buildItemFiltersSearchParams,
+  parseItemFiltersSearchParams,
   listItems,
   getItemDetail,
   listItemEvents,

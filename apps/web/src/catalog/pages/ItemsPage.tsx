@@ -1,8 +1,10 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Collection,
+  hasActiveItemFilters,
+  parseItemFiltersSearchParams,
   getItemDetail,
   listAttributeDefinitions,
   listItems,
@@ -19,7 +21,9 @@ import { ItemsToolbar } from "../components/ItemsToolbar";
 import { useItemFilters } from "../hooks/useItemFilters";
 import { useItemForm } from "../hooks/useItemForm";
 import { useItemMutations } from "../hooks/useItemMutations";
+import { useItemsWorkspaceState } from "../hooks/useItemsWorkspaceState";
 import { useSavedViews } from "../hooks/useSavedViews";
+import { buildItemFiltersCacheKey } from "../utils";
 
 export function ItemsPage({
   selectedCollection
@@ -36,7 +40,6 @@ export function ItemsPage({
     itemFilterLocationId,
     setItemFilterLocationId,
     itemFilterTagIds,
-    setItemFilterTagIds,
     itemAttributeFilters,
     itemSortBy,
     setItemSortBy,
@@ -45,7 +48,6 @@ export function ItemsPage({
     itemPage,
     setItemPage,
     pageSize,
-    normalizedItemFilterTagIds,
     itemFilterMinQuantity,
     setItemFilterMinQuantity,
     itemFilterMaxQuantity,
@@ -63,6 +65,7 @@ export function ItemsPage({
     clearItemFilters,
     toggleFilterTag,
     handleAttributeFilterChange,
+    applyItemFilters,
     applySavedView
   } = useItemFilters(collectionId);
 
@@ -120,18 +123,15 @@ export function ItemsPage({
     queryFn: () => listAttributeDefinitions(collectionId)
   });
 
+  const itemFiltersCacheKey = buildItemFiltersCacheKey(itemFilters);
+
   const itemsQuery = useQuery({
     queryKey: [
       "items",
       collectionId,
       itemPage,
-      itemSearchText,
-      itemFilterLocationId,
-      itemFilterTypeId,
-      itemSortBy,
-      itemSortDirection,
-      JSON.stringify(itemAttributeFilters),
-      ...normalizedItemFilterTagIds
+      pageSize,
+      itemFiltersCacheKey
     ],
     queryFn: () => listItems(collectionId, itemFilters, itemPage, pageSize)
   });
@@ -167,68 +167,58 @@ export function ItemsPage({
   const itemTotalCount = itemsQuery.data?.totalCount ?? 0;
   const isEditing = editingItemId !== null;
 
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
-  const [isFormDrawerOpen, setIsFormDrawerOpen] = useState(false);
-  const [showDeleteItemConfirm, setShowDeleteItemConfirm] = useState(false);
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
-
-  const anyDrawerOpen = isDetailDrawerOpen || isFormDrawerOpen;
-
-  const activeFilterCount =
-    (itemSearchText.trim().length > 0 ? 1 : 0) +
-    (itemFilterLocationId.length > 0 ? 1 : 0) +
-    (itemFilterTagIds.length > 0 ? 1 : 0) +
-    (itemFilterTypeId.length > 0 ? 1 : 0) +
-    Object.values(itemAttributeFilters).filter((v) => v.trim().length > 0).length +
-    (itemSortBy !== "updatedUtc" || itemSortDirection !== "desc" ? 1 : 0) +
-    (itemFilterMinQuantity != null ? 1 : 0) +
-    (itemFilterMaxQuantity != null ? 1 : 0) +
-    (itemFilterCreatedAfter.length > 0 ? 1 : 0) +
-    (itemFilterCreatedBefore.length > 0 ? 1 : 0) +
-    (itemFilterHasNoLocation ? 1 : 0) +
-    (itemFilterHasNoTags ? 1 : 0);
-
-  // Close form drawer after a successful save
-  useEffect(() => {
-    if (itemSaveCount > 0) {
-      setIsFormDrawerOpen(false);
-    }
-  }, [itemSaveCount]);
-
-  // Escape key closes open drawers
-  useEffect(() => {
-    if (!anyDrawerOpen) return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setIsDetailDrawerOpen(false);
-        setIsFormDrawerOpen(false);
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [anyDrawerOpen]);
+  const {
+    activeFilterCount,
+    anyDrawerOpen,
+    isDetailDrawerOpen,
+    isFiltersOpen,
+    isFormDrawerOpen,
+    showDeleteItemConfirm,
+    viewMode,
+    setViewMode,
+    toggleFilters,
+    openDetailDrawer,
+    closeDetailDrawer,
+    openFormDrawer,
+    closeFormDrawer,
+    closeDrawers,
+    openDeleteItemConfirm,
+    closeDeleteItemConfirm
+  } = useItemsWorkspaceState({
+    itemFilters,
+    itemSaveCount
+  });
 
   // Drill-through from Reports page via URL search params
   useEffect(() => {
-    const drillTagId = searchParams.get("tagId");
-    const drillLocationId = searchParams.get("locationId");
     const drillItemId = searchParams.get("itemId");
+    const drillFilters = parseItemFiltersSearchParams(searchParams);
 
-    if (!drillTagId && !drillLocationId && !drillItemId) return;
+    if (!drillItemId && !hasActiveItemFilters(drillFilters)) {
+      return;
+    }
+
+    applyItemFilters(drillFilters);
 
     if (drillItemId) {
-      clearItemFilters();
       setSelectedItemId(drillItemId);
     }
-    if (drillTagId) setItemFilterTagIds([drillTagId]);
-    if (drillLocationId) setItemFilterLocationId(drillLocationId);
-    setItemPage(1);
 
     const next = new URLSearchParams(searchParams);
-    next.delete("tagId");
+    next.delete("searchText");
     next.delete("locationId");
+    next.delete("itemTypeId");
+    next.delete("sortBy");
+    next.delete("sortDirection");
+    next.delete("minQuantity");
+    next.delete("maxQuantity");
+    next.delete("createdAfter");
+    next.delete("createdBefore");
+    next.delete("tagIds");
+    next.delete("attributeFilters");
     next.delete("itemId");
+    next.delete("hasNoLocation");
+    next.delete("hasNoTags");
     setSearchParams(next, { replace: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -250,31 +240,31 @@ export function ItemsPage({
 
   function handleSelectItem(itemId: string) {
     setSelectedItemId(itemId);
-    setIsDetailDrawerOpen(true);
+    openDetailDrawer();
   }
 
   function handleEditFromDetail() {
     if (!itemDetailQuery.data) return;
     populateItemForm(itemDetailQuery.data);
     setEditingItemId(itemDetailQuery.data.id);
-    setIsDetailDrawerOpen(false);
-    setIsFormDrawerOpen(true);
+    closeDetailDrawer();
+    openFormDrawer();
   }
 
   function handleAddItem() {
     resetItemForm();
-    setIsFormDrawerOpen(true);
+    openFormDrawer();
   }
 
   function handleCancelForm() {
     resetItemForm();
-    setIsFormDrawerOpen(false);
+    closeFormDrawer();
   }
 
   function handleDeleteConfirmed() {
     deleteItemMutation.mutate({ collectionId, itemId: selectedItemId });
-    setShowDeleteItemConfirm(false);
-    setIsDetailDrawerOpen(false);
+    closeDeleteItemConfirm();
+    closeDetailDrawer();
   }
 
   function handleItemSubmit(event: FormEvent<HTMLFormElement>) {
@@ -317,7 +307,7 @@ export function ItemsPage({
         searchText={itemSearchText}
         onSearchTextChange={(v) => { setItemPage(1); setItemSearchText(v); }}
         isFiltersOpen={isFiltersOpen}
-        onToggleFilters={() => setIsFiltersOpen((f) => !f)}
+        onToggleFilters={toggleFilters}
         activeFilterCount={activeFilterCount}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -416,23 +406,20 @@ export function ItemsPage({
         <button
           aria-label="Close panel"
           className="drawer-backdrop"
-          onClick={() => {
-            setIsDetailDrawerOpen(false);
-            setIsFormDrawerOpen(false);
-          }}
+          onClick={closeDrawers}
           type="button"
         />
       )}
 
       <ItemDetailDrawer
         isOpen={isDetailDrawerOpen}
-        onClose={() => setIsDetailDrawerOpen(false)}
+        onClose={closeDetailDrawer}
         isLoading={itemDetailQuery.isLoading}
         item={itemDetail}
         isEditing={isEditing && itemDetail?.id === selectedItemId}
         selectedCollectionName={selectedCollection.name}
         onEdit={handleEditFromDetail}
-        onDelete={() => setShowDeleteItemConfirm(true)}
+        onDelete={openDeleteItemConfirm}
         onUploadMedia={(file) =>
           uploadItemMediaMutation.mutate({ collectionId, itemId: selectedItemId, file })
         }
@@ -479,7 +466,7 @@ export function ItemsPage({
           message="This item will be permanently removed. This action cannot be undone."
           isPending={deleteItemMutation.isPending}
           onConfirm={handleDeleteConfirmed}
-          onCancel={() => setShowDeleteItemConfirm(false)}
+          onCancel={closeDeleteItemConfirm}
         />
       ) : null}
     </section>

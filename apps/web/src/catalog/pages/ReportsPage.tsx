@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
+  buildItemFiltersSearchParams,
   getCollectionReports,
   listCollectionActivity,
   type Collection,
@@ -30,17 +31,14 @@ export function ReportsPage({ selectedCollection }: ReportsPageProps) {
   const activity = activityQuery.data;
 
   function drillToLocation(locationId: string | null) {
-    const search = new URLSearchParams();
-    if (locationId) {
-      search.set("locationId", locationId);
-    } else {
-      search.set("hasNoLocation", "1");
-    }
+    const search = buildItemFiltersSearchParams(
+      locationId ? { locationId } : { hasNoLocation: true }
+    );
     navigate(`/collections/${selectedCollection.id}/items?${search.toString()}`);
   }
 
   function drillToTag(tagId: string) {
-    const search = new URLSearchParams({ tagId });
+    const search = buildItemFiltersSearchParams({ tagIds: [tagId] });
     navigate(`/collections/${selectedCollection.id}/items?${search.toString()}`);
   }
 
