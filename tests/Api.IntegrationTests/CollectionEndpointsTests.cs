@@ -1248,6 +1248,28 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     }
 
     [Fact]
+    public async Task CreateSavedView_ShouldReturnValidationProblem_WhenFiltersJsonShapeIsUnsupported()
+    {
+        var collection = await CreateCollectionAsync(UniqueName("SV Invalid Filters"));
+
+        var response = await _client.PostAsJsonAsync(
+            $"/collections/{collection.Id}/saved-views",
+            new { name = "Broken View", filtersJson = """{"tagIds":"not-an-array"}""" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(JsonOptions);
+
+        problem.Should().NotBeNull();
+        problem!.Type.Should().Be("urn:curateds:problem:validation");
+        problem.Title.Should().Be("Validation failed");
+        problem.Status.Should().Be((int)HttpStatusCode.BadRequest);
+        problem.Errors.Should().ContainKey("FiltersJson");
+        problem.Extensions.Should().ContainKey("code");
+        problem.Extensions["code"]?.ToString().Should().Be("invalid_saved_view_filters");
+    }
+
+    [Fact]
     public async Task CreateThenListSavedViews_ShouldReturnCreatedView()
     {
         var collection = await CreateCollectionAsync(UniqueName("SV List"));
