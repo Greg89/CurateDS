@@ -122,7 +122,7 @@ Files:
 
 Problem:
 
-Several files contain mojibake like `â€”`, `â†’`, and `â€¦`.
+Several files contain mojibake or shell-fragile punctuation such as broken dashes, arrows, and ellipses.
 
 Impact:
 

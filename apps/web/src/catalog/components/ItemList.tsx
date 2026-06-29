@@ -58,11 +58,11 @@ export function ItemList({
               </td>
               <td>{item.name}</td>
               <td>{item.quantity}</td>
-              <td>{item.locationName ?? <span className="text-muted">—</span>}</td>
+              <td>{item.locationName ?? <span className="text-muted">-</span>}</td>
               <td>
                 {item.tags.length > 0
                   ? item.tags.join(", ")
-                  : <span className="text-muted">—</span>}
+                  : <span className="text-muted">-</span>}
               </td>
               <td>{item.attributeValueCount}</td>
             </tr>

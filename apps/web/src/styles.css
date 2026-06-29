@@ -195,7 +195,7 @@ textarea {
   max-width: 56rem;
 }
 
-/* Tab navigation � full-width strip below the title row */
+/* Tab navigation - full-width strip below the title row */
 .tab-nav {
   display: flex;
   gap: 0.5rem;
@@ -1486,7 +1486,7 @@ h1 {
   color: oklch(0.25 0.04 260);
 }
 
-/* --- Responsive � narrow desktop (sidebar becomes drawer) ----------------- */
+/* --- Responsive - narrow desktop (sidebar becomes drawer) ----------------- */
 @media (max-width: 1120px) {
   .app-shell {
     grid-template-columns: minmax(0, 1fr);
@@ -1549,7 +1549,7 @@ h1 {
   }
 }
 
-/* --- Responsive � small screens ------------------------------------------ */
+/* --- Responsive - small screens ------------------------------------------ */
 @media (max-width: 860px) {
   .content-grid,
   .metric-grid,

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Public API surface — re-exported from feature modules
+// Public API surface - re-exported from feature modules
 // ---------------------------------------------------------------------------
 
 export { setTokenProvider } from "./http";

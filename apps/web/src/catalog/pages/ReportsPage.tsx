@@ -55,7 +55,7 @@ export function ReportsPage({ selectedCollection }: ReportsPageProps) {
             <h2>Items by Location</h2>
             <p className="reports-card-subtitle">Click a location to view its items.</p>
           </header>
-          {reportsQuery.isLoading ? <p className="reports-loading">Loading…</p> : null}
+          {reportsQuery.isLoading ? <p className="reports-loading">Loading...</p> : null}
           {reports ? (
             <table className="reports-table">
               <thead>
@@ -96,7 +96,7 @@ export function ReportsPage({ selectedCollection }: ReportsPageProps) {
             <h2>Items by Tag</h2>
             <p className="reports-card-subtitle">Click a tag to view items with it.</p>
           </header>
-          {reportsQuery.isLoading ? <p className="reports-loading">Loading…</p> : null}
+          {reportsQuery.isLoading ? <p className="reports-loading">Loading...</p> : null}
           {reports ? (
             <table className="reports-table">
               <thead>
@@ -138,7 +138,7 @@ export function ReportsPage({ selectedCollection }: ReportsPageProps) {
           <h2>Recent Activity</h2>
           <p className="reports-card-subtitle">Latest changes across this collection.</p>
         </header>
-        {activityQuery.isLoading ? <p className="reports-loading">Loading…</p> : null}
+        {activityQuery.isLoading ? <p className="reports-loading">Loading...</p> : null}
         {activity ? (
           <>
             <table className="reports-table">
@@ -159,7 +159,7 @@ export function ReportsPage({ selectedCollection }: ReportsPageProps) {
                     <td>{e.eventType}</td>
                     <td>{new Date(e.occurredUtc).toLocaleString()}</td>
                     <td>{e.occurredBy}</td>
-                    <td className="entity-management-muted">{e.notes ?? "—"}</td>
+                    <td className="entity-management-muted">{e.notes ?? "-"}</td>
                     <td className="reports-numeric">
                       <button
                         type="button"
