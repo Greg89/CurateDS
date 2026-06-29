@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildItemFiltersSearchParams,
+  hasActiveItemFilters,
+  parseItemFiltersSearchParams,
+  serializeItemFilters
+} from "@app/api";
+import {
   buildItemFiltersCacheKey,
   describeSavedView,
   tryParseSavedViewFilters
@@ -93,5 +99,60 @@ describe("catalog utils", () => {
   it("returns null for malformed saved-view filters", () => {
     expect(tryParseSavedViewFilters("{bad json")).toBeNull();
     expect(tryParseSavedViewFilters('{"tagIds":"not-an-array"}')).toBeNull();
+  });
+
+  it("uses the same normalized serialization for cache keys and saved views", () => {
+    const filters = {
+      searchText: "  Jazz  ",
+      tagIds: ["tag-b", "tag-a", "tag-a"],
+      attributeFilters: {
+        era: " 1950s "
+      }
+    };
+
+    expect(buildItemFiltersCacheKey(filters)).toBe(serializeItemFilters(filters));
+  });
+
+  it("round-trips canonical filters through URL search params", () => {
+    const filters = {
+      searchText: "  Jazz  ",
+      locationId: " loc-1 ",
+      itemTypeId: " type-1 ",
+      tagIds: ["tag-b", "tag-a", "tag-a"],
+      attributeFilters: {
+        era: " 1950s ",
+        format: " LP "
+      },
+      minQuantity: 1,
+      maxQuantity: 3,
+      createdAfter: "2026-01-01",
+      createdBefore: "2026-06-01",
+      hasNoTags: true
+    };
+
+    const parsedFilters = parseItemFiltersSearchParams(buildItemFiltersSearchParams(filters));
+
+    expect(parsedFilters).toEqual({
+      searchText: "Jazz",
+      locationId: "loc-1",
+      itemTypeId: "type-1",
+      tagIds: ["tag-a", "tag-b"],
+      attributeFilters: {
+        era: "1950s",
+        format: "LP"
+      },
+      sortBy: "updatedUtc",
+      sortDirection: "desc",
+      minQuantity: 1,
+      maxQuantity: 3,
+      createdAfter: "2026-01-01",
+      createdBefore: "2026-06-01",
+      hasNoTags: true
+    });
+  });
+
+  it("treats default-only filter state as inactive", () => {
+    expect(hasActiveItemFilters({ sortBy: "updatedUtc", sortDirection: "desc" })).toBe(false);
+    expect(hasActiveItemFilters({ hasNoLocation: true })).toBe(true);
   });
 });

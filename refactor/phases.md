@@ -11,6 +11,7 @@ Tasks:
 2. Fix report drill-through so `hasNoLocation` and the other generated filters are consumed by the items page.
 3. Fix saved-view restoration so `itemTypeId` round-trips with the rest of the item filters.
 4. Harden saved-view parsing so one malformed row does not break the whole saved-view query.
+Status: Complete
 
 ## Phase 2: Reusable Filter Contracts
 
@@ -24,6 +25,7 @@ Tasks:
    - URL state
    - saved views
    - report drill-through
+Status: In Progress
 2. Add focused unit tests around filter serialization and application.
 
 ## Phase 3: Interaction Hardening

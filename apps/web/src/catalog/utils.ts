@@ -1,4 +1,9 @@
-import { ItemFilters, ItemFiltersSchema } from "../api";
+import {
+  ItemFilters,
+  normalizeItemFilters,
+  serializeItemFilters,
+  tryParseSerializedItemFilters
+} from "../api";
 import { SavedItemView, UsageEntry } from "./types";
 
 export const sidebarStateStorageKey = "curateds:sidebar-collapsed";
@@ -25,25 +30,28 @@ export function readSavedViews(collectionId: string): SavedItemView[] {
 }
 
 export function describeSavedView(filters: ItemFilters) {
+  const normalizedFilters = normalizeItemFilters(filters);
   const segments: string[] = [];
 
-  if (filters.searchText?.trim()) {
-    segments.push(`Search: ${filters.searchText.trim()}`);
+  if (normalizedFilters.searchText) {
+    segments.push(`Search: ${normalizedFilters.searchText}`);
   }
 
-  if (filters.locationId) {
+  if (normalizedFilters.locationId) {
     segments.push("Location scoped");
   }
 
-  if (filters.itemTypeId) {
+  if (normalizedFilters.itemTypeId) {
     segments.push("Item type scoped");
   }
 
-  if ((filters.tagIds?.length ?? 0) > 0) {
-    segments.push(`${filters.tagIds!.length} tag filter${filters.tagIds!.length === 1 ? "" : "s"}`);
+  if ((normalizedFilters.tagIds?.length ?? 0) > 0) {
+    segments.push(
+      `${normalizedFilters.tagIds!.length} tag filter${normalizedFilters.tagIds!.length === 1 ? "" : "s"}`
+    );
   }
 
-  const attributeFilterCount = Object.values(filters.attributeFilters ?? {}).filter(
+  const attributeFilterCount = Object.values(normalizedFilters.attributeFilters ?? {}).filter(
     (value) => value.trim().length > 0
   ).length;
 
@@ -52,7 +60,10 @@ export function describeSavedView(filters: ItemFilters) {
   }
 
   segments.push(
-    `Sort: ${describeSort(filters.sortBy ?? "updatedUtc", filters.sortDirection ?? "desc")}`
+    `Sort: ${describeSort(
+      normalizedFilters.sortBy ?? "updatedUtc",
+      normalizedFilters.sortDirection ?? "desc"
+    )}`
   );
 
   return segments.join(" | ");
@@ -74,40 +85,12 @@ export function describeSort(
   return `${sortLabel} ${sortDirection === "asc" ? "ascending" : "descending"}`;
 }
 
-export function normalizeTagIds(tagIds: readonly string[]) {
-  return [...new Set(tagIds.map((tagId) => tagId.trim()).filter((tagId) => tagId.length > 0))]
-    .sort((left, right) => left.localeCompare(right));
-}
-
 export function tryParseSavedViewFilters(filtersJson: string): ItemFilters | null {
-  try {
-    return ItemFiltersSchema.parse(JSON.parse(filtersJson));
-  } catch {
-    return null;
-  }
+  return tryParseSerializedItemFilters(filtersJson);
 }
 
 export function buildItemFiltersCacheKey(filters: Readonly<ItemFilters>) {
-  const normalizedAttributeFilters = Object.entries(filters.attributeFilters ?? {})
-    .map(([attributeKey, value]) => [attributeKey.trim(), value.trim()] as const)
-    .filter(([attributeKey, value]) => attributeKey.length > 0 && value.length > 0)
-    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
-
-  return JSON.stringify({
-    searchText: filters.searchText?.trim() || "",
-    locationId: filters.locationId?.trim() || "",
-    itemTypeId: filters.itemTypeId?.trim() || "",
-    tagIds: normalizeTagIds(filters.tagIds ?? []),
-    attributeFilters: normalizedAttributeFilters,
-    sortBy: filters.sortBy ?? "updatedUtc",
-    sortDirection: filters.sortDirection ?? "desc",
-    minQuantity: filters.minQuantity ?? null,
-    maxQuantity: filters.maxQuantity ?? null,
-    createdAfter: filters.createdAfter?.trim() || "",
-    createdBefore: filters.createdBefore?.trim() || "",
-    hasNoLocation: filters.hasNoLocation ?? false,
-    hasNoTags: filters.hasNoTags ?? false
-  });
+  return serializeItemFilters(filters);
 }
 
 export function getTopUsageEntries(

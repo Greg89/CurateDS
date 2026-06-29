@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Collection,
+  hasActiveItemFilters,
+  parseItemFiltersSearchParams,
   getItemDetail,
   listAttributeDefinitions,
   listItems,
@@ -37,7 +39,6 @@ export function ItemsPage({
     itemFilterLocationId,
     setItemFilterLocationId,
     itemFilterTagIds,
-    setItemFilterTagIds,
     itemAttributeFilters,
     itemSortBy,
     setItemSortBy,
@@ -63,6 +64,7 @@ export function ItemsPage({
     clearItemFilters,
     toggleFilterTag,
     handleAttributeFilterChange,
+    applyItemFilters,
     applySavedView
   } = useItemFilters(collectionId);
 
@@ -208,37 +210,31 @@ export function ItemsPage({
 
   // Drill-through from Reports page via URL search params
   useEffect(() => {
-    const drillTagId = searchParams.get("tagId");
-    const drillLocationId = searchParams.get("locationId");
     const drillItemId = searchParams.get("itemId");
-    const drillHasNoLocation = parseDrillThroughFlag(searchParams.get("hasNoLocation"));
-    const drillHasNoTags = parseDrillThroughFlag(searchParams.get("hasNoTags"));
+    const drillFilters = parseItemFiltersSearchParams(searchParams);
 
-    if (
-      !drillTagId &&
-      !drillLocationId &&
-      !drillItemId &&
-      !drillHasNoLocation &&
-      !drillHasNoTags
-    ) {
+    if (!drillItemId && !hasActiveItemFilters(drillFilters)) {
       return;
     }
 
-    clearItemFilters();
+    applyItemFilters(drillFilters);
 
     if (drillItemId) {
       setSelectedItemId(drillItemId);
     }
 
-    if (drillTagId) setItemFilterTagIds([drillTagId]);
-    if (drillLocationId) setItemFilterLocationId(drillLocationId);
-    if (drillHasNoLocation) setItemFilterHasNoLocation(true);
-    if (drillHasNoTags) setItemFilterHasNoTags(true);
-    setItemPage(1);
-
     const next = new URLSearchParams(searchParams);
-    next.delete("tagId");
+    next.delete("searchText");
     next.delete("locationId");
+    next.delete("itemTypeId");
+    next.delete("sortBy");
+    next.delete("sortDirection");
+    next.delete("minQuantity");
+    next.delete("maxQuantity");
+    next.delete("createdAfter");
+    next.delete("createdBefore");
+    next.delete("tagIds");
+    next.delete("attributeFilters");
     next.delete("itemId");
     next.delete("hasNoLocation");
     next.delete("hasNoTags");
@@ -497,8 +493,4 @@ export function ItemsPage({
       ) : null}
     </section>
   );
-}
-
-function parseDrillThroughFlag(value: string | null) {
-  return value === "1" || value?.toLowerCase() === "true";
 }

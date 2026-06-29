@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ItemFilters, createSavedView, deleteSavedView, listSavedViews } from "../../api";
+import {
+  ItemFilters,
+  createSavedView,
+  deleteSavedView,
+  listSavedViews,
+  serializeItemFilters
+} from "../../api";
 import { SavedItemView } from "../types";
 import { tryParseSavedViewFilters } from "../utils";
 
@@ -46,7 +52,7 @@ export function useSavedViews(selectedCollectionId: string) {
 
     createMutation.mutate({
       name: normalizedName,
-      filtersJson: JSON.stringify(filters)
+      filtersJson: serializeItemFilters(filters)
     });
     setSavedViewName("");
   }
