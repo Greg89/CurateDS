@@ -79,6 +79,25 @@ describe("ReportsPage", () => {
     expect(await screen.findByRole("button", { name: /Filters/i })).toBeInTheDocument();
   });
 
+  it("clicking the no-location row applies the no-location filter in the items workspace", async () => {
+    const user = userEvent.setup();
+    stubReports();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/reports`]
+    });
+
+    const noLocationButton = await screen.findByRole("button", { name: "No Location" });
+    await user.click(noLocationButton);
+
+    const filtersButton = await screen.findByRole("button", { name: /Filters/i });
+    expect(filtersButton.textContent).toContain("1");
+
+    await user.click(filtersButton);
+
+    expect(await screen.findByLabelText("No location assigned")).toBeChecked();
+  });
+
   it("clicking a tag row navigates to items with the tagId query param", async () => {
     const user = userEvent.setup();
     stubReports();
