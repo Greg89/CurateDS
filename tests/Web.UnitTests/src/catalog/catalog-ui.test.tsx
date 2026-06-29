@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -121,6 +121,60 @@ describe("CatalogApp UI structure", () => {
     expect(await screen.findByRole("heading", { name: "Saved Views" })).toBeInTheDocument();
     expect(await screen.findByText("Wishlist")).toBeInTheDocument();
     expect(screen.queryByText("Broken")).not.toBeInTheDocument();
+  });
+
+  it("applies a saved view using normalized filter state across the filters panel", async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get("http://localhost:8080/tags", () =>
+        HttpResponse.json([
+          { id: "tag-a", name: "Alpha", key: "alpha", createdUtc: "2026-04-20T00:00:00Z" },
+          { id: "tag-b", name: "Beta", key: "beta", createdUtc: "2026-04-20T00:00:00Z" }
+        ])
+      ),
+      http.get(`http://localhost:8080/collections/${defaultCollection.id}/item-types`, () =>
+        HttpResponse.json([
+          {
+            id: "type-1",
+            collectionId: defaultCollection.id,
+            name: "Vinyl",
+            sortOrder: 0,
+            createdUtc: "2026-04-20T00:00:00Z"
+          }
+        ])
+      ),
+      http.get(
+        `http://localhost:8080/collections/${defaultCollection.id}/saved-views`,
+        () =>
+          HttpResponse.json([
+            {
+              id: "view-1",
+              collectionId: defaultCollection.id,
+              name: "Normalized View",
+              filtersJson:
+                '{"searchText":"  Jazz  ","itemTypeId":" type-1 ","tagIds":["tag-b","tag-a","tag-a"],"hasNoTags":true}',
+              createdUtc: "2026-04-21T00:12:00Z"
+            }
+          ])
+      )
+    );
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    await user.click(await screen.findByRole("button", { name: /Filters/i }));
+    await user.click(await screen.findByRole("button", { name: "Apply" }));
+
+    const filtersPanel = screen.getByRole("heading", { name: "Item Filters" }).closest("section");
+    expect(filtersPanel).not.toBeNull();
+
+    const panel = within(filtersPanel as HTMLElement);
+    expect(panel.getByLabelText("Search")).toHaveValue("Jazz");
+    expect(panel.getByLabelText("Item Type")).toHaveValue("type-1");
+    expect(panel.getByRole("button", { name: /Alpha, Beta/i })).toBeInTheDocument();
+    expect(panel.getByLabelText("No tags assigned")).toBeChecked();
   });
 
   it("Filters button shows a count badge when search text is applied", async () => {

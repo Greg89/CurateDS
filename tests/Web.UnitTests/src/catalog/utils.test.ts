@@ -151,6 +151,46 @@ describe("catalog utils", () => {
     });
   });
 
+  it("ignores non-filter params and malformed filter values when parsing URL state", () => {
+    const searchParams = new URLSearchParams([
+      ["itemId", "item-1"],
+      ["tagIds", " tag-b "],
+      ["tagIds", "tag-a"],
+      ["tagIds", " "],
+      ["attributeFilters", "era= 1950s "],
+      ["attributeFilters", "broken"],
+      ["sortBy", "invalid"],
+      ["sortDirection", "sideways"],
+      ["minQuantity", "abc"],
+      ["maxQuantity", "5"],
+      ["hasNoLocation", "1"]
+    ]);
+
+    expect(parseItemFiltersSearchParams(searchParams)).toEqual({
+      tagIds: ["tag-a", "tag-b"],
+      attributeFilters: {
+        era: "1950s"
+      },
+      sortBy: "updatedUtc",
+      sortDirection: "desc",
+      maxQuantity: 5,
+      hasNoLocation: true
+    });
+  });
+
+  it("can include default sort fields when building API search params", () => {
+    const searchParams = buildItemFiltersSearchParams(
+      { searchText: "Jazz" },
+      { includeDefaultSort: true, extraParams: { page: 2, pageSize: 50 } }
+    );
+
+    expect(searchParams.toString()).toContain("searchText=Jazz");
+    expect(searchParams.toString()).toContain("sortBy=updatedUtc");
+    expect(searchParams.toString()).toContain("sortDirection=desc");
+    expect(searchParams.toString()).toContain("page=2");
+    expect(searchParams.toString()).toContain("pageSize=50");
+  });
+
   it("treats default-only filter state as inactive", () => {
     expect(hasActiveItemFilters({ sortBy: "updatedUtc", sortDirection: "desc" })).toBe(false);
     expect(hasActiveItemFilters({ hasNoLocation: true })).toBe(true);
