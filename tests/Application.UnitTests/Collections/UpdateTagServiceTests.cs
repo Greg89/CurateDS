@@ -21,7 +21,8 @@ public sealed class UpdateTagServiceTests
         const string ownerId = "auth0|test-owner";
         var existing = Tag.Create(ownerId, "Wishlist", DateTime.UtcNow.AddHours(-1), "system");
         var repository = new FakeTagRepository(existing);
-        var service = new UpdateTagService(repository, new FakeCurrentUserService(), new UpdateTagCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new UpdateTagService(repository, unitOfWork, new FakeCurrentUserService(), new UpdateTagCommandValidator());
 
         var result = await service.ExecuteAsync(
             new UpdateTagCommand(ownerId, existing.Id, " Top Picks "),
@@ -30,7 +31,8 @@ public sealed class UpdateTagServiceTests
         result.Name.Should().Be("Top Picks");
         result.Key.Should().Be("top-picks");
         result.UpdatedUtc.Should().NotBeNull();
-        repository.SaveCallCount.Should().Be(1);
+        repository.SaveCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -42,13 +44,15 @@ public sealed class UpdateTagServiceTests
         // If duplicate lookup runs for unchanged names, this test would fail.
         var rival = Tag.Create(ownerId, "WishList", DateTime.UtcNow, "system");
         var repository = new FakeTagRepository(existing, rival);
-        var service = new UpdateTagService(repository, new FakeCurrentUserService(), new UpdateTagCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new UpdateTagService(repository, unitOfWork, new FakeCurrentUserService(), new UpdateTagCommandValidator());
 
         var act = () => service.ExecuteAsync(
             new UpdateTagCommand(ownerId, existing.Id, "Wishlist"),
             CancellationToken.None);
 
         await act.Should().NotThrowAsync();
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -58,7 +62,8 @@ public sealed class UpdateTagServiceTests
         var subject = Tag.Create(ownerId, "Wishlist", DateTime.UtcNow, "system");
         var rival = Tag.Create(ownerId, "Top Picks", DateTime.UtcNow, "system");
         var repository = new FakeTagRepository(subject, rival);
-        var service = new UpdateTagService(repository, new FakeCurrentUserService(), new UpdateTagCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new UpdateTagService(repository, unitOfWork, new FakeCurrentUserService(), new UpdateTagCommandValidator());
 
         var act = () => service.ExecuteAsync(
             new UpdateTagCommand(ownerId, subject.Id, "Top Picks"),
@@ -68,19 +73,23 @@ public sealed class UpdateTagServiceTests
             .Where(exception => exception.Errors.Any(error =>
                 error.PropertyName == nameof(UpdateTagCommand.Name) &&
                 error.ErrorCode == "duplicate_tag"));
+        repository.SaveCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
     public async Task ExecuteAsync_ShouldThrowNotFound_WhenTagMissing()
     {
         var repository = new FakeTagRepository();
-        var service = new UpdateTagService(repository, new FakeCurrentUserService(), new UpdateTagCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new UpdateTagService(repository, unitOfWork, new FakeCurrentUserService(), new UpdateTagCommandValidator());
 
         var act = () => service.ExecuteAsync(
             new UpdateTagCommand("auth0|test-owner", Guid.NewGuid(), "Anything"),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();
+        unitOfWork.ExecutionCount.Should().Be(0);
     }
 
     private sealed class FakeTagRepository : ITagRepository
