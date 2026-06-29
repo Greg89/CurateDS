@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Tag } from "../../api";
 
 export function TagSelector({
@@ -49,6 +49,7 @@ export function TagMultiSelect({
   onToggle: (tagId: string) => void;
 }>) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const selectedTags = tags.filter((tag) => selectedTagIds.includes(tag.id));
   const triggerLabel = selectedTags.length === 0
     ? emptyLabel
@@ -56,8 +57,34 @@ export function TagMultiSelect({
       ? selectedTags.map((tag) => tag.name).join(", ")
       : `${selectedTags.length} tags selected`;
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
   return (
-    <div className={`multi-select${isOpen ? " open" : ""}`}>
+    <div className={`multi-select${isOpen ? " open" : ""}`} ref={containerRef}>
       <button
         aria-expanded={isOpen}
         className="multi-select-trigger"

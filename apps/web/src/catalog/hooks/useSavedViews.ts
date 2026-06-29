@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ItemFilters, createSavedView, deleteSavedView, listSavedViews } from "../../api";
+import {
+  ItemFilters,
+  createSavedView,
+  deleteSavedView,
+  listSavedViews,
+  serializeItemFilters
+} from "../../api";
 import { SavedItemView } from "../types";
+import { tryParseSavedViewFilters } from "../utils";
 
 export function useSavedViews(selectedCollectionId: string) {
   const [savedViewName, setSavedViewName] = useState("");
@@ -12,11 +19,16 @@ export function useSavedViews(selectedCollectionId: string) {
     queryFn: () => listSavedViews(selectedCollectionId),
     enabled: !!selectedCollectionId,
     select: (data): SavedItemView[] =>
-      data.map((v) => ({
-        id: v.id,
-        name: v.name,
-        filters: JSON.parse(v.filtersJson) as ItemFilters
-      }))
+      data.flatMap((v) => {
+        const filters = tryParseSavedViewFilters(v.filtersJson);
+        return filters
+          ? [{
+              id: v.id,
+              name: v.name,
+              filters
+            }]
+          : [];
+      })
   });
 
   const createMutation = useMutation({
@@ -40,7 +52,7 @@ export function useSavedViews(selectedCollectionId: string) {
 
     createMutation.mutate({
       name: normalizedName,
-      filtersJson: JSON.stringify(filters)
+      filtersJson: serializeItemFilters(filters)
     });
     setSavedViewName("");
   }
