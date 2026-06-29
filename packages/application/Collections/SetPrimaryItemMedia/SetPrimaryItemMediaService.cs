@@ -7,13 +7,16 @@ public sealed class SetPrimaryItemMediaService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly IItemRepository _itemRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
 
     public SetPrimaryItemMediaService(
         ICollectionRepository collectionRepository,
-        IItemRepository itemRepository)
+        IItemRepository itemRepository,
+        ICatalogUnitOfWork unitOfWork)
     {
         _collectionRepository = collectionRepository;
         _itemRepository = itemRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task ExecuteAsync(SetPrimaryItemMediaCommand command, CancellationToken cancellationToken)
@@ -45,8 +48,12 @@ public sealed class SetPrimaryItemMediaService
             throw new NotFoundException("Media asset was not found on this item.");
         }
 
-        item.SetPrimaryMedia(command.MediaAssetId);
-
-        await _itemRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            innerCancellationToken =>
+            {
+                item.SetPrimaryMedia(command.MediaAssetId);
+                return Task.CompletedTask;
+            },
+            cancellationToken);
     }
 }
