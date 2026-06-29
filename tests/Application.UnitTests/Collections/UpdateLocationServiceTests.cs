@@ -21,7 +21,8 @@ public sealed class UpdateLocationServiceTests
         const string ownerId = "auth0|test-owner";
         var existing = Location.Create(ownerId, "Shelf", "Old", DateTime.UtcNow, "system");
         var repository = new FakeLocationRepository(existing);
-        var service = new UpdateLocationService(repository, new FakeCurrentUserService(), new UpdateLocationCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new UpdateLocationService(repository, unitOfWork, new FakeCurrentUserService(), new UpdateLocationCommandValidator());
 
         var result = await service.ExecuteAsync(
             new UpdateLocationCommand(ownerId, existing.Id, "Cabinet", "Drawer 3"),
@@ -30,7 +31,8 @@ public sealed class UpdateLocationServiceTests
         result.Name.Should().Be("Cabinet");
         result.Description.Should().Be("Drawer 3");
         result.UpdatedUtc.Should().NotBeNull();
-        repository.SaveCallCount.Should().Be(1);
+        repository.SaveCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -40,7 +42,8 @@ public sealed class UpdateLocationServiceTests
         var subject = Location.Create(ownerId, "Shelf", null, DateTime.UtcNow, "system");
         var rival = Location.Create(ownerId, "Cabinet", null, DateTime.UtcNow, "system");
         var repository = new FakeLocationRepository(subject, rival);
-        var service = new UpdateLocationService(repository, new FakeCurrentUserService(), new UpdateLocationCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new UpdateLocationService(repository, unitOfWork, new FakeCurrentUserService(), new UpdateLocationCommandValidator());
 
         var act = () => service.ExecuteAsync(
             new UpdateLocationCommand(ownerId, subject.Id, "Cabinet", null),
@@ -48,19 +51,23 @@ public sealed class UpdateLocationServiceTests
 
         await act.Should().ThrowAsync<ValidationException>()
             .Where(exception => exception.Errors.Any(error => error.ErrorCode == "duplicate_location"));
+        repository.SaveCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
     public async Task ExecuteAsync_ShouldThrowNotFound_WhenLocationMissing()
     {
         var repository = new FakeLocationRepository();
-        var service = new UpdateLocationService(repository, new FakeCurrentUserService(), new UpdateLocationCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new UpdateLocationService(repository, unitOfWork, new FakeCurrentUserService(), new UpdateLocationCommandValidator());
 
         var act = () => service.ExecuteAsync(
             new UpdateLocationCommand("auth0|test-owner", Guid.NewGuid(), "Anywhere", null),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();
+        unitOfWork.ExecutionCount.Should().Be(0);
     }
 
     private sealed class FakeLocationRepository : ILocationRepository
@@ -94,11 +101,5 @@ public sealed class UpdateLocationServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid locationId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-        {
-            SaveCallCount++;
-            return Task.CompletedTask;
-        }
     }
 }

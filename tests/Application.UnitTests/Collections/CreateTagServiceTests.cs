@@ -18,7 +18,12 @@ public sealed class CreateTagServiceTests
     public async Task ExecuteAsync_ShouldCreateTag_WhenKeyIsAvailable()
     {
         var repository = new FakeTagRepository();
-        var service = new CreateTagService(repository, new FakeCurrentUserService(), new CreateTagCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new CreateTagService(
+            repository,
+            unitOfWork,
+            new FakeCurrentUserService(),
+            new CreateTagCommandValidator());
 
         var result = await service.ExecuteAsync(
             new CreateTagCommand("auth0|test-owner", "Wishlist"),
@@ -27,6 +32,7 @@ public sealed class CreateTagServiceTests
         result.Name.Should().Be("Wishlist");
         result.Key.Should().Be("wishlist");
         repository.AddCallCount.Should().Be(1);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -35,7 +41,12 @@ public sealed class CreateTagServiceTests
         const string ownerId = "auth0|test-owner";
         var repository = new FakeTagRepository(
             Tag.Create(ownerId, "Wishlist", DateTime.UtcNow, "system"));
-        var service = new CreateTagService(repository, new FakeCurrentUserService(), new CreateTagCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new CreateTagService(
+            repository,
+            unitOfWork,
+            new FakeCurrentUserService(),
+            new CreateTagCommandValidator());
 
         var act = () => service.ExecuteAsync(
             new CreateTagCommand(ownerId, " Wishlist "),
@@ -46,6 +57,7 @@ public sealed class CreateTagServiceTests
                 error.PropertyName == nameof(CreateTagCommand.Name) &&
                 error.ErrorMessage == "A tag with this name already exists."));
         repository.AddCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(0);
     }
 
     private sealed class FakeTagRepository : ITagRepository
@@ -95,7 +107,5 @@ public sealed class CreateTagServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

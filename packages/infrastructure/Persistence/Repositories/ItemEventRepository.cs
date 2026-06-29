@@ -31,11 +31,6 @@ public sealed class ItemEventRepository : IItemEventRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        return _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
     public async Task<PagedResult<CollectionActivityEventDto>> ListByCollectionAsync(
         Guid collectionId,
         int page,

@@ -42,25 +42,48 @@ public sealed class CreateSavedViewCommandValidatorTests
     }
 
     [Fact]
-    public async Task Validate_ShouldFail_WhenFiltersJsonIsNotValidJson()
+    public async Task Validate_ShouldFail_WhenFiltersJsonIsNotSupportedItemFilterJson()
     {
         var result = await Validator.ValidateAsync(ValidCommand() with { FiltersJson = "not-json" });
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == nameof(CreateSavedViewCommand.FiltersJson) &&
-            e.ErrorMessage == "'FiltersJson' must be a valid JSON string.");
+            e.ErrorMessage == "'FiltersJson' must be a supported item filter JSON object." &&
+            e.ErrorCode == "invalid_saved_view_filters");
     }
 
     [Theory]
     [InlineData("{}")]
-    [InlineData("{\"search\":\"dragon\"}")]
-    [InlineData("{\"tagIds\":[],\"attributeFilters\":[]}")]
-    public async Task Validate_ShouldPass_WhenFiltersJsonIsValidJson(string filtersJson)
+    [InlineData("{\"searchText\":\"dragon\",\"locationId\":\"loc-1\",\"itemTypeId\":\"type-1\"}")]
+    [InlineData("{\"tagIds\":[\"tag-a\",\"tag-b\"],\"attributeFilters\":{\"era\":\"1950s\"}}")]
+    [InlineData("{\"sortBy\":\"quantity\",\"sortDirection\":\"asc\",\"minQuantity\":1,\"maxQuantity\":5}")]
+    [InlineData("{\"createdAfter\":\"2026-01-01\",\"createdBefore\":\"2026-12-31\",\"hasNoLocation\":true,\"hasNoTags\":false}")]
+    public async Task Validate_ShouldPass_WhenFiltersJsonMatchesSupportedItemFilterShape(string filtersJson)
     {
         var result = await Validator.ValidateAsync(ValidCommand() with { FiltersJson = filtersJson });
 
         result.IsValid.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("{\"search\":\"dragon\"}")]
+    [InlineData("{\"tagIds\":\"tag-a\"}")]
+    [InlineData("{\"attributeFilters\":[]}")]
+    [InlineData("{\"attributeFilters\":{\"era\":1950}}")]
+    [InlineData("{\"sortBy\":\"rating\"}")]
+    [InlineData("{\"sortDirection\":\"sideways\"}")]
+    [InlineData("{\"minQuantity\":\"1\"}")]
+    [InlineData("{\"hasNoLocation\":\"true\"}")]
+    public async Task Validate_ShouldFail_WhenFiltersJsonHasUnsupportedShape(string filtersJson)
+    {
+        var result = await Validator.ValidateAsync(ValidCommand() with { FiltersJson = filtersJson });
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e =>
+            e.PropertyName == nameof(CreateSavedViewCommand.FiltersJson) &&
+            e.ErrorCode == "invalid_saved_view_filters");
     }
 
     [Fact]

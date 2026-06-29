@@ -42,6 +42,7 @@ public sealed class CreateItemServiceTests
             createdBy: "system");
 
         var itemRepository = new FakeItemRepository();
+        var unitOfWork = new FakeCatalogUnitOfWork();
         var service = new CreateItemService(
             new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(issueNumber, isFoil),
@@ -50,6 +51,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
+            unitOfWork,
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -72,6 +74,7 @@ public sealed class CreateItemServiceTests
         result.Name.Should().Be("Blue-Eyes White Dragon");
         result.AttributeValues.Should().HaveCount(2);
         itemRepository.Items.Should().ContainSingle();
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -96,6 +99,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -141,6 +145,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(itemTypeA, itemTypeB),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -188,6 +193,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(itemTypeA, itemTypeB),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -234,6 +240,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(itemTypeA),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -268,6 +275,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(), // empty — unknown type won't be found
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -299,6 +307,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -389,8 +398,6 @@ public sealed class CreateItemServiceTests
 
         public Task<bool> ExistsByKeyExcludingAsync(Guid collectionId, string key, Guid excludeAttributeDefinitionId, CancellationToken cancellationToken)
             => Task.FromResult(false);
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakeItemRepository : IItemRepository
@@ -430,11 +437,6 @@ public sealed class CreateItemServiceTests
             return Task.FromResult<IReadOnlyList<Item>>(Items.Where(item => item.CollectionId == collectionId).ToArray());
         }
 
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-
         public Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
 
@@ -456,8 +458,6 @@ public sealed class CreateItemServiceTests
 
         public Task<PagedResult<CollectionActivityEventDto>> ListByCollectionAsync(Guid collectionId, int page, int pageSize, CancellationToken cancellationToken)
             => throw new NotImplementedException();
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakeLocationRepository : ILocationRepository
@@ -478,8 +478,6 @@ public sealed class CreateItemServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid locationId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakeTagRepository : ITagRepository
@@ -503,8 +501,6 @@ public sealed class CreateItemServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
 }

@@ -19,9 +19,11 @@ public sealed class UploadItemMediaServiceTests
         var item = Item.Create(collection.Id, "Kind of Blue", null, 1, DateTime.UtcNow, "system");
         var itemRepository = new FakeItemRepository(item);
         var storageService = new FakeMediaStorageService();
+        var unitOfWork = new FakeCatalogUnitOfWork();
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             itemRepository,
+            unitOfWork,
             storageService);
 
         using var stream = new MemoryStream(new byte[1024]);
@@ -40,8 +42,45 @@ public sealed class UploadItemMediaServiceTests
         result.FileName.Should().Be("cover.jpg");
         result.IsPrimary.Should().BeTrue();
         storageService.UploadedKeys.Should().HaveCount(1);
-        itemRepository.SaveChangesCallCount.Should().Be(1);
+        storageService.DeletedKeys.Should().BeEmpty();
+        itemRepository.SaveChangesCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(1);
         item.MediaAssets.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldDeleteUploadedObject_WhenDatabaseCommitFails()
+    {
+        var collection = Collection.Create("auth0|test-owner", "Records", DateTime.UtcNow, "system");
+        var item = Item.Create(collection.Id, "Kind of Blue", null, 1, DateTime.UtcNow, "system");
+        var storageService = new FakeMediaStorageService();
+        var unitOfWork = new FakeCatalogUnitOfWork
+        {
+            ExceptionToThrowAfterOperation = new InvalidOperationException("Database commit failed.")
+        };
+        var service = new UploadItemMediaService(
+            new FakeCollectionRepository(collection),
+            new FakeItemRepository(item),
+            unitOfWork,
+            storageService);
+
+        using var stream = new MemoryStream(new byte[1024]);
+        var act = () => service.ExecuteAsync(
+            new UploadItemMediaCommand(
+                collection.OwnerId,
+                collection.Id,
+                item.Id,
+                stream,
+                "image/jpeg",
+                "cover.jpg",
+                1024),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Database commit failed.");
+        storageService.UploadedKeys.Should().ContainSingle();
+        storageService.DeletedKeys.Should().Equal(storageService.UploadedKeys);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -52,6 +91,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(item),
+            new FakeCatalogUnitOfWork(),
             new FakeMediaStorageService());
 
         using var stream = new MemoryStream(new byte[512]);
@@ -70,6 +110,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(item),
+            new FakeCatalogUnitOfWork(),
             new FakeMediaStorageService());
 
         using var stream = new MemoryStream(new byte[1024]);
@@ -88,6 +129,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(item),
+            new FakeCatalogUnitOfWork(),
             new FakeMediaStorageService());
 
         var overLimit = UploadItemMediaService.MaxFileSizeBytes + 1;
@@ -105,6 +147,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(),
             new FakeItemRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeMediaStorageService());
 
         using var stream = new MemoryStream(new byte[512]);
@@ -122,6 +165,7 @@ public sealed class UploadItemMediaServiceTests
         var service = new UploadItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeMediaStorageService());
 
         using var stream = new MemoryStream(new byte[512]);
@@ -207,12 +251,6 @@ public sealed class UploadItemMediaServiceTests
 
         public Task<IReadOnlyList<Item>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Item>>(_items.Where(i => i.CollectionId == collectionId).ToArray());
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-        {
-            SaveChangesCallCount++;
-            return Task.CompletedTask;
-        }
 
         public void AddMediaAsset(MediaAsset asset) { }
 

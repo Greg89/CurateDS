@@ -10,17 +10,20 @@ public sealed class CreateItemTypeService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly IItemTypeRepository _itemTypeRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<CreateItemTypeCommand> _validator;
 
     public CreateItemTypeService(
         ICollectionRepository collectionRepository,
         IItemTypeRepository itemTypeRepository,
+        ICatalogUnitOfWork unitOfWork,
         ICurrentUserService currentUser,
         IValidator<CreateItemTypeCommand> validator)
     {
         _collectionRepository = collectionRepository;
         _itemTypeRepository = itemTypeRepository;
+        _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -50,7 +53,9 @@ public sealed class CreateItemTypeService
             DateTime.UtcNow,
             _currentUser.GetCurrentUser());
 
-        await _itemTypeRepository.AddAsync(itemType, cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            innerCancellationToken => _itemTypeRepository.AddAsync(itemType, innerCancellationToken),
+            cancellationToken);
 
         return new CreateItemTypeResult(
             itemType.Id,

@@ -27,9 +27,11 @@ public sealed class DeleteItemMediaServiceTests
 
         var itemRepository = new FakeItemRepository(item);
         var storageService = new FakeMediaStorageService();
+        var unitOfWork = new FakeCatalogUnitOfWork();
         var service = new DeleteItemMediaService(
             new FakeCollectionRepository(collection),
             itemRepository,
+            unitOfWork,
             storageService);
 
         await service.ExecuteAsync(
@@ -38,7 +40,8 @@ public sealed class DeleteItemMediaServiceTests
 
         item.MediaAssets.Should().BeEmpty();
         storageService.DeletedKeys.Should().Contain("beta/key.jpg");
-        itemRepository.SaveChangesCallCount.Should().Be(1);
+        itemRepository.SaveChangesCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -55,6 +58,7 @@ public sealed class DeleteItemMediaServiceTests
         var service = new DeleteItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(item),
+            new FakeCatalogUnitOfWork(),
             new FakeMediaStorageService());
 
         await service.ExecuteAsync(
@@ -71,6 +75,7 @@ public sealed class DeleteItemMediaServiceTests
         var service = new DeleteItemMediaService(
             new FakeCollectionRepository(),
             new FakeItemRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeMediaStorageService());
 
         var act = () => service.ExecuteAsync(
@@ -87,6 +92,7 @@ public sealed class DeleteItemMediaServiceTests
         var service = new DeleteItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeMediaStorageService());
 
         var act = () => service.ExecuteAsync(
@@ -104,6 +110,7 @@ public sealed class DeleteItemMediaServiceTests
         var service = new DeleteItemMediaService(
             new FakeCollectionRepository(collection),
             new FakeItemRepository(item),
+            new FakeCatalogUnitOfWork(),
             new FakeMediaStorageService());
 
         var act = () => service.ExecuteAsync(
@@ -181,12 +188,6 @@ public sealed class DeleteItemMediaServiceTests
         public Task<IReadOnlyList<Item>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Item>>([]);
 
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-        {
-            SaveChangesCallCount++;
-            return Task.CompletedTask;
-        }
-
         public void AddMediaAsset(MediaAsset asset) { }
 
         public Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
@@ -213,9 +214,11 @@ public sealed class SetPrimaryItemMediaServiceTests
         item.AddMedia(second);
 
         var itemRepository = new FakeSPItemRepository(item);
+        var unitOfWork = new FakeCatalogUnitOfWork();
         var service = new SetPrimaryItemMediaService(
             new FakeSPCollectionRepository(collection),
-            itemRepository);
+            itemRepository,
+            unitOfWork);
 
         await service.ExecuteAsync(
             new SetPrimaryItemMediaCommand(collection.OwnerId, collection.Id, item.Id, second.Id),
@@ -223,7 +226,8 @@ public sealed class SetPrimaryItemMediaServiceTests
 
         first.IsPrimary.Should().BeFalse();
         second.IsPrimary.Should().BeTrue();
-        itemRepository.SaveChangesCallCount.Should().Be(1);
+        itemRepository.SaveChangesCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -233,7 +237,8 @@ public sealed class SetPrimaryItemMediaServiceTests
         var item = Item.Create(collection.Id, "Kind of Blue", null, 1, DateTime.UtcNow, "system");
         var service = new SetPrimaryItemMediaService(
             new FakeSPCollectionRepository(collection),
-            new FakeSPItemRepository(item));
+            new FakeSPItemRepository(item),
+            new FakeCatalogUnitOfWork());
 
         var act = () => service.ExecuteAsync(
             new SetPrimaryItemMediaCommand(collection.OwnerId, collection.Id, item.Id, Guid.NewGuid()),
@@ -248,7 +253,8 @@ public sealed class SetPrimaryItemMediaServiceTests
         var collection = Collection.Create("auth0|test-owner", "Records", DateTime.UtcNow, "system");
         var service = new SetPrimaryItemMediaService(
             new FakeSPCollectionRepository(collection),
-            new FakeSPItemRepository());
+            new FakeSPItemRepository(),
+            new FakeCatalogUnitOfWork());
 
         var act = () => service.ExecuteAsync(
             new SetPrimaryItemMediaCommand(collection.OwnerId, collection.Id, Guid.NewGuid(), Guid.NewGuid()),
@@ -308,12 +314,6 @@ public sealed class SetPrimaryItemMediaServiceTests
 
         public Task<IReadOnlyList<Item>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Item>>([]);
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-        {
-            SaveChangesCallCount++;
-            return Task.CompletedTask;
-        }
 
         public void AddMediaAsset(MediaAsset asset) { }
 

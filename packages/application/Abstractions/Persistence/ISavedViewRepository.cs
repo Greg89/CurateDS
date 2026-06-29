@@ -11,6 +11,4 @@ public interface ISavedViewRepository
     Task<SavedView?> GetByIdAsync(Guid id, string ownerId, CancellationToken cancellationToken);
 
     void Remove(SavedView savedView);
-
-    Task SaveChangesAsync(CancellationToken cancellationToken);
 }

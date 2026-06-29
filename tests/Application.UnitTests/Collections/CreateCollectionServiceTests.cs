@@ -18,13 +18,19 @@ public sealed class CreateCollectionServiceTests
     public async Task ExecuteAsync_ShouldPersistTrimmedCollection()
     {
         var repository = new FakeCollectionRepository();
-        var service = new CreateCollectionService(repository, new FakeCurrentUserService(), new CreateCollectionCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new CreateCollectionService(
+            repository,
+            unitOfWork,
+            new FakeCurrentUserService(),
+            new CreateCollectionCommandValidator());
         var command = new CreateCollectionCommand("auth0|test-owner", "  Vinyl Records  ");
 
         var result = await service.ExecuteAsync(command, CancellationToken.None);
 
         result.Name.Should().Be("Vinyl Records");
         repository.Collections.Should().ContainSingle(collection => collection.Id == result.Id);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     private sealed class FakeCollectionRepository : ICollectionRepository

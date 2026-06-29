@@ -17,6 +17,7 @@ public sealed class UpdateItemService
     private readonly ITagRepository _tagRepository;
     private readonly IItemEventRepository _itemEventRepository;
     private readonly IItemTypeRepository _itemTypeRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<UpdateItemCommand> _validator;
 
@@ -28,6 +29,7 @@ public sealed class UpdateItemService
         ITagRepository tagRepository,
         IItemEventRepository itemEventRepository,
         IItemTypeRepository itemTypeRepository,
+        ICatalogUnitOfWork unitOfWork,
         ICurrentUserService currentUser,
         IValidator<UpdateItemCommand> validator)
     {
@@ -38,6 +40,7 @@ public sealed class UpdateItemService
         _tagRepository = tagRepository;
         _itemEventRepository = itemEventRepository;
         _itemTypeRepository = itemTypeRepository;
+        _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -123,34 +126,37 @@ public sealed class UpdateItemService
 
         var changeNotes = BuildChangeNotes(item, command, organization, oldItemTypeName, newItemTypeName);
 
-        item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc, actor);
-        item.AssignLocation(organization.Location?.Id, updatedUtc, actor);
-        item.AssignItemType(command.ItemTypeId, updatedUtc, actor);
-        await _itemRepository.ReplaceAttributeValuesAsync(item.Id, attributeValues, cancellationToken);
-        await _itemRepository.ReplaceTagsAsync(
-            item.Id,
-            ItemOrganizationValidator.BuildItemTags(item.Id, organization.Tags),
-            cancellationToken);
-        await _itemRepository.SaveChangesAsync(cancellationToken);
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async innerCancellationToken =>
+            {
+                item.UpdateDetails(command.Name, command.Description, command.Quantity, updatedUtc, actor);
+                item.AssignLocation(organization.Location?.Id, updatedUtc, actor);
+                item.AssignItemType(command.ItemTypeId, updatedUtc, actor);
+                await _itemRepository.ReplaceAttributeValuesAsync(item.Id, attributeValues, innerCancellationToken);
+                await _itemRepository.ReplaceTagsAsync(
+                    item.Id,
+                    ItemOrganizationValidator.BuildItemTags(item.Id, organization.Tags),
+                    innerCancellationToken);
 
-        await _itemEventRepository.RecordAsync(
-            ItemEvent.Record(item.Id, item.CollectionId, ItemEventType.Updated, updatedUtc, actor, changeNotes),
-            cancellationToken);
-        await _itemEventRepository.SaveChangesAsync(cancellationToken);
+                await _itemEventRepository.RecordAsync(
+                    ItemEvent.Record(item.Id, item.CollectionId, ItemEventType.Updated, updatedUtc, actor, changeNotes),
+                    innerCancellationToken);
 
-        return new UpdateItemResult(
-            item.Id,
-            item.CollectionId,
-            item.Name,
-            item.Description,
-            item.Quantity,
-            organization.Location?.Id,
-            organization.Location?.Name,
-            item.ItemTypeId,
-            organization.Tags.Select(tag => new TagDto(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)).ToArray(),
-            item.CreatedUtc,
-            item.UpdatedUtc,
-            MapAttributeValues(attributeValues, attributeDefinitions));
+                return new UpdateItemResult(
+                    item.Id,
+                    item.CollectionId,
+                    item.Name,
+                    item.Description,
+                    item.Quantity,
+                    organization.Location?.Id,
+                    organization.Location?.Name,
+                    item.ItemTypeId,
+                    organization.Tags.Select(tag => new TagDto(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)).ToArray(),
+                    item.CreatedUtc,
+                    item.UpdatedUtc,
+                    MapAttributeValues(attributeValues, attributeDefinitions));
+            },
+            cancellationToken);
     }
 
     private static IReadOnlyList<ItemAttributeValueDto> MapAttributeValues(

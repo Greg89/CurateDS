@@ -1,61 +1,19 @@
 # Prioritized Refactor Roadmap
 
-## Phase 1: Correctness Fixes
+Status updated: 2026-06-29
+
+## Phase 1: Documentation And Status Refresh
 
 Goal:
-Remove behavior mismatches before adding more features.
+Make the refactor notes match the repo before planning more work.
 
 Work:
 
-1. Fix item-list query keys so every active filter participates in cache identity.
-2. Fix report drill-through so every generated filter is consumed by the items page.
-3. Fix saved view restoration so `itemTypeId` is restored with the rest of the filters.
-4. Add tests for:
-   - quantity/date/quick filter refetch behavior
-   - saved view round-trip fidelity
-   - report drill-through into filtered items
+1. Mark completed filter, saved-view, and report drill-through fixes as done.
+2. Record the item drawer unmount fix and green beta smoke test.
+3. Keep the remaining open work visible: encoding cleanup, `TagMultiSelect`, saved-view write validation, and transaction-boundary design.
 
-## Phase 2: Client State Consolidation
-
-Goal:
-Reduce repeated filter-state logic and make future browsing work safer.
-
-Work:
-
-1. Introduce a canonical item-filter serializer.
-2. Reuse it for:
-   - React Query keys
-   - URL state
-   - saved view persistence
-   - report drill-through
-3. Move fragile parsing helpers behind typed utilities with fallback behavior.
-
-## Phase 3: UI Hardening
-
-Goal:
-Stabilize newer interactive controls and keep the shell maintainable.
-
-Work:
-
-1. Harden `TagMultiSelect` behavior.
-2. Audit other drawer and popover interactions for consistent close/focus behavior.
-3. Continue decomposing feature surfaces like the items workspace into smaller tested units.
-
-## Phase 4: Validation Reliability
-
-Goal:
-Reduce environment-specific failures in local and CI feedback loops.
-
-Work:
-
-1. Revisit infrastructure tests that depend on `HttpListener`.
-2. Decide whether to:
-   - swap to a more portable fake server
-   - isolate those tests behind explicit environment assumptions
-   - move them to a different integration-test style
-3. Make repo validation notes clearer when failures are environment-specific rather than product regressions.
-
-## Phase 5: Polish And Maintenance
+## Phase 2: Polish And Encoding Cleanup
 
 Goal:
 Clean obvious presentation debt while refactor momentum is already active.
@@ -68,3 +26,54 @@ Work:
    - encoding
    - accessibility
    - filter/query symmetry
+
+## Phase 3: UI Hardening
+
+Goal:
+Stabilize newer interactive controls and keep the shell maintainable.
+
+Work:
+
+1. Harden `TagMultiSelect` behavior.
+2. Audit other drawer and popover interactions for consistent close/focus behavior.
+3. Continue decomposing feature surfaces like the items workspace into smaller tested units.
+
+## Phase 4: Saved-View Write Validation
+
+Goal:
+Prevent invalid saved-view filter payloads from entering persistence.
+
+Work:
+
+1. Validate `FiltersJson` in `CreateSavedViewCommandValidator` or `CreateSavedViewService`.
+2. Reuse the same supported item-filter shape as the web client.
+3. Add application and API integration tests for malformed JSON and unsupported shapes.
+
+## Phase 5: Transaction-Boundary Design
+
+Goal:
+Define the write consistency approach before adding more multi-table domain features.
+
+Work:
+
+1. Document the unit-of-work transaction abstraction.
+2. Start implementation with item create, update, and delete flows.
+3. Define compensation behavior separately for object storage plus database writes.
+
+Status:
+
+The design direction is captured in `04-transaction-boundary-design.md`. Implementation remains open.
+
+## Phase 6: Validation Reliability
+
+Goal:
+Reduce environment-specific failures in local and CI feedback loops.
+
+Work:
+
+1. Revisit infrastructure tests that depend on `HttpListener`.
+2. Decide whether to:
+   - swap to a more portable fake server
+   - isolate those tests behind explicit environment assumptions
+   - move them to a different integration-test style
+3. Make repo validation notes clearer when failures are environment-specific rather than product regressions.

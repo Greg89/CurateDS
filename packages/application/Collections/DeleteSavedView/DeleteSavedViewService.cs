@@ -7,13 +7,16 @@ public sealed class DeleteSavedViewService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly ISavedViewRepository _savedViewRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
 
     public DeleteSavedViewService(
         ICollectionRepository collectionRepository,
-        ISavedViewRepository savedViewRepository)
+        ISavedViewRepository savedViewRepository,
+        ICatalogUnitOfWork unitOfWork)
     {
         _collectionRepository = collectionRepository;
         _savedViewRepository = savedViewRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task ExecuteAsync(DeleteSavedViewCommand command, CancellationToken cancellationToken)
@@ -29,7 +32,12 @@ public sealed class DeleteSavedViewService
         if (view is null)
             throw new NotFoundException("Saved view was not found.");
 
-        _savedViewRepository.Remove(view);
-        await _savedViewRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            innerCancellationToken =>
+            {
+                _savedViewRepository.Remove(view);
+                return Task.CompletedTask;
+            },
+            cancellationToken);
     }
 }

@@ -1,101 +1,90 @@
 # Concrete Findings
 
-## P1: Item list cache keys do not include all active filters
+Status updated: 2026-06-29
+
+## Done: Item list cache keys include all active filters
 
 Files:
 
-- `apps/web/src/catalog/pages/ItemsPage.tsx:123`
+- `apps/web/src/catalog/pages/ItemsPage.tsx`
+- `apps/web/src/catalog/utils.ts`
+- `tests/Web.UnitTests/src/catalog/utils.test.ts`
 
-Problem:
+Status:
 
-The item-list query key includes search text, location, item type, sort, attribute filters, page, and tag IDs, but it does not include:
+The item-list query now uses `buildItemFiltersCacheKey(...)`, which delegates to the same normalized serialization used by saved views. Unit coverage verifies quantity filters and quick filters change cache identity, and equivalent filters normalize to the same key.
 
-- `minQuantity`
-- `maxQuantity`
-- `createdAfter`
-- `createdBefore`
-- `hasNoLocation`
-- `hasNoTags`
-
-Impact:
-
-Changing one of those filters can reuse stale React Query cache entries instead of forcing a refetch. The UI can appear to accept a filter while still showing results from a previous filter state.
-
-Recommendation:
-
-- extract a single canonical filter-key builder
-- use the same canonical representation for:
-  - React Query keys
-  - saved view serialization
-  - report drill-through handoff
-
-## P1: "No location" report drill-through is broken
+## Done: Report drill-through consumes generated filters
 
 Files:
 
-- `apps/web/src/catalog/pages/ReportsPage.tsx:32`
-- `apps/web/src/catalog/pages/ItemsPage.tsx:212`
+- `apps/web/src/catalog/pages/ReportsPage.tsx`
+- `apps/web/src/catalog/pages/ItemsPage.tsx`
+- `apps/web/src/api/items.ts`
+- `tests/Web.UnitTests/src/catalog/utils.test.ts`
 
-Problem:
+Status:
 
-The reports page navigates to the items view with `hasNoLocation=1`, but the items page drill-through effect only reads:
+Reports build item filter search params through `buildItemFiltersSearchParams(...)`. The items page hydrates all supported filter params through `parseItemFiltersSearchParams(...)`, including `hasNoLocation` and `hasNoTags`.
 
-- `tagId`
-- `locationId`
-- `itemId`
-
-It ignores `hasNoLocation`, so the navigation succeeds but the intended filter is never applied.
-
-Impact:
-
-The user can click a report row and land on an unfiltered items view, which makes the reports feature feel unreliable.
-
-Recommendation:
-
-- standardize report drill-through params
-- let the items page hydrate all supported drill-through filters, not just a subset
-- add a web test that covers `locationId = null`
-
-## P2: Saved views do not restore item type filters
+## Done: Saved views restore item type filters
 
 Files:
 
-- `apps/web/src/catalog/hooks/useItemFilters.ts:83`
+- `apps/web/src/catalog/hooks/useItemFilters.ts`
+- `tests/Web.UnitTests/src/catalog/catalog-ui.test.tsx`
 
-Problem:
+Status:
 
-`useItemFilters.applySavedView(...)` restores search text, location, tags, attribute filters, sort, quantity range, dates, and quick filters, but it does not restore `itemTypeId`.
+`applySavedView(...)` now delegates to `applyItemFilters(...)`, which restores the normalized `itemTypeId` with the rest of the filter state. Web UI coverage applies a saved view with `itemTypeId`, normalized tags, and quick filters.
 
-Impact:
-
-A saved view that was created with an item type filter silently comes back incomplete, which undermines trust in saved views.
-
-Recommendation:
-
-- restore `itemTypeId` in `applySavedView(...)`
-- add a focused unit test around saved view application for every supported filter field
-
-## P2: One malformed saved view can break the entire saved-views query
+## Done: Malformed saved views do not break the query
 
 Files:
 
-- `apps/web/src/catalog/hooks/useSavedViews.ts:14`
+- `apps/web/src/catalog/hooks/useSavedViews.ts`
+- `apps/web/src/catalog/utils.ts`
+- `tests/Web.UnitTests/src/catalog/catalog-ui.test.tsx`
+- `tests/Web.UnitTests/src/catalog/utils.test.ts`
+
+Status:
+
+The saved-view query now parses through `tryParseSavedViewFilters(...)` and drops invalid rows instead of failing the entire saved-view experience.
+
+## Done: Item drawers no longer remain mounted after close
+
+Files:
+
+- `apps/web/src/catalog/components/ItemFormDrawer.tsx`
+- `apps/web/src/catalog/components/ItemDetailDrawer.tsx`
+- `tests/Web.UnitTests/src/catalog/catalog-ui.test.tsx`
+
+Status:
+
+The item form and detail drawers now unmount when closed. This fixed the beta smoke-test regression where the Create Item drawer could appear over Settings and refuse to close.
+
+## P1: Saved-view filter JSON is not validated on write
+
+Files:
+
+- `packages/application/Collections/CreateSavedView/CreateSavedViewCommandValidator.cs`
+- `packages/application/Collections/CreateSavedView/CreateSavedViewService.cs`
 
 Problem:
 
-The `select` mapper uses raw `JSON.parse(v.filtersJson)` with no guard. If one saved view contains malformed JSON from legacy data, manual edits, or a migration mistake, the entire query fails.
+The web client now safely ignores malformed saved views, but the API still accepts raw `FiltersJson` when a saved view is created. Bad data can still enter persistence through old clients, manual requests, or future client drift.
 
 Impact:
 
-One bad row can take down the whole saved-views experience for a collection.
+One malformed row no longer breaks the web query, but the server still allows corrupted saved-view data to accumulate.
 
 Recommendation:
 
-- wrap parsing in a safe helper
-- drop invalid rows or mark them as corrupted instead of failing the whole query
-- optionally parse against a schema before exposing the result to the UI
+- validate that `FiltersJson` is valid JSON
+- validate the JSON shape against the supported item-filter fields
+- return a stable validation error code for invalid saved-view filters
 
-## P3: Tag multi-select still needs interaction hardening
+## P2: Tag multi-select still needs interaction hardening
 
 Files:
 
@@ -133,7 +122,7 @@ Files:
 
 Problem:
 
-Several files contain mojibake like `â€”`, `â†’`, and `â€¦`.
+Several files contain mojibake or shell-fragile punctuation such as broken dashes, arrows, and ellipses.
 
 Impact:
 
@@ -145,3 +134,25 @@ Recommendation:
 
 - normalize these files to UTF-8 clean text
 - add a lightweight docs/content pass as part of the next refactor batch
+
+## P2: Multi-step writes need explicit transaction boundaries
+
+Files:
+
+- `packages/application/Collections/CreateItem/CreateItemService.cs`
+- `packages/application/Collections/UpdateItem/UpdateItemService.cs`
+- `packages/application/Collections/DeleteItem/DeleteItemService.cs`
+
+Problem:
+
+Item create, update, and delete flows write item state and item events as separate steps without an explicit transaction boundary.
+
+Impact:
+
+If a later write fails, the earlier state change can already be persisted. That risk grows as acquisition, valuation, condition, and other multi-table features are added.
+
+Recommendation:
+
+- follow the design in `04-transaction-boundary-design.md`
+- wrap the item write plus item-event write in one transaction
+- define separate compensation behavior for object storage plus database flows

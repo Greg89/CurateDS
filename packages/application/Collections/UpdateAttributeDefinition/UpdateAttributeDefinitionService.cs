@@ -11,6 +11,7 @@ public sealed class UpdateAttributeDefinitionService
     private readonly ICollectionRepository _collectionRepository;
     private readonly IAttributeDefinitionRepository _attributeDefinitionRepository;
     private readonly IItemTypeRepository _itemTypeRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<UpdateAttributeDefinitionCommand> _validator;
 
@@ -18,12 +19,14 @@ public sealed class UpdateAttributeDefinitionService
         ICollectionRepository collectionRepository,
         IAttributeDefinitionRepository attributeDefinitionRepository,
         IItemTypeRepository itemTypeRepository,
+        ICatalogUnitOfWork unitOfWork,
         ICurrentUserService currentUser,
         IValidator<UpdateAttributeDefinitionCommand> validator)
     {
         _collectionRepository = collectionRepository;
         _attributeDefinitionRepository = attributeDefinitionRepository;
         _itemTypeRepository = itemTypeRepository;
+        _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -66,43 +69,46 @@ public sealed class UpdateAttributeDefinitionService
         var now = DateTime.UtcNow;
         var actor = _currentUser.GetCurrentUser();
 
-        var originalKey = attributeDefinition.Key;
-        attributeDefinition.Update(
-            command.Name,
-            command.IsRequired,
-            command.IsFilterable,
-            command.ItemTypeId,
-            now,
-            actor);
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async innerCancellationToken =>
+            {
+                var originalKey = attributeDefinition.Key;
+                attributeDefinition.Update(
+                    command.Name,
+                    command.IsRequired,
+                    command.IsFilterable,
+                    command.ItemTypeId,
+                    now,
+                    actor);
 
-        if (attributeDefinition.Key != originalKey
-            && await _attributeDefinitionRepository.ExistsByKeyExcludingAsync(
-                command.CollectionId,
-                attributeDefinition.Key,
-                attributeDefinition.Id,
-                cancellationToken))
-        {
-            throw new ValidationException([
-                new ValidationFailure(nameof(UpdateAttributeDefinitionCommand.Name), "An attribute with this name already exists.")
+                if (attributeDefinition.Key != originalKey
+                    && await _attributeDefinitionRepository.ExistsByKeyExcludingAsync(
+                        command.CollectionId,
+                        attributeDefinition.Key,
+                        attributeDefinition.Id,
+                        innerCancellationToken))
                 {
-                    ErrorCode = "duplicate_attribute"
+                    throw new ValidationException([
+                        new ValidationFailure(nameof(UpdateAttributeDefinitionCommand.Name), "An attribute with this name already exists.")
+                        {
+                            ErrorCode = "duplicate_attribute"
+                        }
+                    ]);
                 }
-            ]);
-        }
 
-        await _attributeDefinitionRepository.SaveChangesAsync(cancellationToken);
-
-        return new UpdateAttributeDefinitionResult(
-            attributeDefinition.Id,
-            attributeDefinition.CollectionId,
-            attributeDefinition.Name,
-            attributeDefinition.Key,
-            attributeDefinition.DataType,
-            attributeDefinition.IsRequired,
-            attributeDefinition.IsFilterable,
-            attributeDefinition.SortOrder,
-            attributeDefinition.ItemTypeId,
-            attributeDefinition.CreatedUtc,
-            attributeDefinition.UpdatedUtc);
+                return new UpdateAttributeDefinitionResult(
+                    attributeDefinition.Id,
+                    attributeDefinition.CollectionId,
+                    attributeDefinition.Name,
+                    attributeDefinition.Key,
+                    attributeDefinition.DataType,
+                    attributeDefinition.IsRequired,
+                    attributeDefinition.IsFilterable,
+                    attributeDefinition.SortOrder,
+                    attributeDefinition.ItemTypeId,
+                    attributeDefinition.CreatedUtc,
+                    attributeDefinition.UpdatedUtc);
+            },
+            cancellationToken);
     }
 }
