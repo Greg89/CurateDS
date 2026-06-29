@@ -165,10 +165,5 @@ public sealed class ItemRepository : IItemRepository
         {
             item.SoftDelete(deletedUtc, deletedBy);
         }
-
-        if (items.Count > 0)
-        {
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
     }
 }

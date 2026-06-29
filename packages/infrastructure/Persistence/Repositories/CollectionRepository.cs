@@ -49,7 +49,6 @@ public sealed class CollectionRepository : ICollectionRepository
         }
 
         collection.SoftDelete(deletedUtc, deletedBy);
-        await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 
