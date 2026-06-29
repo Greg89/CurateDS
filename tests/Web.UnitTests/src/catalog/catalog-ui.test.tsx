@@ -237,7 +237,25 @@ describe("CatalogApp UI structure", () => {
 
     await user.click(screen.getByRole("button", { name: "Close item form" }));
 
+    expect(document.querySelector(".form-drawer")).toBeNull();
     expect(addItemButton).toHaveFocus();
+  });
+
+  it("does not leave the item form mounted after navigating to settings", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    await user.click(await screen.findByRole("button", { name: /\+ Add Item/i }));
+    expect(await screen.findByRole("dialog", { name: /create item/i })).toBeInTheDocument();
+
+    await user.click(await screen.findByRole("link", { name: "Settings" }));
+    await screen.findByRole("heading", { name: "Collection Settings" });
+
+    expect(document.querySelector(".form-drawer")).toBeNull();
+    expect(screen.queryByRole("dialog", { name: /create item/i })).not.toBeInTheDocument();
   });
 
   it("shows tag usage in settings organization summary when items are tagged", async () => {

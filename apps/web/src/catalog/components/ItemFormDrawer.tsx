@@ -68,7 +68,6 @@ export function ItemFormDrawer({
       className={`item-drawer form-drawer${isOpen ? " open" : ""}`}
       isOpen={isOpen}
       initialFocusSelector="[data-autofocus='true']"
-      keepMounted
       onRequestClose={onClose}
     >
       <div className="drawer-header">
