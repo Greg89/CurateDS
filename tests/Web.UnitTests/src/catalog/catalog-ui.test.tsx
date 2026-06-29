@@ -222,6 +222,24 @@ describe("CatalogApp UI structure", () => {
     expect(await screen.findByRole("dialog", { name: /create item/i })).toBeInTheDocument();
   });
 
+  it("focuses the item name field on open and returns focus to Add Item on close", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    const addItemButton = await screen.findByRole("button", { name: /\+ Add Item/i });
+    await user.click(addItemButton);
+
+    const nameInput = await screen.findByLabelText("Name");
+    expect(nameInput).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Close item form" }));
+
+    expect(addItemButton).toHaveFocus();
+  });
+
   it("shows tag usage in settings organization summary when items are tagged", async () => {
     server.use(
       http.get("http://localhost:8080/tags", () =>
