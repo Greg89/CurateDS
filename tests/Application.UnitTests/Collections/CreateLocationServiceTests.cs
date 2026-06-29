@@ -18,7 +18,12 @@ public sealed class CreateLocationServiceTests
     public async Task ExecuteAsync_ShouldCreateLocation_WhenNameIsAvailable()
     {
         var repository = new FakeLocationRepository();
-        var service = new CreateLocationService(repository, new FakeCurrentUserService(), new CreateLocationCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new CreateLocationService(
+            repository,
+            unitOfWork,
+            new FakeCurrentUserService(),
+            new CreateLocationCommandValidator());
 
         var result = await service.ExecuteAsync(
             new CreateLocationCommand("auth0|test-owner", "Hall Closet", null),
@@ -26,6 +31,7 @@ public sealed class CreateLocationServiceTests
 
         result.Name.Should().Be("Hall Closet");
         repository.AddCallCount.Should().Be(1);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -33,7 +39,12 @@ public sealed class CreateLocationServiceTests
     {
         const string ownerId = "auth0|test-owner";
         var repository = new FakeLocationRepository(existingName: "Hall Closet", ownerId: ownerId);
-        var service = new CreateLocationService(repository, new FakeCurrentUserService(), new CreateLocationCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new CreateLocationService(
+            repository,
+            unitOfWork,
+            new FakeCurrentUserService(),
+            new CreateLocationCommandValidator());
 
         var act = () => service.ExecuteAsync(
             new CreateLocationCommand(ownerId, "Hall Closet", null),
@@ -44,13 +55,19 @@ public sealed class CreateLocationServiceTests
                 error.PropertyName == nameof(CreateLocationCommand.Name) &&
                 error.ErrorMessage == "A location with this name already exists."));
         repository.AddCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(0);
     }
 
     [Fact]
     public async Task ExecuteAsync_ShouldNotThrow_WhenSameNameExistsForDifferentOwner()
     {
         var repository = new FakeLocationRepository(existingName: "Hall Closet", ownerId: "auth0|other-owner");
-        var service = new CreateLocationService(repository, new FakeCurrentUserService(), new CreateLocationCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new CreateLocationService(
+            repository,
+            unitOfWork,
+            new FakeCurrentUserService(),
+            new CreateLocationCommandValidator());
 
         var act = () => service.ExecuteAsync(
             new CreateLocationCommand("auth0|test-owner", "Hall Closet", null),
@@ -58,13 +75,19 @@ public sealed class CreateLocationServiceTests
 
         await act.Should().NotThrowAsync();
         repository.AddCallCount.Should().Be(1);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
     public async Task ExecuteAsync_ShouldThrowValidationException_WhenNameIsTooShort()
     {
         var repository = new FakeLocationRepository();
-        var service = new CreateLocationService(repository, new FakeCurrentUserService(), new CreateLocationCommandValidator());
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = new CreateLocationService(
+            repository,
+            unitOfWork,
+            new FakeCurrentUserService(),
+            new CreateLocationCommandValidator());
 
         var act = () => service.ExecuteAsync(
             new CreateLocationCommand("auth0|test-owner", "A", null),
@@ -72,6 +95,7 @@ public sealed class CreateLocationServiceTests
 
         await act.Should().ThrowAsync<ValidationException>();
         repository.AddCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(0);
     }
 
     private sealed class FakeLocationRepository : ILocationRepository

@@ -16,7 +16,6 @@ public sealed class LocationRepository : ILocationRepository
     public async Task AddAsync(Location location, CancellationToken cancellationToken)
     {
         await _dbContext.Locations.AddAsync(location, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public Task<bool> ExistsByNameAsync(string ownerId, string name, CancellationToken cancellationToken)
@@ -64,7 +63,6 @@ public sealed class LocationRepository : ILocationRepository
         }
 
         location.SoftDelete(deletedUtc, deletedBy);
-        await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 
