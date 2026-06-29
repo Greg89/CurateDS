@@ -51,6 +51,7 @@ export {
   tryParseItemFilters,
   tryParseSerializedItemFilters,
   hasActiveItemFilters,
+  countActiveItemFilters,
   buildItemFiltersSearchParams,
   parseItemFiltersSearchParams,
   listItems,

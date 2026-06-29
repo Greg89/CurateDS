@@ -177,6 +177,27 @@ export function hasActiveItemFilters(filters?: Readonly<ItemFilters>) {
   );
 }
 
+export function countActiveItemFilters(filters?: Readonly<ItemFilters>) {
+  const normalizedFilters = normalizeItemFilters(filters);
+
+  return (
+    (normalizedFilters.searchText ? 1 : 0) +
+    (normalizedFilters.locationId ? 1 : 0) +
+    ((normalizedFilters.tagIds?.length ?? 0) > 0 ? 1 : 0) +
+    (normalizedFilters.itemTypeId ? 1 : 0) +
+    Object.keys(normalizedFilters.attributeFilters ?? {}).length +
+    (normalizedFilters.sortBy !== defaultItemSortBy || normalizedFilters.sortDirection !== defaultItemSortDirection
+      ? 1
+      : 0) +
+    (normalizedFilters.minQuantity != null ? 1 : 0) +
+    (normalizedFilters.maxQuantity != null ? 1 : 0) +
+    (normalizedFilters.createdAfter ? 1 : 0) +
+    (normalizedFilters.createdBefore ? 1 : 0) +
+    (normalizedFilters.hasNoLocation ? 1 : 0) +
+    (normalizedFilters.hasNoTags ? 1 : 0)
+  );
+}
+
 export function buildItemFiltersSearchParams(
   filters?: Readonly<ItemFilters>,
   options?: Readonly<{
