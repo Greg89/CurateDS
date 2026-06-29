@@ -50,6 +50,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -96,6 +97,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -141,6 +143,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(itemTypeA, itemTypeB),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -188,6 +191,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(itemTypeA, itemTypeB),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -234,6 +238,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(itemTypeA),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -268,6 +273,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(), // empty — unknown type won't be found
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -299,6 +305,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 

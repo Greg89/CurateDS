@@ -57,6 +57,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -106,6 +107,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -154,6 +156,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(itemTypeA, itemTypeB),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -204,6 +207,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(itemTypeA, itemTypeB),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -239,6 +243,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -288,6 +293,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -327,6 +333,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             eventRepository,
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -353,6 +360,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             eventRepository,
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -379,6 +387,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             eventRepository,
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -405,6 +414,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             eventRepository,
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -433,6 +443,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(), // empty — unknown type won't be found
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -463,6 +474,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             eventRepository,
             new FakeItemTypeRepository(oldType, newType),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 

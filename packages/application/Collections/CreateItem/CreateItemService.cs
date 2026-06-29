@@ -17,6 +17,7 @@ public sealed class CreateItemService
     private readonly ITagRepository _tagRepository;
     private readonly IItemEventRepository _itemEventRepository;
     private readonly IItemTypeRepository _itemTypeRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<CreateItemCommand> _validator;
 
@@ -28,6 +29,7 @@ public sealed class CreateItemService
         ITagRepository tagRepository,
         IItemEventRepository itemEventRepository,
         IItemTypeRepository itemTypeRepository,
+        ICatalogUnitOfWork unitOfWork,
         ICurrentUserService currentUser,
         IValidator<CreateItemCommand> validator)
     {
@@ -38,6 +40,7 @@ public sealed class CreateItemService
         _tagRepository = tagRepository;
         _itemEventRepository = itemEventRepository;
         _itemTypeRepository = itemTypeRepository;
+        _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -120,26 +123,31 @@ public sealed class CreateItemService
             now,
             actor);
 
-        await _itemRepository.AddAsync(item, cancellationToken);
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async innerCancellationToken =>
+            {
+                await _itemRepository.AddAsync(item, innerCancellationToken);
 
-        await _itemEventRepository.RecordAsync(
-            ItemEvent.Record(item.Id, item.CollectionId, ItemEventType.Created, now, actor),
+                await _itemEventRepository.RecordAsync(
+                    ItemEvent.Record(item.Id, item.CollectionId, ItemEventType.Created, now, actor),
+                    innerCancellationToken);
+                await _itemEventRepository.SaveChangesAsync(innerCancellationToken);
+
+                return new CreateItemResult(
+                    item.Id,
+                    item.CollectionId,
+                    item.Name,
+                    item.Description,
+                    item.Quantity,
+                    organization.Location?.Id,
+                    organization.Location?.Name,
+                    item.ItemTypeId,
+                    organization.Tags.Select(tag => new TagDto(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)).ToArray(),
+                    item.CreatedUtc,
+                    item.UpdatedUtc,
+                    MapAttributeValues(item, attributeDefinitions));
+            },
             cancellationToken);
-        await _itemEventRepository.SaveChangesAsync(cancellationToken);
-
-        return new CreateItemResult(
-            item.Id,
-            item.CollectionId,
-            item.Name,
-            item.Description,
-            item.Quantity,
-            organization.Location?.Id,
-            organization.Location?.Name,
-            item.ItemTypeId,
-            organization.Tags.Select(tag => new TagDto(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)).ToArray(),
-            item.CreatedUtc,
-            item.UpdatedUtc,
-            MapAttributeValues(item, attributeDefinitions));
     }
 
     private static IReadOnlyList<ItemAttributeValueDto> MapAttributeValues(
