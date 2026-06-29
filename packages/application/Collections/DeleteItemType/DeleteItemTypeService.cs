@@ -8,15 +8,18 @@ public sealed class DeleteItemTypeService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly IItemTypeRepository _itemTypeRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
 
     public DeleteItemTypeService(
         ICollectionRepository collectionRepository,
         IItemTypeRepository itemTypeRepository,
+        ICatalogUnitOfWork unitOfWork,
         ICurrentUserService currentUser)
     {
         _collectionRepository = collectionRepository;
         _itemTypeRepository = itemTypeRepository;
+        _unitOfWork = unitOfWork;
         _currentUser = currentUser;
     }
 
@@ -35,16 +38,21 @@ public sealed class DeleteItemTypeService
             throw new NotFoundException("Collection was not found.");
         }
 
-        var deleted = await _itemTypeRepository.SoftDeleteAsync(
-            command.ItemTypeId,
-            command.CollectionId,
-            now,
-            actor,
-            cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            async innerCancellationToken =>
+            {
+                var deleted = await _itemTypeRepository.SoftDeleteAsync(
+                    command.ItemTypeId,
+                    command.CollectionId,
+                    now,
+                    actor,
+                    innerCancellationToken);
 
-        if (!deleted)
-        {
-            throw new NotFoundException("Item type was not found.");
-        }
+                if (!deleted)
+                {
+                    throw new NotFoundException("Item type was not found.");
+                }
+            },
+            cancellationToken);
     }
 }

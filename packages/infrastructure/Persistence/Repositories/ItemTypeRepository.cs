@@ -16,7 +16,6 @@ public sealed class ItemTypeRepository : IItemTypeRepository
     public async Task AddAsync(ItemType itemType, CancellationToken cancellationToken)
     {
         await _dbContext.ItemTypes.AddAsync(itemType, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<int> GetNextSortOrderAsync(Guid collectionId, CancellationToken cancellationToken)
@@ -62,7 +61,6 @@ public sealed class ItemTypeRepository : IItemTypeRepository
             return false;
 
         itemType.SoftDelete(deletedUtc, deletedBy);
-        await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 }
