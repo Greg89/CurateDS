@@ -82,8 +82,5 @@ public sealed class DeleteLocationServiceTests
             SoftDeleteCallCount++;
             return Task.FromResult(_locations.Any(location => location.Id == locationId && location.OwnerId == ownerId));
         }
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-            => Task.CompletedTask;
     }
 }

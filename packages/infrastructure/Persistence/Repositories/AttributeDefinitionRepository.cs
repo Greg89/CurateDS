@@ -72,8 +72,4 @@ public sealed class AttributeDefinitionRepository : IAttributeDefinitionReposito
         return true;
     }
 
-    public async Task SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
 }

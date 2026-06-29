@@ -1496,8 +1496,6 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
 
         public Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed record ItemEventResponse(Guid Id, Guid ItemId, Guid CollectionId, string EventType, DateTime OccurredUtc, string OccurredBy, string? Notes);

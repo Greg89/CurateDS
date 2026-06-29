@@ -124,9 +124,6 @@ public sealed class DeleteCollectionServiceTests
         public Task<IReadOnlyList<Item>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Item>>([]);
 
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-            => Task.CompletedTask;
-
         public Task<bool> SoftDeleteAsync(
             Guid itemId,
             Guid collectionId,

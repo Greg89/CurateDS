@@ -73,11 +73,6 @@ public sealed class ItemRepository : IItemRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        return _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
     public async Task<PagedResult<ItemSummaryProjection>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
     {
         var q = _dbContext.Items

@@ -107,7 +107,5 @@ public sealed class CreateTagServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid tagId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

@@ -252,12 +252,6 @@ public sealed class UploadItemMediaServiceTests
         public Task<IReadOnlyList<Item>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Item>>(_items.Where(i => i.CollectionId == collectionId).ToArray());
 
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-        {
-            SaveChangesCallCount++;
-            return Task.CompletedTask;
-        }
-
         public void AddMediaAsset(MediaAsset asset) { }
 
         public Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)

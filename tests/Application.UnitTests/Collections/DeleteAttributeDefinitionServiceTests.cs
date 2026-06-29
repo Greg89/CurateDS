@@ -146,8 +146,5 @@ public sealed class DeleteAttributeDefinitionServiceTests
 
         public Task<bool> ExistsByKeyExcludingAsync(Guid collectionId, string key, Guid excludeAttributeDefinitionId, CancellationToken cancellationToken)
             => Task.FromResult(false);
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-            => Task.CompletedTask;
     }
 }

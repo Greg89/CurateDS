@@ -167,8 +167,6 @@ public sealed class CreateAttributeDefinitionServiceTests
 
         public Task<bool> ExistsByKeyExcludingAsync(Guid collectionId, string key, Guid excludeAttributeDefinitionId, CancellationToken cancellationToken)
             => Task.FromResult(AttributeDefinitions.Any(definition => definition.CollectionId == collectionId && definition.Key == key && definition.Id != excludeAttributeDefinitionId));
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
 }

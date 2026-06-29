@@ -37,8 +37,4 @@ public sealed class SavedViewRepository : ISavedViewRepository
         _dbContext.SavedViews.Remove(savedView);
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        return _dbContext.SaveChangesAsync(cancellationToken);
-    }
 }

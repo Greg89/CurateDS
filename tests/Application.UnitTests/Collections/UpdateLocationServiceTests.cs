@@ -101,11 +101,5 @@ public sealed class UpdateLocationServiceTests
 
         public Task<bool> SoftDeleteAsync(Guid locationId, string ownerId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken)
             => Task.FromResult(false);
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-        {
-            SaveCallCount++;
-            return Task.CompletedTask;
-        }
     }
 }

@@ -66,8 +66,4 @@ public sealed class LocationRepository : ILocationRepository
         return true;
     }
 
-    public async Task SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
 }

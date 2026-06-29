@@ -71,8 +71,4 @@ public sealed class TagRepository : ITagRepository
         return true;
     }
 
-    public async Task SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
 }

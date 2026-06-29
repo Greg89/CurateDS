@@ -121,8 +121,5 @@ public sealed class DeleteSavedViewServiceTests
         {
             SavedViews.Remove(savedView);
         }
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-            => Task.CompletedTask;
     }
 }

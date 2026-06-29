@@ -85,8 +85,5 @@ public sealed class DeleteTagServiceTests
             SoftDeleteCallCount++;
             return Task.FromResult(_tags.Any(tag => tag.Id == tagId && tag.OwnerId == ownerId));
         }
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-            => Task.CompletedTask;
     }
 }

@@ -100,8 +100,5 @@ public sealed class CreateSavedViewServiceTests
         {
             SavedViews.Remove(savedView);
         }
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken)
-            => Task.CompletedTask;
     }
 }
