@@ -11,6 +11,7 @@ const tags = [
 describe("TagMultiSelect", () => {
   it("closes when pressing Escape", async () => {
     const user = userEvent.setup();
+    const onToggle = vi.fn();
 
     render(
       <div>
@@ -19,17 +20,26 @@ describe("TagMultiSelect", () => {
           emptyLabel="Select tags"
           selectedTagIds={[]}
           tags={tags}
-          onToggle={vi.fn()}
+          onToggle={onToggle}
         />
       </div>
     );
 
-    await user.click(screen.getByRole("button", { name: /Select tags/i }));
-    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    const trigger = screen.getByRole("button", { name: /Select tags/i });
+    await user.click(trigger);
+
+    const menu = screen.getByRole("group", { name: "Tag options" });
+    expect(menu).toBeInTheDocument();
+
+    const alphaOption = screen.getByRole("checkbox", { name: "Alpha" });
+    await user.click(alphaOption);
+    expect(alphaOption).toHaveFocus();
+    expect(onToggle).toHaveBeenCalledWith("tag-a");
 
     await user.keyboard("{Escape}");
 
     expect(screen.queryByText("Alpha")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 
   it("closes when clicking outside the component", async () => {
@@ -49,10 +59,36 @@ describe("TagMultiSelect", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /Select tags/i }));
-    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Tag options" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Outside target" }));
+    const outsideTarget = screen.getByRole("button", { name: "Outside target" });
+    await user.click(outsideTarget);
 
     expect(screen.queryByText("Alpha")).not.toBeInTheDocument();
+    expect(outsideTarget).toHaveFocus();
+  });
+
+  it("links the trigger to the open tag options group", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <TagMultiSelect
+        disabled={false}
+        emptyLabel="Select tags"
+        selectedTagIds={[]}
+        tags={tags}
+        onToggle={vi.fn()}
+      />
+    );
+
+    const trigger = screen.getByRole("button", { name: /Select tags/i });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(trigger).not.toHaveAttribute("aria-controls");
+
+    await user.click(trigger);
+
+    const menu = screen.getByRole("group", { name: "Tag options" });
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(trigger).toHaveAttribute("aria-controls", menu.id);
   });
 });
