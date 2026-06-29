@@ -42,6 +42,7 @@ public sealed class CreateItemServiceTests
             createdBy: "system");
 
         var itemRepository = new FakeItemRepository();
+        var unitOfWork = new FakeCatalogUnitOfWork();
         var service = new CreateItemService(
             new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(issueNumber, isFoil),
@@ -50,7 +51,7 @@ public sealed class CreateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
-            new FakeCatalogUnitOfWork(),
+            unitOfWork,
             new FakeCurrentUserService(),
             new CreateItemCommandValidator());
 
@@ -73,6 +74,7 @@ public sealed class CreateItemServiceTests
         result.Name.Should().Be("Blue-Eyes White Dragon");
         result.AttributeValues.Should().HaveCount(2);
         itemRepository.Items.Should().ContainSingle();
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]

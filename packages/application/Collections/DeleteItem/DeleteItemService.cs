@@ -60,7 +60,6 @@ public sealed class DeleteItemService
                 await _itemEventRepository.RecordAsync(
                     ItemEvent.Record(command.ItemId, command.CollectionId, ItemEventType.Deleted, now, actor),
                     innerCancellationToken);
-                await _itemEventRepository.SaveChangesAsync(innerCancellationToken);
             },
             cancellationToken);
     }

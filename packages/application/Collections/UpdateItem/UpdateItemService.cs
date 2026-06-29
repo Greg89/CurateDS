@@ -137,12 +137,10 @@ public sealed class UpdateItemService
                     item.Id,
                     ItemOrganizationValidator.BuildItemTags(item.Id, organization.Tags),
                     innerCancellationToken);
-                await _itemRepository.SaveChangesAsync(innerCancellationToken);
 
                 await _itemEventRepository.RecordAsync(
                     ItemEvent.Record(item.Id, item.CollectionId, ItemEventType.Updated, updatedUtc, actor, changeNotes),
                     innerCancellationToken);
-                await _itemEventRepository.SaveChangesAsync(innerCancellationToken);
 
                 return new UpdateItemResult(
                     item.Id,

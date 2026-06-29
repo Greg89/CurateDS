@@ -49,6 +49,7 @@ public sealed class UpdateItemServiceTests
             "system");
 
         var itemRepository = new FakeItemRepository(item);
+        var unitOfWork = new FakeCatalogUnitOfWork();
         var service = new UpdateItemService(
             new FakeCollectionRepository(collection),
             new FakeAttributeDefinitionRepository(issueNumber, condition),
@@ -57,7 +58,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(),
-            new FakeCatalogUnitOfWork(),
+            unitOfWork,
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -81,7 +82,8 @@ public sealed class UpdateItemServiceTests
         result.Name.Should().Be("Updated Card");
         result.Quantity.Should().Be(2);
         result.AttributeValues.Should().HaveCount(2);
-        itemRepository.SaveChangesCallCount.Should().Be(1);
+        itemRepository.SaveChangesCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -198,6 +200,7 @@ public sealed class UpdateItemServiceTests
 
         var item = Item.Create(collection.Id, "Dark Magician", null, 1, DateTime.UtcNow, "system");
         var itemRepository = new FakeItemRepository(item);
+        var unitOfWork = new FakeCatalogUnitOfWork();
 
         var service = new UpdateItemService(
             new FakeCollectionRepository(collection),
@@ -207,7 +210,7 @@ public sealed class UpdateItemServiceTests
             new FakeTagRepository(),
             new FakeItemEventRepository(),
             new FakeItemTypeRepository(itemTypeA, itemTypeB),
-            new FakeCatalogUnitOfWork(),
+            unitOfWork,
             new FakeCurrentUserService(),
             new UpdateItemCommandValidator());
 
@@ -227,7 +230,8 @@ public sealed class UpdateItemServiceTests
             CancellationToken.None);
 
         result.Name.Should().Be("Dark Magician");
-        itemRepository.SaveChangesCallCount.Should().Be(1);
+        itemRepository.SaveChangesCallCount.Should().Be(0);
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]

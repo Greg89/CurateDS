@@ -131,7 +131,6 @@ public sealed class CreateItemService
                 await _itemEventRepository.RecordAsync(
                     ItemEvent.Record(item.Id, item.CollectionId, ItemEventType.Created, now, actor),
                     innerCancellationToken);
-                await _itemEventRepository.SaveChangesAsync(innerCancellationToken);
 
                 return new CreateItemResult(
                     item.Id,

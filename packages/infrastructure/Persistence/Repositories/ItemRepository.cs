@@ -19,7 +19,6 @@ public sealed class ItemRepository : IItemRepository
     public async Task AddAsync(Item item, CancellationToken cancellationToken)
     {
         await _dbContext.Items.AddAsync(item, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public void AddMediaAsset(MediaAsset asset)
@@ -153,7 +152,6 @@ public sealed class ItemRepository : IItemRepository
         }
 
         item.SoftDelete(deletedUtc, deletedBy);
-        await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 
