@@ -56,9 +56,13 @@ Define the write consistency approach before adding more multi-table domain feat
 
 Work:
 
-1. Decide whether application services should depend on a unit-of-work abstraction or infrastructure transaction service.
-2. Start with item create, update, and delete flows.
+1. Document the unit-of-work transaction abstraction.
+2. Start implementation with item create, update, and delete flows.
 3. Define compensation behavior separately for object storage plus database writes.
+
+Status:
+
+The design direction is captured in `04-transaction-boundary-design.md`. Implementation remains open.
 
 ## Phase 6: Validation Reliability
 

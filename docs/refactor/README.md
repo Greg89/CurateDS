@@ -8,6 +8,7 @@ Contents:
 - `01-concrete-findings.md`
 - `02-prioritized-refactor-roadmap.md`
 - `03-validation-notes.md`
+- `04-transaction-boundary-design.md`
 
 Recommended reading order:
 
@@ -15,6 +16,7 @@ Recommended reading order:
 2. `01-concrete-findings.md`
 3. `02-prioritized-refactor-roadmap.md`
 4. `03-validation-notes.md`
+5. `04-transaction-boundary-design.md`
 
 Current near-term phases:
 

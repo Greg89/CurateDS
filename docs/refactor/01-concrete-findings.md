@@ -153,6 +153,6 @@ If a later write fails, the earlier state change can already be persisted. That 
 
 Recommendation:
 
-- decide on a transaction abstraction before implementing more domain entities
+- follow the design in `04-transaction-boundary-design.md`
 - wrap the item write plus item-event write in one transaction
 - define separate compensation behavior for object storage plus database flows
