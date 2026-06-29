@@ -17,7 +17,6 @@ public sealed class CollectionRepository : ICollectionRepository
     public async Task AddAsync(Collection collection, CancellationToken cancellationToken)
     {
         await _dbContext.Collections.AddAsync(collection, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<Collection?> GetByIdAndOwnerAsync(Guid collectionId, string ownerId, CancellationToken cancellationToken)
