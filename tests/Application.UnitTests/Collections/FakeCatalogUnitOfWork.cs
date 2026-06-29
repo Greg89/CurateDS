@@ -5,13 +5,19 @@ namespace CurateDS.Application.UnitTests.Collections;
 internal sealed class FakeCatalogUnitOfWork : ICatalogUnitOfWork
 {
     public int ExecutionCount { get; private set; }
+    public Exception? ExceptionToThrowAfterOperation { get; init; }
 
-    public Task ExecuteInTransactionAsync(
+    public async Task ExecuteInTransactionAsync(
         Func<CancellationToken, Task> operation,
         CancellationToken cancellationToken)
     {
         ExecutionCount++;
-        return operation(cancellationToken);
+        await operation(cancellationToken);
+
+        if (ExceptionToThrowAfterOperation is not null)
+        {
+            throw ExceptionToThrowAfterOperation;
+        }
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(
@@ -19,6 +25,13 @@ internal sealed class FakeCatalogUnitOfWork : ICatalogUnitOfWork
         CancellationToken cancellationToken)
     {
         ExecutionCount++;
-        return await operation(cancellationToken);
+        var result = await operation(cancellationToken);
+
+        if (ExceptionToThrowAfterOperation is not null)
+        {
+            throw ExceptionToThrowAfterOperation;
+        }
+
+        return result;
     }
 }
