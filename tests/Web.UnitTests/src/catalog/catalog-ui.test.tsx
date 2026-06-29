@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -86,6 +86,97 @@ describe("CatalogApp UI structure", () => {
     await screen.findByRole("heading", { name: "Item Filters" });
   });
 
+  it("keeps rendering valid saved views when one saved-view payload is malformed", async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get(
+        `http://localhost:8080/collections/${defaultCollection.id}/saved-views`,
+        () =>
+          HttpResponse.json([
+            {
+              id: "view-valid",
+              collectionId: defaultCollection.id,
+              name: "Wishlist",
+              filtersJson: '{"hasNoTags":true}',
+              createdUtc: "2026-04-21T00:12:00Z"
+            },
+            {
+              id: "view-invalid",
+              collectionId: defaultCollection.id,
+              name: "Broken",
+              filtersJson: '{"tagIds":"not-an-array"}',
+              createdUtc: "2026-04-21T00:13:00Z"
+            }
+          ])
+      )
+    );
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    await user.click(await screen.findByRole("button", { name: /Filters/i }));
+
+    expect(await screen.findByRole("heading", { name: "Saved Views" })).toBeInTheDocument();
+    expect(await screen.findByText("Wishlist")).toBeInTheDocument();
+    expect(screen.queryByText("Broken")).not.toBeInTheDocument();
+  });
+
+  it("applies a saved view using normalized filter state across the filters panel", async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get("http://localhost:8080/tags", () =>
+        HttpResponse.json([
+          { id: "tag-a", name: "Alpha", key: "alpha", createdUtc: "2026-04-20T00:00:00Z" },
+          { id: "tag-b", name: "Beta", key: "beta", createdUtc: "2026-04-20T00:00:00Z" }
+        ])
+      ),
+      http.get(`http://localhost:8080/collections/${defaultCollection.id}/item-types`, () =>
+        HttpResponse.json([
+          {
+            id: "type-1",
+            collectionId: defaultCollection.id,
+            name: "Vinyl",
+            sortOrder: 0,
+            createdUtc: "2026-04-20T00:00:00Z"
+          }
+        ])
+      ),
+      http.get(
+        `http://localhost:8080/collections/${defaultCollection.id}/saved-views`,
+        () =>
+          HttpResponse.json([
+            {
+              id: "view-1",
+              collectionId: defaultCollection.id,
+              name: "Normalized View",
+              filtersJson:
+                '{"searchText":"  Jazz  ","itemTypeId":" type-1 ","tagIds":["tag-b","tag-a","tag-a"],"hasNoTags":true}',
+              createdUtc: "2026-04-21T00:12:00Z"
+            }
+          ])
+      )
+    );
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    await user.click(await screen.findByRole("button", { name: /Filters/i }));
+    await user.click(await screen.findByRole("button", { name: "Apply" }));
+
+    const filtersPanel = screen.getByRole("heading", { name: "Item Filters" }).closest("section");
+    expect(filtersPanel).not.toBeNull();
+
+    const panel = within(filtersPanel as HTMLElement);
+    expect(panel.getByLabelText("Search")).toHaveValue("Jazz");
+    expect(panel.getByLabelText("Item Type")).toHaveValue("type-1");
+    expect(panel.getByRole("button", { name: /Alpha, Beta/i })).toBeInTheDocument();
+    expect(panel.getByLabelText("No tags assigned")).toBeChecked();
+  });
+
   it("Filters button shows a count badge when search text is applied", async () => {
     const user = userEvent.setup();
 
@@ -129,6 +220,24 @@ describe("CatalogApp UI structure", () => {
     await user.click(await screen.findByRole("button", { name: /\+ Add Item/i }));
 
     expect(await screen.findByRole("dialog", { name: /create item/i })).toBeInTheDocument();
+  });
+
+  it("focuses the item name field on open and returns focus to Add Item on close", async () => {
+    const user = userEvent.setup();
+
+    renderApp(<App />, {
+      initialEntries: [`/collections/${defaultCollection.id}/items`]
+    });
+
+    const addItemButton = await screen.findByRole("button", { name: /\+ Add Item/i });
+    await user.click(addItemButton);
+
+    const nameInput = await screen.findByLabelText("Name");
+    expect(nameInput).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Close item form" }));
+
+    expect(addItemButton).toHaveFocus();
   });
 
   it("shows tag usage in settings organization summary when items are tagged", async () => {

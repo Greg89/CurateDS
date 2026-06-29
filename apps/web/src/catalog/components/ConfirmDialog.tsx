@@ -20,13 +20,19 @@ export function ConfirmDialog({
       className="confirm-dialog-backdrop"
       labelledBy="confirm-dialog-title"
       closeDisabled={isPending}
+      initialFocusSelector="[data-autofocus='true']"
       onRequestClose={onCancel}
     >
       <div className="confirm-dialog">
         <h3 id="confirm-dialog-title">{title}</h3>
         <p>{message}</p>
         <div className="confirm-dialog-actions">
-          <button className="secondary-button" disabled={isPending} onClick={onCancel}>
+          <button
+            className="secondary-button"
+            data-autofocus="true"
+            disabled={isPending}
+            onClick={onCancel}
+          >
             Cancel
           </button>
           <button className="danger-button" disabled={isPending} onClick={onConfirm}>

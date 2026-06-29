@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { ItemFilters } from "../../api";
+import { ItemFilters, normalizeItemFilters, normalizeTagIds } from "../../api";
 import { SavedItemView } from "../types";
-import { normalizeTagIds } from "../utils";
 
 export function useItemFilters(selectedCollectionId: string) {
   const defaultSortBy: ItemFilters["sortBy"] = "updatedUtc";
@@ -25,7 +24,7 @@ export function useItemFilters(selectedCollectionId: string) {
 
   const normalizedItemFilterTagIds = normalizeTagIds(itemFilterTagIds);
 
-  const itemFilters: ItemFilters = {
+  const itemFilters = normalizeItemFilters({
     searchText: itemSearchText,
     locationId: itemFilterLocationId,
     itemTypeId: itemFilterTypeId || undefined,
@@ -39,7 +38,7 @@ export function useItemFilters(selectedCollectionId: string) {
     createdBefore: itemFilterCreatedBefore || undefined,
     hasNoLocation: itemFilterHasNoLocation || undefined,
     hasNoTags: itemFilterHasNoTags || undefined
-  };
+  });
 
   useEffect(() => {
     clearItemFilters();
@@ -80,20 +79,27 @@ export function useItemFilters(selectedCollectionId: string) {
     }));
   }
 
-  function applySavedView(view: SavedItemView) {
-    setItemSearchText(view.filters.searchText ?? "");
-    setItemFilterLocationId(view.filters.locationId ?? "");
-    setItemFilterTagIds(view.filters.tagIds ?? []);
-    setItemAttributeFilters(view.filters.attributeFilters ?? {});
-    setItemSortBy(view.filters.sortBy ?? defaultSortBy);
-    setItemSortDirection(view.filters.sortDirection ?? defaultSortDirection);
-    setItemFilterMinQuantity(view.filters.minQuantity);
-    setItemFilterMaxQuantity(view.filters.maxQuantity);
-    setItemFilterCreatedAfter(view.filters.createdAfter ?? "");
-    setItemFilterCreatedBefore(view.filters.createdBefore ?? "");
-    setItemFilterHasNoLocation(view.filters.hasNoLocation ?? false);
-    setItemFilterHasNoTags(view.filters.hasNoTags ?? false);
+  function applyItemFilters(filters: ItemFilters) {
+    const normalizedFilters = normalizeItemFilters(filters);
+
+    setItemSearchText(normalizedFilters.searchText ?? "");
+    setItemFilterLocationId(normalizedFilters.locationId ?? "");
+    setItemFilterTypeId(normalizedFilters.itemTypeId ?? "");
+    setItemFilterTagIds(normalizedFilters.tagIds ?? []);
+    setItemAttributeFilters(normalizedFilters.attributeFilters ?? {});
+    setItemSortBy(normalizedFilters.sortBy ?? defaultSortBy);
+    setItemSortDirection(normalizedFilters.sortDirection ?? defaultSortDirection);
+    setItemFilterMinQuantity(normalizedFilters.minQuantity);
+    setItemFilterMaxQuantity(normalizedFilters.maxQuantity);
+    setItemFilterCreatedAfter(normalizedFilters.createdAfter ?? "");
+    setItemFilterCreatedBefore(normalizedFilters.createdBefore ?? "");
+    setItemFilterHasNoLocation(normalizedFilters.hasNoLocation ?? false);
+    setItemFilterHasNoTags(normalizedFilters.hasNoTags ?? false);
     setItemPage(1);
+  }
+
+  function applySavedView(view: SavedItemView) {
+    applyItemFilters(view.filters);
   }
 
   return {
@@ -130,6 +136,7 @@ export function useItemFilters(selectedCollectionId: string) {
     clearItemFilters,
     toggleFilterTag,
     handleAttributeFilterChange,
+    applyItemFilters,
     applySavedView
   };
 }
