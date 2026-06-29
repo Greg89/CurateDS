@@ -54,6 +54,32 @@ describe("Item detail sections", () => {
     expect(screen.getByRole("dialog", { name: "Image lightbox" })).toBeInTheDocument();
   });
 
+  it("renders media metadata in the item media section", () => {
+    renderApp(
+      <ItemMediaSection
+        isUploadPending={false}
+        mediaAssets={[
+          {
+            id: "asset-1",
+            url: "https://example.com/cover.jpg",
+            fileName: "cover.jpg",
+            contentType: "image/jpeg",
+            sizeBytes: 1234,
+            isPrimary: true,
+            uploadedUtc: "2026-01-01T00:00:00Z"
+          }
+        ]}
+        onDeleteMedia={vi.fn()}
+        onSetPrimaryMedia={vi.fn()}
+        onUploadMedia={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText("cover.jpg")).toBeInTheDocument();
+    expect(screen.getByText("JPEG image | 1.2 KB")).toBeInTheDocument();
+    expect(screen.getByText(/Uploaded/i)).toBeInTheDocument();
+  });
+
   it("renders history events returned by the API", async () => {
     server.use(
       http.get(
