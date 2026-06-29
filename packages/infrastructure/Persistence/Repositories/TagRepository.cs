@@ -16,7 +16,6 @@ public sealed class TagRepository : ITagRepository
     public async Task AddAsync(Tag tag, CancellationToken cancellationToken)
     {
         await _dbContext.Tags.AddAsync(tag, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public Task<bool> ExistsByKeyAsync(string ownerId, string key, CancellationToken cancellationToken)
@@ -69,7 +68,6 @@ public sealed class TagRepository : ITagRepository
         _dbContext.ItemTags.RemoveRange(itemTags);
 
         tag.SoftDelete(deletedUtc, deletedBy);
-        await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 

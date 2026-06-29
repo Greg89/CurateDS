@@ -7,11 +7,16 @@ namespace CurateDS.Application.Collections.DeleteTag;
 public sealed class DeleteTagService
 {
     private readonly ITagRepository _tagRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
 
-    public DeleteTagService(ITagRepository tagRepository, ICurrentUserService currentUser)
+    public DeleteTagService(
+        ITagRepository tagRepository,
+        ICatalogUnitOfWork unitOfWork,
+        ICurrentUserService currentUser)
     {
         _tagRepository = tagRepository;
+        _unitOfWork = unitOfWork;
         _currentUser = currentUser;
     }
 
@@ -20,16 +25,21 @@ public sealed class DeleteTagService
         var now = DateTime.UtcNow;
         var actor = _currentUser.GetCurrentUser();
 
-        var deleted = await _tagRepository.SoftDeleteAsync(
-            command.TagId,
-            command.OwnerId,
-            now,
-            actor,
-            cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            async innerCancellationToken =>
+            {
+                var deleted = await _tagRepository.SoftDeleteAsync(
+                    command.TagId,
+                    command.OwnerId,
+                    now,
+                    actor,
+                    innerCancellationToken);
 
-        if (!deleted)
-        {
-            throw new NotFoundException("Tag was not found.");
-        }
+                if (!deleted)
+                {
+                    throw new NotFoundException("Tag was not found.");
+                }
+            },
+            cancellationToken);
     }
 }
