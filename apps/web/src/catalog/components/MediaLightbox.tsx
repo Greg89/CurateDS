@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { MediaAsset } from "../../api";
+import {
+  formatMediaContentType,
+  formatMediaFileSize,
+  mediaDateFormat
+} from "../mediaFormatting";
 
 export function MediaLightbox({
   assets,
@@ -80,13 +85,20 @@ export function MediaLightbox({
 
         <div className="media-lightbox-bar">
           <div className="media-lightbox-info">
-            {asset.isPrimary && <span className="media-primary-badge">Primary</span>}
-            <span className="media-lightbox-filename">{asset.fileName}</span>
-            {assets.length > 1 && (
-              <span className="media-lightbox-counter">
-                {currentIndex + 1} of {assets.length}
-              </span>
-            )}
+            <div className="media-lightbox-title-row">
+              {asset.isPrimary && <span className="media-primary-badge">Primary</span>}
+              <span className="media-lightbox-filename">{asset.fileName}</span>
+              {assets.length > 1 && (
+                <span className="media-lightbox-counter">
+                  {currentIndex + 1} of {assets.length}
+                </span>
+              )}
+            </div>
+            <div className="media-lightbox-meta">
+              <span>{formatMediaContentType(asset.contentType)}</span>
+              <span>{formatMediaFileSize(asset.sizeBytes)}</span>
+              <span>Uploaded {mediaDateFormat.format(new Date(asset.uploadedUtc))}</span>
+            </div>
           </div>
 
           <div className="media-lightbox-actions">
