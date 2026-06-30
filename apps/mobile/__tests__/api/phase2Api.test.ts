@@ -8,22 +8,22 @@ import * as client from '../../src/api/client';
 const mockedFetch = client.apiFetch as jest.MockedFunction<typeof client.apiFetch>;
 
 const TAG = {
-  id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   name: 'film',
   key: 'film',
   createdUtc: '2026-01-01T00:00:00Z',
 };
 
 const LOCATION = {
-  id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+  id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
   name: 'Camera shelf',
   description: null,
   createdUtc: '2026-01-01T00:00:00Z',
 };
 
 const ATTR_DEF = {
-  id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
-  collectionId: '11111111-1111-1111-1111-111111111111',
+  id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+  collectionId: '11111111-1111-4111-8111-111111111111',
   name: 'Year',
   key: 'year',
   dataType: 'Number',
@@ -35,8 +35,8 @@ const ATTR_DEF = {
 };
 
 const ITEM_DETAIL = {
-  id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
-  collectionId: '11111111-1111-1111-1111-111111111111',
+  id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  collectionId: '11111111-1111-4111-8111-111111111111',
   name: 'Canon AE-1',
   description: null,
   quantity: 1,
@@ -51,7 +51,7 @@ const ITEM_DETAIL = {
 };
 
 const MEDIA_ASSET = {
-  id: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+  id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
   url: 'https://cdn.example.com/photo.jpg',
   contentType: 'image/jpeg',
   fileName: 'photo.jpg',
@@ -102,9 +102,9 @@ describe('listLocations', () => {
 describe('listAttributeDefinitions', () => {
   it('calls GET /collections/:id/attribute-definitions and returns parsed defs', async () => {
     mockedFetch.mockResolvedValueOnce([ATTR_DEF]);
-    const result = await listAttributeDefinitions('11111111-1111-1111-1111-111111111111');
+    const result = await listAttributeDefinitions('11111111-1111-4111-8111-111111111111');
     expect(mockedFetch).toHaveBeenCalledWith(
-      '/collections/11111111-1111-1111-1111-111111111111/attribute-definitions',
+      '/collections/11111111-1111-4111-8111-111111111111/attribute-definitions',
     );
     expect(result[0].name).toBe('Year');
     expect(result[0].isRequired).toBe(true);
@@ -112,7 +112,7 @@ describe('listAttributeDefinitions', () => {
 
   it('returns empty array when no definitions exist', async () => {
     mockedFetch.mockResolvedValueOnce([]);
-    const result = await listAttributeDefinitions('11111111-1111-1111-1111-111111111111');
+    const result = await listAttributeDefinitions('11111111-1111-4111-8111-111111111111');
     expect(result).toEqual([]);
   });
 });
@@ -128,9 +128,9 @@ describe('createItem', () => {
       tagIds: [],
       attributeValues: [],
     };
-    const result = await createItem('11111111-1111-1111-1111-111111111111', input);
+    const result = await createItem('11111111-1111-4111-8111-111111111111', input);
     expect(mockedFetch).toHaveBeenCalledWith(
-      '/collections/11111111-1111-1111-1111-111111111111/items',
+      '/collections/11111111-1111-4111-8111-111111111111/items',
       expect.objectContaining({ method: 'POST' }),
     );
     expect(result.name).toBe('Canon AE-1');
@@ -138,7 +138,7 @@ describe('createItem', () => {
 
   it('returns parsed ItemDetail on success', async () => {
     mockedFetch.mockResolvedValueOnce(ITEM_DETAIL);
-    const result = await createItem('11111111-1111-1111-1111-111111111111', {
+    const result = await createItem('11111111-1111-4111-8111-111111111111', {
       name: 'Canon AE-1',
       description: '',
       quantity: 1,
@@ -153,7 +153,7 @@ describe('createItem', () => {
   it('throws on invalid response shape', async () => {
     mockedFetch.mockResolvedValueOnce({ id: 'bad' });
     await expect(
-      createItem('11111111-1111-1111-1111-111111111111', {
+      createItem('11111111-1111-4111-8111-111111111111', {
         name: 'Canon AE-1',
         description: '',
         quantity: 1,
@@ -169,14 +169,14 @@ describe('uploadItemMedia', () => {
   it('calls POST media endpoint and returns parsed MediaAsset', async () => {
     mockedFetch.mockResolvedValueOnce(MEDIA_ASSET);
     const result = await uploadItemMedia(
-      '11111111-1111-1111-1111-111111111111',
-      'dddddddd-dddd-dddd-dddd-dddddddddddd',
+      '11111111-1111-4111-8111-111111111111',
+      'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
       'file:///tmp/photo.jpg',
       'photo.jpg',
       'image/jpeg',
     );
     expect(mockedFetch).toHaveBeenCalledWith(
-      '/collections/11111111-1111-1111-1111-111111111111/items/dddddddd-dddd-dddd-dddd-dddddddddddd/media',
+      '/collections/11111111-1111-4111-8111-111111111111/items/dddddddd-dddd-4ddd-8ddd-dddddddddddd/media',
       expect.objectContaining({ method: 'POST' }),
     );
     expect(result.isPrimary).toBe(true);
