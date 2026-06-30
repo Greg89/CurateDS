@@ -70,7 +70,7 @@ describe('App', () => {
   it('shows the sign-in screen when no tokens are stored', async () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(null);
 
-    const { findByText } = render(<App />);
+    const { findByText } = await render(<App />);
 
     expect(await findByText('CurateDS')).toBeTruthy();
     expect(await findByText('Sign in')).toBeTruthy();
@@ -79,7 +79,7 @@ describe('App', () => {
   it('shows the profile tab with user claim once signed in', async () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(validTokens);
 
-    const { findByText } = render(<App />);
+    const { findByText } = await render(<App />);
 
     expect(await findByText('Ada Lovelace')).toBeTruthy();
     expect(await findByText('ada@example.com')).toBeTruthy();
@@ -89,10 +89,10 @@ describe('App', () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(null);
     mockedClient.login.mockResolvedValueOnce(validTokens);
 
-    const { findByText } = render(<App />);
+    const { findByText } = await render(<App />);
 
     const signInButton = await findByText('Sign in');
-    fireEvent.press(signInButton);
+    await fireEvent.press(signInButton);
 
     await waitFor(async () => {
       expect(await findByText('Ada Lovelace')).toBeTruthy();

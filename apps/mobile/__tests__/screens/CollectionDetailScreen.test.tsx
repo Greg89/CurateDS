@@ -50,10 +50,10 @@ describe('CollectionDetailScreen', () => {
     queryClient.clear();
   });
 
-  it('shows a loading indicator while fetching', () => {
+  it('shows a loading indicator while fetching', async () => {
     mockedApi.listItems.mockResolvedValueOnce([]);
 
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
@@ -64,7 +64,7 @@ describe('CollectionDetailScreen', () => {
   it('renders item names and metadata on success', async () => {
     mockedApi.listItems.mockResolvedValueOnce(items);
 
-    const { findByText } = render(
+    const { findByText } = await render(
       <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
@@ -79,7 +79,7 @@ describe('CollectionDetailScreen', () => {
   it('shows empty state when items array is empty', async () => {
     mockedApi.listItems.mockResolvedValueOnce([]);
 
-    const { findByText } = render(
+    const { findByText } = await render(
       <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
@@ -90,7 +90,7 @@ describe('CollectionDetailScreen', () => {
   it('shows error state on fetch failure', async () => {
     mockedApi.listItems.mockRejectedValueOnce(new Error('Network error'));
 
-    const { findByText } = render(
+    const { findByText } = await render(
       <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
