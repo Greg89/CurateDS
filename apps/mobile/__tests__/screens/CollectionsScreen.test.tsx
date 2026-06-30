@@ -25,9 +25,9 @@ const collections: Collection[] = [
 
 describe('CollectionsScreen', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
+      defaultOptions: { queries: { retry: false, gcTime: Infinity } },
     });
   });
 
@@ -36,7 +36,7 @@ describe('CollectionsScreen', () => {
   });
 
   it('shows a loading indicator while fetching', () => {
-    mockedApi.listCollections.mockReturnValue(new Promise(() => {}));
+    mockedApi.listCollections.mockResolvedValueOnce([]);
 
     const { getByTestId } = render(<CollectionsScreen navigation={mockNavigation} route={mockRoute} />, { wrapper });
 
@@ -72,7 +72,7 @@ describe('CollectionsScreen', () => {
   it('re-fetches when the retry button is pressed', async () => {
     mockedApi.listCollections
       .mockRejectedValueOnce(new Error('Network error'))
-      .mockResolvedValueOnce(collections);
+      .mockResolvedValue(collections);
 
     const { findByText } = render(<CollectionsScreen navigation={mockNavigation} route={mockRoute} />, { wrapper });
 

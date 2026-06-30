@@ -1,4 +1,3 @@
-import { ZodError } from "zod";
 import { describe, expect, it } from "vitest";
 import {
   ItemSummarySchema,
@@ -20,6 +19,21 @@ import { LocationSchema } from "@app/api/locations";
 import { ItemTypeSchema } from "@app/api/item-types";
 import { SavedViewSchema } from "@app/api/saved-views";
 import { MediaAssetSchema } from "@app/api/media";
+
+const expectZodError = (parse: () => unknown) => {
+  let thrown: unknown;
+
+  try {
+    parse();
+  } catch (error) {
+    thrown = error;
+  }
+
+  expect(thrown).toMatchObject({
+    name: "ZodError",
+    issues: expect.any(Array),
+  });
+};
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -70,11 +84,11 @@ describe("ItemSummarySchema", () => {
 
   it("throws ZodError when name is missing", () => {
     const { name: _name, ...withoutName } = validItemSummary;
-    expect(() => ItemSummarySchema.parse(withoutName)).toThrow(ZodError);
+    expectZodError(() => ItemSummarySchema.parse(withoutName));
   });
 
   it("throws ZodError when quantity is not a number", () => {
-    expect(() => ItemSummarySchema.parse({ ...validItemSummary, quantity: "one" })).toThrow(ZodError);
+    expectZodError(() => ItemSummarySchema.parse({ ...validItemSummary, quantity: "one" }));
   });
 });
 
@@ -107,9 +121,9 @@ describe("PagedItemsSchema", () => {
   });
 
   it("throws ZodError when totalCount is missing", () => {
-    expect(() =>
+    expectZodError(() =>
       PagedItemsSchema.parse({ items: [], page: 1, pageSize: 50, totalPages: 0 })
-    ).toThrow(ZodError);
+    );
   });
 });
 
@@ -150,7 +164,7 @@ describe("ItemDetailSchema", () => {
 
   it("throws ZodError when attributeValues is missing", () => {
     const { attributeValues: _av, ...without } = validDetail;
-    expect(() => ItemDetailSchema.parse(without)).toThrow(ZodError);
+    expectZodError(() => ItemDetailSchema.parse(without));
   });
 });
 
@@ -169,7 +183,7 @@ describe("CollectionSchema", () => {
   });
 
   it("throws ZodError when id is missing", () => {
-    expect(() => CollectionSchema.parse({ name: "Records", createdUtc: "2026-04-20T00:00:00Z" })).toThrow(ZodError);
+    expectZodError(() => CollectionSchema.parse({ name: "Records", createdUtc: "2026-04-20T00:00:00Z" }));
   });
 });
 
@@ -186,7 +200,7 @@ describe("AttributeDataTypeSchema", () => {
   );
 
   it("throws ZodError for an unknown data type", () => {
-    expect(() => AttributeDataTypeSchema.parse("Blob")).toThrow(ZodError);
+    expectZodError(() => AttributeDataTypeSchema.parse("Blob"));
   });
 });
 
@@ -215,7 +229,7 @@ describe("AttributeDefinitionSchema", () => {
   });
 
   it("throws ZodError for an invalid dataType", () => {
-    expect(() => AttributeDefinitionSchema.parse({ ...validDef, dataType: "Blob" })).toThrow(ZodError);
+    expectZodError(() => AttributeDefinitionSchema.parse({ ...validDef, dataType: "Blob" }));
   });
 });
 
@@ -230,7 +244,7 @@ describe("TagSchema", () => {
   });
 
   it("throws ZodError when key is missing", () => {
-    expect(() => TagSchema.parse({ id: "aaa", name: "Jazz", createdUtc: "2026-01-01T00:00:00Z" })).toThrow(ZodError);
+    expectZodError(() => TagSchema.parse({ id: "aaa", name: "Jazz", createdUtc: "2026-01-01T00:00:00Z" }));
   });
 });
 
@@ -287,7 +301,7 @@ describe("MediaAssetSchema", () => {
   });
 
   it("throws ZodError when sizeBytes is not a number", () => {
-    expect(() =>
+    expectZodError(() =>
       MediaAssetSchema.parse({
         id: "aaa",
         url: "https://cdn.example.com/img.jpg",
@@ -297,7 +311,7 @@ describe("MediaAssetSchema", () => {
         isPrimary: false,
         uploadedUtc: "2026-01-01T00:00:00Z",
       })
-    ).toThrow(ZodError);
+    );
   });
 });
 
