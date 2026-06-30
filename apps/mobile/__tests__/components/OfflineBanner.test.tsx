@@ -9,13 +9,13 @@ const mockedNetInfo = NetInfo as jest.Mocked<typeof NetInfo>;
 type NetInfoCallback = Parameters<typeof NetInfo.addEventListener>[0];
 
 describe('OfflineBanner', () => {
-  it('renders nothing when online', () => {
+  it('renders nothing when online', async () => {
     mockedNetInfo.addEventListener.mockImplementation((cb: NetInfoCallback) => {
       cb({ isConnected: true } as Parameters<NetInfoCallback>[0]);
       return () => {};
     });
 
-    const { queryByText } = render(<OfflineBanner />);
+    const { queryByText } = await render(<OfflineBanner />);
 
     expect(queryByText(/offline/i)).toBeNull();
   });
@@ -26,7 +26,7 @@ describe('OfflineBanner', () => {
       return () => {};
     });
 
-    const { findByText } = render(<OfflineBanner />);
+    const { findByText } = await render(<OfflineBanner />);
 
     expect(await findByText("You're offline — showing cached data")).toBeTruthy();
   });
@@ -39,10 +39,10 @@ describe('OfflineBanner', () => {
       return () => {};
     });
 
-    const { queryByText, findByText } = render(<OfflineBanner />);
+    const { queryByText, findByText } = await render(<OfflineBanner />);
     expect(await findByText("You're offline — showing cached data")).toBeTruthy();
 
-    act(() => {
+    await act(() => {
       capturedCb?.({ isConnected: true } as Parameters<NetInfoCallback>[0]);
     });
 

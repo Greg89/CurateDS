@@ -85,51 +85,51 @@ function renderScreen(routeOverrides = {}) {
 }
 
 describe('NewItemScreen', () => {
-  it('renders name, description, and quantity inputs', () => {
-    const { getByTestId } = renderScreen();
+  it('renders name, description, and quantity inputs', async () => {
+    const { getByTestId } = await renderScreen();
     expect(getByTestId('name-input')).toBeTruthy();
     expect(getByTestId('description-input')).toBeTruthy();
     expect(getByTestId('quantity-input')).toBeTruthy();
   });
 
-  it('shows a photo preview when photoUri is provided', () => {
-    const { getByTestId } = renderScreen();
+  it('shows a photo preview when photoUri is provided', async () => {
+    const { getByTestId } = await renderScreen();
     expect(getByTestId('photo-preview')).toBeTruthy();
   });
 
-  it('does not show photo preview when photoUri is null', () => {
-    const { queryByTestId } = renderScreen({ photoUri: null });
+  it('does not show photo preview when photoUri is null', async () => {
+    const { queryByTestId } = await renderScreen({ photoUri: null });
     expect(queryByTestId('photo-preview')).toBeNull();
   });
 
   it('shows name validation error when name is empty', async () => {
-    const { getByTestId } = renderScreen();
-    fireEvent.press(getByTestId('save-button'));
+    const { getByTestId } = await renderScreen();
+    await fireEvent.press(getByTestId('save-button'));
     await waitFor(() => expect(getByTestId('name-error')).toBeTruthy());
   });
 
   it('shows name validation error when name is too short', async () => {
-    const { getByTestId } = renderScreen();
-    fireEvent.changeText(getByTestId('name-input'), 'AB');
-    fireEvent.press(getByTestId('save-button'));
+    const { getByTestId } = await renderScreen();
+    await fireEvent.changeText(getByTestId('name-input'), 'AB');
+    await fireEvent.press(getByTestId('save-button'));
     await waitFor(() =>
       expect(getByTestId('name-error').props.children).toContain('3 characters'),
     );
   });
 
   it('shows quantity validation error when quantity is 0', async () => {
-    const { getByTestId } = renderScreen();
-    fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
-    fireEvent.changeText(getByTestId('quantity-input'), '0');
-    fireEvent.press(getByTestId('save-button'));
+    const { getByTestId } = await renderScreen();
+    await fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
+    await fireEvent.changeText(getByTestId('quantity-input'), '0');
+    await fireEvent.press(getByTestId('save-button'));
     await waitFor(() => expect(getByTestId('quantity-error')).toBeTruthy());
   });
 
   it('shows quantity validation error when quantity exceeds 9999', async () => {
-    const { getByTestId } = renderScreen();
-    fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
-    fireEvent.changeText(getByTestId('quantity-input'), '10000');
-    fireEvent.press(getByTestId('save-button'));
+    const { getByTestId } = await renderScreen();
+    await fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
+    await fireEvent.changeText(getByTestId('quantity-input'), '10000');
+    await fireEvent.press(getByTestId('save-button'));
     await waitFor(() => expect(getByTestId('quantity-error')).toBeTruthy());
   });
 
@@ -145,9 +145,9 @@ describe('NewItemScreen', () => {
       uploadedUtc: '2026-01-01T00:00:00Z',
     });
 
-    const { getByTestId } = renderScreen();
-    fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
-    fireEvent.press(getByTestId('save-button'));
+    const { getByTestId } = await renderScreen();
+    await fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
+    await fireEvent.press(getByTestId('save-button'));
 
     await waitFor(() =>
       expect(mockNavigate).toHaveBeenCalledWith('ItemSaved', {
@@ -166,9 +166,9 @@ describe('NewItemScreen', () => {
   it('skips uploadItemMedia when no photo uri provided', async () => {
     mockedItems.createItem.mockResolvedValueOnce(SAVED_ITEM);
 
-    const { getByTestId } = renderScreen({ photoUri: null });
-    fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
-    fireEvent.press(getByTestId('save-button'));
+    const { getByTestId } = await renderScreen({ photoUri: null });
+    await fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
+    await fireEvent.press(getByTestId('save-button'));
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
     expect(mockedItems.uploadItemMedia).not.toHaveBeenCalled();
@@ -177,9 +177,9 @@ describe('NewItemScreen', () => {
   it('shows server error when createItem fails', async () => {
     mockedItems.createItem.mockRejectedValueOnce(new Error('network'));
 
-    const { getByTestId } = renderScreen();
-    fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
-    fireEvent.press(getByTestId('save-button'));
+    const { getByTestId } = await renderScreen();
+    await fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
+    await fireEvent.press(getByTestId('save-button'));
 
     await waitFor(() => expect(getByTestId('server-error')).toBeTruthy());
   });
@@ -188,7 +188,7 @@ describe('NewItemScreen', () => {
     mockedLocations.listLocations.mockResolvedValue([
       { id: 'loc-1', name: 'Camera shelf', description: null, createdUtc: '2026-01-01T00:00:00Z' },
     ]);
-    const { findByTestId } = renderScreen();
+    const { findByTestId } = await renderScreen();
     expect(await findByTestId('location-loc-1')).toBeTruthy();
   });
 
@@ -196,7 +196,7 @@ describe('NewItemScreen', () => {
     mockedTags.listTags.mockResolvedValue([
       { id: 'tag-1', name: 'film', key: 'film', createdUtc: '2026-01-01T00:00:00Z' },
     ]);
-    const { findByTestId } = renderScreen();
+    const { findByTestId } = await renderScreen();
     expect(await findByTestId('tag-tag-1')).toBeTruthy();
   });
 
@@ -215,7 +215,7 @@ describe('NewItemScreen', () => {
         createdUtc: '2026-01-01T00:00:00Z',
       },
     ]);
-    const { findByTestId } = renderScreen();
+    const { findByTestId } = await renderScreen();
     expect(await findByTestId('attr-year')).toBeTruthy();
   });
 
@@ -228,11 +228,11 @@ describe('NewItemScreen', () => {
       id: 'aaa', url: '', contentType: 'image/jpeg', fileName: 'p.jpg', sizeBytes: 1, isPrimary: true, uploadedUtc: '',
     });
 
-    const { getByTestId, findByTestId } = renderScreen();
-    fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
+    const { getByTestId, findByTestId } = await renderScreen();
+    await fireEvent.changeText(getByTestId('name-input'), 'Canon AE-1');
     const tagChip = await findByTestId('tag-tag-1');
-    fireEvent.press(tagChip);
-    fireEvent.press(getByTestId('save-button'));
+    await fireEvent.press(tagChip);
+    await fireEvent.press(getByTestId('save-button'));
 
     await waitFor(() =>
       expect(mockedItems.createItem).toHaveBeenCalledWith(
@@ -257,7 +257,7 @@ describe('NewItemScreen', () => {
         createdUtc: '2026-01-01T00:00:00Z',
       },
     ]);
-    const { findByTestId } = renderScreen();
+    const { findByTestId } = await renderScreen();
     const toggle = await findByTestId('attr-mintCondition');
     // Switch renders with accessibilityRole="switch"
     expect(toggle.props.accessibilityRole).toBe('switch');
@@ -278,12 +278,12 @@ describe('NewItemScreen', () => {
         createdUtc: '2026-01-01T00:00:00Z',
       },
     ]);
-    const { findByTestId, queryByTestId } = renderScreen();
+    const { findByTestId, queryByTestId } = await renderScreen();
     const trigger = await findByTestId('attr-purchaseDate');
     expect(trigger).toBeTruthy();
     // Picker is hidden until trigger is pressed
     expect(queryByTestId('attr-purchaseDate-picker')).toBeNull();
-    fireEvent.press(trigger);
+    await fireEvent.press(trigger);
     expect(queryByTestId('attr-purchaseDate-picker')).toBeTruthy();
   });
 });

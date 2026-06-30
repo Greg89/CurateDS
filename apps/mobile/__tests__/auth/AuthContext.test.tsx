@@ -43,7 +43,7 @@ describe('AuthContext', () => {
   it('starts signed out when secure storage is empty', async () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(null);
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
 
     await waitFor(() => expect(result.current.state).toBe('signedOut'));
     expect(result.current.profile).toBeNull();
@@ -52,7 +52,7 @@ describe('AuthContext', () => {
   it('hydrates the profile from a stored id token', async () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(validTokens);
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
 
     await waitFor(() => expect(result.current.state).toBe('signedIn'));
     expect(result.current.profile).toEqual({
@@ -66,7 +66,7 @@ describe('AuthContext', () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(null);
     mockedClient.login.mockResolvedValueOnce(validTokens);
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(result.current.state).toBe('signedOut'));
 
     await act(async () => {
@@ -81,7 +81,7 @@ describe('AuthContext', () => {
   it('signOut clears storage and returns to the signed-out state', async () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(validTokens);
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(result.current.state).toBe('signedIn'));
 
     await act(async () => {
@@ -96,7 +96,7 @@ describe('AuthContext', () => {
   it('getAccessToken returns the cached access token while it is still valid', async () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(validTokens);
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(result.current.state).toBe('signedIn'));
 
     const token = await result.current.getAccessToken();
@@ -114,7 +114,7 @@ describe('AuthContext', () => {
     };
     mockedClient.refresh.mockResolvedValueOnce(refreshed);
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(result.current.state).toBe('signedIn'));
 
     let token: string | null = null;
@@ -131,7 +131,7 @@ describe('AuthContext', () => {
     mockedStorage.loadTokens.mockResolvedValueOnce(expiredTokens);
     mockedClient.refresh.mockRejectedValueOnce(new Error('refresh denied'));
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(result.current.state).toBe('signedIn'));
 
     let token: string | null = 'unset';
