@@ -33,7 +33,7 @@
     "expo-web-browser": "~56.0.5",
     "react": "19.2.7",
     "react-native": "0.85.3",
-    "react-native-safe-area-context": "~5.7.0",
+    "react-native-safe-area-context": "~5.8.0",
     "react-native-screens": "4.25.2",
     "zod": "^3.25.76"
   },
