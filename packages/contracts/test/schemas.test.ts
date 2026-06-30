@@ -4,21 +4,21 @@ import {
   PagedItemsSchema,
   ItemDetailSchema,
   ItemEventSchema,
-} from "@curateds/contracts/items";
+} from "../src/items";
 import {
   CollectionSchema,
   CollectionSummarySchema,
   CollectionActivityEventSchema,
-} from "@curateds/contracts/collections";
+} from "../src/collections";
 import {
   AttributeDataTypeSchema,
   AttributeDefinitionSchema,
-} from "@curateds/contracts/attributes";
-import { TagSchema } from "@curateds/contracts/tags";
-import { LocationSchema } from "@curateds/contracts/locations";
-import { ItemTypeSchema } from "@curateds/contracts/item-types";
-import { SavedViewSchema } from "@curateds/contracts/saved-views";
-import { MediaAssetSchema } from "@curateds/contracts/media";
+} from "../src/attributes";
+import { TagSchema } from "../src/tags";
+import { LocationSchema } from "../src/locations";
+import { ItemTypeSchema } from "../src/item-types";
+import { SavedViewSchema } from "../src/saved-views";
+import { MediaAssetSchema } from "../src/media";
 
 const expectZodError = (parse: () => unknown) => {
   let thrown: unknown;
