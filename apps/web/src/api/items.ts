@@ -26,9 +26,11 @@ export {
   type UpdateItemInput,
 } from "@curateds/contracts/items";
 import {
+  CreateItemRequestSchema,
   ItemDetailSchema,
   ItemEventSchema,
   PagedItemsSchema,
+  UpdateItemRequestSchema,
   buildItemFiltersSearchParams,
 } from "@curateds/contracts/items";
 import { apiBase, authHeader, readValidationMessage } from "./http";
@@ -113,15 +115,15 @@ export async function createItem(input: {
     {
       method: "POST",
       headers: { ...await authHeader(), "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: JSON.stringify(CreateItemRequestSchema.parse({
         name: input.name,
-        description: input.description,
+        description: input.description ?? null,
         quantity: input.quantity,
         locationId: input.locationId,
         itemTypeId: input.itemTypeId ?? null,
         tagIds: input.tagIds,
         attributeValues: input.attributeValues,
-      }),
+      })),
     }
   );
 
@@ -148,15 +150,15 @@ export async function updateItem(input: {
     {
       method: "PUT",
       headers: { ...await authHeader(), "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: JSON.stringify(UpdateItemRequestSchema.parse({
         name: input.name,
-        description: input.description,
+        description: input.description ?? null,
         quantity: input.quantity,
         locationId: input.locationId,
         itemTypeId: input.itemTypeId ?? null,
         tagIds: input.tagIds,
         attributeValues: input.attributeValues,
-      }),
+      })),
     }
   );
 

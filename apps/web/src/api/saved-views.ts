@@ -1,6 +1,6 @@
 import { z } from "zod";
 export { SavedViewSchema, type SavedView, type CreateSavedViewInput } from "@curateds/contracts/saved-views";
-import { SavedViewSchema } from "@curateds/contracts/saved-views";
+import { CreateSavedViewRequestSchema, SavedViewSchema } from "@curateds/contracts/saved-views";
 import { apiBase, authHeader } from "./http";
 import type { SavedView } from "@curateds/contracts/saved-views";
 
@@ -29,7 +29,7 @@ export async function createSavedView(
     {
       method: "POST",
       headers: { ...await authHeader(), "Content-Type": "application/json" },
-      body: JSON.stringify({ name, filtersJson }),
+      body: JSON.stringify(CreateSavedViewRequestSchema.parse({ name, filtersJson })),
     }
   );
 

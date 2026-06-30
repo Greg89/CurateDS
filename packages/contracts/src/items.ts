@@ -15,6 +15,14 @@ export const ItemAttributeValueSchema = z.object({
 });
 export type ItemAttributeValue = z.infer<typeof ItemAttributeValueSchema>;
 
+export const CreateItemAttributeValueRequestSchema = z.object({
+  attributeDefinitionId: z.string(),
+  value: z.string(),
+});
+export type CreateItemAttributeValueRequest = z.infer<
+  typeof CreateItemAttributeValueRequestSchema
+>;
+
 export const ItemSummarySchema = z.object({
   id: z.string(),
   collectionId: z.string(),
@@ -68,6 +76,28 @@ export const ItemEventSchema = z.object({
 });
 export type ItemEvent = z.infer<typeof ItemEventSchema>;
 
+export const CreateItemRequestSchema = z.object({
+  name: z.string(),
+  description: z.string().nullable(),
+  quantity: z.number(),
+  locationId: z.string().nullable(),
+  itemTypeId: z.string().nullable(),
+  tagIds: z.array(z.string()),
+  attributeValues: z.array(CreateItemAttributeValueRequestSchema),
+});
+export type CreateItemRequest = z.infer<typeof CreateItemRequestSchema>;
+
+export const UpdateItemRequestSchema = z.object({
+  name: z.string(),
+  description: z.string().nullable(),
+  quantity: z.number(),
+  locationId: z.string().nullable(),
+  itemTypeId: z.string().nullable(),
+  tagIds: z.array(z.string()),
+  attributeValues: z.array(CreateItemAttributeValueRequestSchema),
+});
+export type UpdateItemRequest = z.infer<typeof UpdateItemRequestSchema>;
+
 export const ItemFiltersSchema = z.object({
   searchText: z.string().optional(),
   locationId: z.string().optional(),
@@ -93,7 +123,7 @@ export interface ItemAttributeValueInput {
 export interface CreateItemInput {
   collectionId: string;
   name: string;
-  description: string;
+  description: string | null;
   quantity: number;
   locationId: string | null;
   itemTypeId?: string | null;

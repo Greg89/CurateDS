@@ -1,6 +1,6 @@
 import { z } from "zod";
 export { ItemTypeSchema, type ItemType, type CreateItemTypeInput } from "@curateds/contracts/item-types";
-import { ItemTypeSchema } from "@curateds/contracts/item-types";
+import { CreateItemTypeRequestSchema, ItemTypeSchema } from "@curateds/contracts/item-types";
 import { apiBase, authHeader, readValidationMessage } from "./http";
 import type { ItemType } from "@curateds/contracts/item-types";
 
@@ -28,7 +28,7 @@ export async function createItemType(input: {
     {
       method: "POST",
       headers: { ...await authHeader(), "Content-Type": "application/json" },
-      body: JSON.stringify({ name: input.name }),
+      body: JSON.stringify(CreateItemTypeRequestSchema.parse({ name: input.name })),
     }
   );
 

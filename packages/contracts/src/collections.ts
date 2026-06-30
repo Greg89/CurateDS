@@ -7,6 +7,11 @@ export const CollectionSchema = z.object({
 });
 export type Collection = z.infer<typeof CollectionSchema>;
 
+export const CreateCollectionRequestSchema = z.object({
+  name: z.string(),
+});
+export type CreateCollectionRequest = z.infer<typeof CreateCollectionRequestSchema>;
+
 export const CollectionSummarySchema = z.object({
   collectionId: z.string(),
   totalItems: z.number(),

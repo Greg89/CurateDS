@@ -134,6 +134,93 @@ describe("backend response contract drift", () => {
   );
 });
 
+const requestContracts: readonly ContractMapping[] = [
+  {
+    csharpFile: "apps/api/Collections/CollectionContracts.cs",
+    csharpRecord: "CreateCollectionRequest",
+    schemaFile: "packages/contracts/src/collections.ts",
+    schemaName: "CreateCollectionRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/CollectionContracts.cs",
+    csharpRecord: "CreateSavedViewRequest",
+    schemaFile: "packages/contracts/src/saved-views.ts",
+    schemaName: "CreateSavedViewRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/AttributeDefinitionContracts.cs",
+    csharpRecord: "CreateAttributeDefinitionRequest",
+    schemaFile: "packages/contracts/src/attributes.ts",
+    schemaName: "CreateAttributeDefinitionRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/AttributeDefinitionContracts.cs",
+    csharpRecord: "UpdateAttributeDefinitionRequest",
+    schemaFile: "packages/contracts/src/attributes.ts",
+    schemaName: "UpdateAttributeDefinitionRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/OrganizationContracts.cs",
+    csharpRecord: "CreateTagRequest",
+    schemaFile: "packages/contracts/src/tags.ts",
+    schemaName: "CreateTagRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/OrganizationContracts.cs",
+    csharpRecord: "UpdateTagRequest",
+    schemaFile: "packages/contracts/src/tags.ts",
+    schemaName: "UpdateTagRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/OrganizationContracts.cs",
+    csharpRecord: "CreateLocationRequest",
+    schemaFile: "packages/contracts/src/locations.ts",
+    schemaName: "CreateLocationRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/OrganizationContracts.cs",
+    csharpRecord: "UpdateLocationRequest",
+    schemaFile: "packages/contracts/src/locations.ts",
+    schemaName: "UpdateLocationRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/ItemTypeContracts.cs",
+    csharpRecord: "CreateItemTypeRequest",
+    schemaFile: "packages/contracts/src/item-types.ts",
+    schemaName: "CreateItemTypeRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/ItemContracts.cs",
+    csharpRecord: "CreateItemRequest",
+    schemaFile: "packages/contracts/src/items.ts",
+    schemaName: "CreateItemRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/ItemContracts.cs",
+    csharpRecord: "UpdateItemRequest",
+    schemaFile: "packages/contracts/src/items.ts",
+    schemaName: "UpdateItemRequestSchema"
+  },
+  {
+    csharpFile: "apps/api/Collections/ItemContracts.cs",
+    csharpRecord: "CreateItemAttributeValueRequest",
+    schemaFile: "packages/contracts/src/items.ts",
+    schemaName: "CreateItemAttributeValueRequestSchema"
+  }
+];
+
+describe("backend request contract drift", () => {
+  it.each(requestContracts)(
+    "$csharpRecord fields match $schemaName",
+    ({ csharpFile, csharpRecord, schemaFile, schemaName }) => {
+      const backendFields = getCSharpRecordJsonFields(csharpFile, csharpRecord);
+      const schemaFields = getZodObjectFields(schemaFile, schemaName);
+
+      expect(schemaFields).toEqual(backendFields);
+    }
+  );
+});
+
 function getCSharpRecordJsonFields(relativePath: string, recordName: string) {
   const source = readWorkspaceFile(relativePath);
   const recordMatch = new RegExp(

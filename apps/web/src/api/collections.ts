@@ -19,6 +19,7 @@ import {
   CollectionReportsSchema,
   CollectionSchema,
   CollectionSummarySchema,
+  CreateCollectionRequestSchema,
   PagedCollectionActivitySchema,
 } from "@curateds/contracts/collections";
 import { apiBase, authHeader, readValidationMessage } from "./http";
@@ -49,7 +50,7 @@ export async function createCollection(name: string): Promise<Collection> {
   const response = await fetch(`${apiBase}/collections`, {
     method: "POST",
     headers: { ...await authHeader(), "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(CreateCollectionRequestSchema.parse({ name })),
   });
 
   if (!response.ok) {

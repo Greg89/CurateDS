@@ -9,6 +9,11 @@ export const ItemTypeSchema = z.object({
 });
 export type ItemType = z.infer<typeof ItemTypeSchema>;
 
+export const CreateItemTypeRequestSchema = z.object({
+  name: z.string(),
+});
+export type CreateItemTypeRequest = z.infer<typeof CreateItemTypeRequestSchema>;
+
 export interface CreateItemTypeInput {
   collectionId: string;
   name: string;

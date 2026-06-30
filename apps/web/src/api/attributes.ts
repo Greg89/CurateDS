@@ -7,7 +7,11 @@ export {
   type CreateAttributeDefinitionInput,
   type UpdateAttributeDefinitionInput,
 } from "@curateds/contracts/attributes";
-import { AttributeDefinitionSchema } from "@curateds/contracts/attributes";
+import {
+  AttributeDefinitionSchema,
+  CreateAttributeDefinitionRequestSchema,
+  UpdateAttributeDefinitionRequestSchema,
+} from "@curateds/contracts/attributes";
 import { apiBase, authHeader, readValidationMessage } from "./http";
 import type { AttributeDataType, AttributeDefinition } from "@curateds/contracts/attributes";
 
@@ -41,13 +45,13 @@ export async function createAttributeDefinition(input: {
     {
       method: "POST",
       headers: { ...await authHeader(), "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: JSON.stringify(CreateAttributeDefinitionRequestSchema.parse({
         name: input.name,
         dataType: input.dataType,
         isRequired: input.isRequired,
         isFilterable: input.isFilterable,
         itemTypeId: input.itemTypeId ?? null,
-      }),
+      })),
     }
   );
 
@@ -85,12 +89,12 @@ export async function updateAttributeDefinition(input: {
     {
       method: "PUT",
       headers: { ...await authHeader(), "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: JSON.stringify(UpdateAttributeDefinitionRequestSchema.parse({
         name: input.name,
         isRequired: input.isRequired,
         isFilterable: input.isFilterable,
         itemTypeId: input.itemTypeId ?? null,
-      }),
+      })),
     }
   );
 

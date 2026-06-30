@@ -24,6 +24,27 @@ export const AttributeDefinitionSchema = z.object({
 });
 export type AttributeDefinition = z.infer<typeof AttributeDefinitionSchema>;
 
+export const CreateAttributeDefinitionRequestSchema = z.object({
+  name: z.string(),
+  dataType: AttributeDataTypeSchema,
+  isRequired: z.boolean(),
+  isFilterable: z.boolean(),
+  itemTypeId: z.string().nullable(),
+});
+export type CreateAttributeDefinitionRequest = z.infer<
+  typeof CreateAttributeDefinitionRequestSchema
+>;
+
+export const UpdateAttributeDefinitionRequestSchema = z.object({
+  name: z.string(),
+  isRequired: z.boolean(),
+  isFilterable: z.boolean(),
+  itemTypeId: z.string().nullable(),
+});
+export type UpdateAttributeDefinitionRequest = z.infer<
+  typeof UpdateAttributeDefinitionRequestSchema
+>;
+
 export interface CreateAttributeDefinitionInput {
   collectionId: string;
   name: string;

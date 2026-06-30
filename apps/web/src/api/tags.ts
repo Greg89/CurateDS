@@ -1,6 +1,6 @@
 import { z } from "zod";
 export { TagSchema, type Tag } from "@curateds/contracts/tags";
-import { TagSchema } from "@curateds/contracts/tags";
+import { CreateTagRequestSchema, TagSchema, UpdateTagRequestSchema } from "@curateds/contracts/tags";
 import { apiBase, authHeader, readValidationMessage } from "./http";
 import type { Tag } from "@curateds/contracts/tags";
 
@@ -22,7 +22,7 @@ export async function createTag(name: string): Promise<Tag> {
   const response = await fetch(`${apiBase}/tags`, {
     method: "POST",
     headers: { ...await authHeader(), "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(CreateTagRequestSchema.parse({ name })),
   });
 
   if (!response.ok) {
@@ -36,7 +36,7 @@ export async function updateTag(tagId: string, name: string): Promise<Tag> {
   const response = await fetch(`${apiBase}/tags/${tagId}`, {
     method: "PUT",
     headers: { ...await authHeader(), "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(UpdateTagRequestSchema.parse({ name })),
   });
 
   if (!response.ok) {

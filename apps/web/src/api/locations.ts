@@ -5,7 +5,11 @@ export {
   type CreateLocationInput,
   type UpdateLocationInput,
 } from "@curateds/contracts/locations";
-import { LocationSchema } from "@curateds/contracts/locations";
+import {
+  CreateLocationRequestSchema,
+  LocationSchema,
+  UpdateLocationRequestSchema,
+} from "@curateds/contracts/locations";
 import { apiBase, authHeader, readValidationMessage } from "./http";
 import type { Location } from "@curateds/contracts/locations";
 
@@ -25,12 +29,12 @@ export async function listLocations(): Promise<Location[]> {
 
 export async function createLocation(input: {
   name: string;
-  description: string;
+  description: string | null;
 }): Promise<Location> {
   const response = await fetch(`${apiBase}/locations`, {
     method: "POST",
     headers: { ...await authHeader(), "Content-Type": "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify(CreateLocationRequestSchema.parse(input)),
   });
 
   if (!response.ok) {
@@ -49,7 +53,7 @@ export async function updateLocation(
   const response = await fetch(`${apiBase}/locations/${locationId}`, {
     method: "PUT",
     headers: { ...await authHeader(), "Content-Type": "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify(UpdateLocationRequestSchema.parse(input)),
   });
 
   if (!response.ok) {

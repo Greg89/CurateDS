@@ -11,6 +11,7 @@ export {
   type MediaAsset,
 } from '@curateds/contracts/items';
 import {
+  CreateItemRequestSchema,
   ItemDetailSchema,
   MediaAssetSchema,
   PagedItemsSchema as PagedItemsResponseSchema,
@@ -35,9 +36,10 @@ export async function getItemDetail(
 
 export interface CreateItemInput {
   name: string;
-  description: string;
+  description: string | null;
   quantity: number;
   locationId: string | null;
+  itemTypeId?: string | null;
   tagIds: string[];
   attributeValues: Array<{ attributeDefinitionId: string; value: string }>;
 }
@@ -48,7 +50,13 @@ export async function createItem(
 ): Promise<ItemDetail> {
   const raw = await apiFetch<unknown>(`/collections/${collectionId}/items`, {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: JSON.stringify(
+      CreateItemRequestSchema.parse({
+        ...input,
+        description: input.description ?? null,
+        itemTypeId: input.itemTypeId ?? null,
+      }),
+    ),
   });
   return ItemDetailSchema.parse(raw);
 }
