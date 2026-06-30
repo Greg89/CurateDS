@@ -4,11 +4,14 @@
   "workspaces": [
     "apps/web",
     "apps/mobile",
+    "packages/contracts",
     "tests/Web.UnitTests",
     "tests/EndToEndTests"
   ],
   "scripts": {
-    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web -- --run && npm run typecheck:mobile && npm run test:mobile",
+    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:contracts && npm run build:web && npm run test:web -- --run && npm run typecheck:mobile && npm run test:mobile",
+    "build:contracts": "npm run build --workspace @curateds/contracts",
+    "typecheck:contracts": "npm run typecheck --workspace @curateds/contracts",
     "build:web": "npm run build --workspace @curateds/web",
     "test:web": "npm run test --workspace @curateds/web-tests",
     "test:web:coverage": "npm run test:coverage --workspace @curateds/web-tests",
