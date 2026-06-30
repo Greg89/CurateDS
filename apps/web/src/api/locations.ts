@@ -1,17 +1,13 @@
 import { z } from "zod";
+export {
+  LocationSchema,
+  type Location,
+  type CreateLocationInput,
+  type UpdateLocationInput,
+} from "@curateds/contracts/locations";
+import { LocationSchema } from "@curateds/contracts/locations";
 import { apiBase, authHeader, readValidationMessage } from "./http";
-
-// ---------------------------------------------------------------------------
-// Schemas & types
-// ---------------------------------------------------------------------------
-
-export const LocationSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().nullable(),
-  createdUtc: z.string(),
-});
-export type Location = z.infer<typeof LocationSchema>;
+import type { Location } from "@curateds/contracts/locations";
 
 // ---------------------------------------------------------------------------
 // API functions

@@ -1,15 +1,9 @@
 import { z } from 'zod';
+export { LocationSchema, type Location } from '@curateds/contracts/locations';
+import { LocationSchema } from '@curateds/contracts/locations';
 
 import { apiFetch } from './client';
-
-export const LocationSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  description: z.string().nullable(),
-  createdUtc: z.string(),
-});
-
-export type Location = z.infer<typeof LocationSchema>;
+import type { Location } from '@curateds/contracts/locations';
 
 export async function listLocations(): Promise<Location[]> {
   const raw = await apiFetch<unknown>('/locations');

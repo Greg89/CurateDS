@@ -1,15 +1,9 @@
 import { z } from 'zod';
+export { TagSchema, type Tag } from '@curateds/contracts/tags';
+import { TagSchema } from '@curateds/contracts/tags';
 
 import { apiFetch } from './client';
-
-export const TagSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  key: z.string(),
-  createdUtc: z.string(),
-});
-
-export type Tag = z.infer<typeof TagSchema>;
+import type { Tag } from '@curateds/contracts/tags';
 
 export async function listTags(): Promise<Tag[]> {
   const raw = await apiFetch<unknown>('/tags');

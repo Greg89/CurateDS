@@ -1,31 +1,16 @@
 import { z } from 'zod';
+import {
+  AttributeDataTypeSchema,
+  AttributeDefinitionSchema,
+  type AttributeDataType as AttributeDataTypeType,
+} from '@curateds/contracts/attributes';
+export { AttributeDefinitionSchema, type AttributeDefinition } from '@curateds/contracts/attributes';
 
 import { apiFetch } from './client';
+import type { AttributeDefinition } from '@curateds/contracts/attributes';
 
-export const AttributeDataType = z.enum([
-  'Text',
-  'Number',
-  'Decimal',
-  'Boolean',
-  'Date',
-  'SingleSelect',
-]);
-export type AttributeDataType = z.infer<typeof AttributeDataType>;
-
-export const AttributeDefinitionSchema = z.object({
-  id: z.string().uuid(),
-  collectionId: z.string().uuid(),
-  name: z.string(),
-  key: z.string(),
-  dataType: AttributeDataType,
-  isRequired: z.boolean(),
-  isFilterable: z.boolean(),
-  sortOrder: z.number().int(),
-  itemTypeId: z.string().uuid().nullable(),
-  createdUtc: z.string(),
-});
-
-export type AttributeDefinition = z.infer<typeof AttributeDefinitionSchema>;
+export const AttributeDataType = AttributeDataTypeSchema;
+export type AttributeDataType = AttributeDataTypeType;
 
 export async function listAttributeDefinitions(
   collectionId: string,

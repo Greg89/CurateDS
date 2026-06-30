@@ -1,17 +1,8 @@
 import { z } from "zod";
+export { TagSchema, type Tag } from "@curateds/contracts/tags";
+import { TagSchema } from "@curateds/contracts/tags";
 import { apiBase, authHeader, readValidationMessage } from "./http";
-
-// ---------------------------------------------------------------------------
-// Schemas & types
-// ---------------------------------------------------------------------------
-
-export const TagSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  key: z.string(),
-  createdUtc: z.string(),
-});
-export type Tag = z.infer<typeof TagSchema>;
+import type { Tag } from "@curateds/contracts/tags";
 
 // ---------------------------------------------------------------------------
 // API functions

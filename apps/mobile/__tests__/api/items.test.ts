@@ -65,7 +65,14 @@ const rawDetail = {
   locationId: null,
   locationName: null,
   itemTypeId: null,
-  tags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: 'film' }],
+  tags: [
+    {
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      name: 'film',
+      key: 'film',
+      createdUtc: '2024-01-01T00:00:00Z',
+    },
+  ],
   createdUtc: '2024-01-01T00:00:00Z',
   updatedUtc: null,
   attributeValues: [],

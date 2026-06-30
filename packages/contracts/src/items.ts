@@ -3,6 +3,9 @@ import { AttributeDataTypeSchema } from "./attributes";
 import { MediaAssetSchema } from "./media";
 import { TagSchema } from "./tags";
 
+export { MediaAssetSchema, type MediaAsset } from "./media";
+export { TagSchema } from "./tags";
+
 export const ItemAttributeValueSchema = z.object({
   attributeDefinitionId: z.string(),
   attributeName: z.string(),

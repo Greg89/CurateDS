@@ -35,7 +35,14 @@ const fullItem: ItemDetail = {
   locationId: '33333333-3333-3333-3333-333333333333',
   locationName: 'Camera shelf',
   itemTypeId: null,
-  tags: [{ id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', name: 'film' }],
+  tags: [
+    {
+      id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      name: 'film',
+      key: 'film',
+      createdUtc: '2024-01-15T10:00:00Z',
+    },
+  ],
   createdUtc: '2024-01-15T10:00:00Z',
   updatedUtc: null,
   attributeValues: [

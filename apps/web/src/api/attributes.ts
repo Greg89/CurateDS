@@ -1,33 +1,15 @@
 import { z } from "zod";
+export {
+  AttributeDataTypeSchema,
+  AttributeDefinitionSchema,
+  type AttributeDataType,
+  type AttributeDefinition,
+  type CreateAttributeDefinitionInput,
+  type UpdateAttributeDefinitionInput,
+} from "@curateds/contracts/attributes";
+import { AttributeDefinitionSchema } from "@curateds/contracts/attributes";
 import { apiBase, authHeader, readValidationMessage } from "./http";
-
-// ---------------------------------------------------------------------------
-// Schemas & types
-// ---------------------------------------------------------------------------
-
-export const AttributeDataTypeSchema = z.enum([
-  "Text",
-  "Number",
-  "Decimal",
-  "Boolean",
-  "Date",
-  "SingleSelect",
-]);
-export type AttributeDataType = z.infer<typeof AttributeDataTypeSchema>;
-
-export const AttributeDefinitionSchema = z.object({
-  id: z.string(),
-  collectionId: z.string(),
-  name: z.string(),
-  key: z.string(),
-  dataType: AttributeDataTypeSchema,
-  isRequired: z.boolean(),
-  isFilterable: z.boolean(),
-  sortOrder: z.number(),
-  itemTypeId: z.string().nullable(),
-  createdUtc: z.string(),
-});
-export type AttributeDefinition = z.infer<typeof AttributeDefinitionSchema>;
+import type { AttributeDataType, AttributeDefinition } from "@curateds/contracts/attributes";
 
 // ---------------------------------------------------------------------------
 // API functions

@@ -1,18 +1,8 @@
 import { z } from "zod";
+export { SavedViewSchema, type SavedView, type CreateSavedViewInput } from "@curateds/contracts/saved-views";
+import { SavedViewSchema } from "@curateds/contracts/saved-views";
 import { apiBase, authHeader } from "./http";
-
-// ---------------------------------------------------------------------------
-// Schemas & types
-// ---------------------------------------------------------------------------
-
-export const SavedViewSchema = z.object({
-  id: z.string(),
-  collectionId: z.string(),
-  name: z.string(),
-  filtersJson: z.string(),
-  createdUtc: z.string(),
-});
-export type SavedView = z.infer<typeof SavedViewSchema>;
+import type { SavedView } from "@curateds/contracts/saved-views";
 
 // ---------------------------------------------------------------------------
 // API functions

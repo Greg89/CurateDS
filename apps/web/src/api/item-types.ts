@@ -1,18 +1,8 @@
 import { z } from "zod";
+export { ItemTypeSchema, type ItemType, type CreateItemTypeInput } from "@curateds/contracts/item-types";
+import { ItemTypeSchema } from "@curateds/contracts/item-types";
 import { apiBase, authHeader, readValidationMessage } from "./http";
-
-// ---------------------------------------------------------------------------
-// Schemas & types
-// ---------------------------------------------------------------------------
-
-export const ItemTypeSchema = z.object({
-  id: z.string(),
-  collectionId: z.string(),
-  name: z.string(),
-  sortOrder: z.number(),
-  createdUtc: z.string(),
-});
-export type ItemType = z.infer<typeof ItemTypeSchema>;
+import type { ItemType } from "@curateds/contracts/item-types";
 
 // ---------------------------------------------------------------------------
 // API functions

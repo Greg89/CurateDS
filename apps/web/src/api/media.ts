@@ -1,20 +1,7 @@
-import { z } from "zod";
+export { MediaAssetSchema, type MediaAsset, type ItemMediaInput } from "@curateds/contracts/media";
+import { MediaAssetSchema } from "@curateds/contracts/media";
 import { apiBase, authHeader, readValidationMessage } from "./http";
-
-// ---------------------------------------------------------------------------
-// Schemas & types
-// ---------------------------------------------------------------------------
-
-export const MediaAssetSchema = z.object({
-  id: z.string(),
-  url: z.string(),
-  contentType: z.string(),
-  fileName: z.string(),
-  sizeBytes: z.number(),
-  isPrimary: z.boolean(),
-  uploadedUtc: z.string(),
-});
-export type MediaAsset = z.infer<typeof MediaAssetSchema>;
+import type { MediaAsset } from "@curateds/contracts/media";
 
 // ---------------------------------------------------------------------------
 // API functions
