@@ -62,8 +62,8 @@ const fullItem: ItemDetail = {
 
 describe('ItemDetailScreen', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    jest.resetAllMocks();
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   });
 
   afterEach(() => {
@@ -71,7 +71,7 @@ describe('ItemDetailScreen', () => {
   });
 
   it('shows a loading indicator while fetching', () => {
-    mockedApi.getItemDetail.mockReturnValue(new Promise(() => {}));
+    mockedApi.getItemDetail.mockResolvedValueOnce(fullItem);
 
     const { getByTestId } = render(
       <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,

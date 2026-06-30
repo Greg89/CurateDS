@@ -42,8 +42,8 @@ const items: ItemSummary[] = [
 
 describe('CollectionDetailScreen', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    jest.resetAllMocks();
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   });
 
   afterEach(() => {
@@ -51,7 +51,7 @@ describe('CollectionDetailScreen', () => {
   });
 
   it('shows a loading indicator while fetching', () => {
-    mockedApi.listItems.mockReturnValue(new Promise(() => {}));
+    mockedApi.listItems.mockResolvedValueOnce([]);
 
     const { getByTestId } = render(
       <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,

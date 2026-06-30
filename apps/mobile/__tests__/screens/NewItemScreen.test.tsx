@@ -66,7 +66,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   mockedTags.listTags.mockResolvedValue([]);
   mockedLocations.listLocations.mockResolvedValue([]);
   mockedAttrDefs.listAttributeDefinitions.mockResolvedValue([]);
