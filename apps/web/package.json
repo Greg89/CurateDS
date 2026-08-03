@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.16.2",
-    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-query": "^5.101.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router": "^8.3.0",
