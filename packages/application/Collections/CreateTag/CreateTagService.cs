@@ -9,12 +9,18 @@ namespace CurateDS.Application.Collections.CreateTag;
 public sealed class CreateTagService
 {
     private readonly ITagRepository _tagRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<CreateTagCommand> _validator;
 
-    public CreateTagService(ITagRepository tagRepository, ICurrentUserService currentUser, IValidator<CreateTagCommand> validator)
+    public CreateTagService(
+        ITagRepository tagRepository,
+        ICatalogUnitOfWork unitOfWork,
+        ICurrentUserService currentUser,
+        IValidator<CreateTagCommand> validator)
     {
         _tagRepository = tagRepository;
+        _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -35,7 +41,9 @@ public sealed class CreateTagService
             ]);
         }
 
-        await _tagRepository.AddAsync(tag, cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            innerCancellationToken => _tagRepository.AddAsync(tag, innerCancellationToken),
+            cancellationToken);
 
         return new CreateTagResult(tag.Id, tag.Name, tag.Key, tag.CreatedUtc);
     }

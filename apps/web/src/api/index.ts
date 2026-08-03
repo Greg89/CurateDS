@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Public API surface — re-exported from feature modules
+// Public API surface - re-exported from feature modules
 // ---------------------------------------------------------------------------
 
 export { setTokenProvider } from "./http";
@@ -44,6 +44,16 @@ export type {
   ItemFilters,
 } from "./items";
 export {
+  ItemFiltersSchema,
+  normalizeTagIds,
+  normalizeItemFilters,
+  serializeItemFilters,
+  tryParseItemFilters,
+  tryParseSerializedItemFilters,
+  hasActiveItemFilters,
+  countActiveItemFilters,
+  buildItemFiltersSearchParams,
+  parseItemFiltersSearchParams,
   listItems,
   getItemDetail,
   listItemEvents,

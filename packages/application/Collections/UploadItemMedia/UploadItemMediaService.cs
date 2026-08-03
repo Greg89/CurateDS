@@ -21,15 +21,18 @@ public sealed class UploadItemMediaService
 
     private readonly ICollectionRepository _collectionRepository;
     private readonly IItemRepository _itemRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly IMediaStorageService _mediaStorageService;
 
     public UploadItemMediaService(
         ICollectionRepository collectionRepository,
         IItemRepository itemRepository,
+        ICatalogUnitOfWork unitOfWork,
         IMediaStorageService mediaStorageService)
     {
         _collectionRepository = collectionRepository;
         _itemRepository = itemRepository;
+        _unitOfWork = unitOfWork;
         _mediaStorageService = mediaStorageService;
     }
 
@@ -79,10 +82,31 @@ public sealed class UploadItemMediaService
             command.SizeBytes,
             uploadedUtc);
 
-        item.AddMedia(asset);
-        _itemRepository.AddMediaAsset(asset); // explicitly register as Added — EF can't infer this for new entities with non-default Guid keys
+        try
+        {
+            await _unitOfWork.ExecuteInTransactionAsync(
+                innerCancellationToken =>
+                {
+                    item.AddMedia(asset);
+                    _itemRepository.AddMediaAsset(asset); // explicitly register as Added — EF can't infer this for new entities with non-default Guid keys
 
-        await _itemRepository.SaveChangesAsync(cancellationToken);
+                    return Task.CompletedTask;
+                },
+                cancellationToken);
+        }
+        catch
+        {
+            try
+            {
+                await _mediaStorageService.DeleteAsync(storageKey, cancellationToken);
+            }
+            catch
+            {
+                // Best-effort compensation: preserve the original database failure.
+            }
+
+            throw;
+        }
 
         return new MediaAssetDto(
             asset.Id,

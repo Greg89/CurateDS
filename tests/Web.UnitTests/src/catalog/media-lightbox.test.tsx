@@ -55,6 +55,14 @@ describe("MediaLightbox", () => {
     expect(screen.getByText("mountain.jpg")).toBeInTheDocument();
   });
 
+  it("shows media metadata for the current asset", () => {
+    renderLightbox({ currentIndex: 0 });
+
+    expect(screen.getByText("JPEG image")).toBeInTheDocument();
+    expect(screen.getByText("12.1 KB")).toBeInTheDocument();
+    expect(screen.getByText(/Uploaded/i)).toBeInTheDocument();
+  });
+
   it("shows the Primary badge for the primary asset", () => {
     renderLightbox({ currentIndex: 0 });
 

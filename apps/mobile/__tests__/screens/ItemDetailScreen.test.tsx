@@ -62,18 +62,18 @@ const fullItem: ItemDetail = {
 
 describe('ItemDetailScreen', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    jest.resetAllMocks();
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   });
 
   afterEach(() => {
     queryClient.clear();
   });
 
-  it('shows a loading indicator while fetching', () => {
-    mockedApi.getItemDetail.mockReturnValue(new Promise(() => {}));
+  it('shows a loading indicator while fetching', async () => {
+    mockedApi.getItemDetail.mockResolvedValueOnce(fullItem);
 
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
@@ -84,7 +84,7 @@ describe('ItemDetailScreen', () => {
   it('renders item name, description, and location on success', async () => {
     mockedApi.getItemDetail.mockResolvedValueOnce(fullItem);
 
-    const { findByText } = render(
+    const { findByText } = await render(
       <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
@@ -97,7 +97,7 @@ describe('ItemDetailScreen', () => {
   it('renders attribute values', async () => {
     mockedApi.getItemDetail.mockResolvedValueOnce(fullItem);
 
-    const { findByText } = render(
+    const { findByText } = await render(
       <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
@@ -109,7 +109,7 @@ describe('ItemDetailScreen', () => {
   it('renders tags', async () => {
     mockedApi.getItemDetail.mockResolvedValueOnce(fullItem);
 
-    const { findByText } = render(
+    const { findByText } = await render(
       <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
@@ -120,7 +120,7 @@ describe('ItemDetailScreen', () => {
   it('shows error state on fetch failure', async () => {
     mockedApi.getItemDetail.mockRejectedValueOnce(new Error('Network error'));
 
-    const { findByText } = render(
+    const { findByText } = await render(
       <ItemDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );

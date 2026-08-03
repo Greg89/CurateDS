@@ -74,7 +74,7 @@ export function EntityManagementTable({
 
   function sortIndicator(column: SortColumn) {
     if (sortColumn !== column) return "";
-    return sortDirection === "asc" ? " ▲" : " ▼";
+    return sortDirection === "asc" ? " (asc)" : " (desc)";
   }
 
   return (
@@ -84,7 +84,7 @@ export function EntityManagementTable({
         <input
           className="entity-management-search"
           type="search"
-          placeholder={searchPlaceholder ?? "Search…"}
+          placeholder={searchPlaceholder ?? "Search..."}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -136,7 +136,7 @@ export function EntityManagementTable({
                       {row.secondary ? (
                         <span className="attribute-pill">{row.secondary}</span>
                       ) : (
-                        <span className="entity-management-muted">—</span>
+                        <span className="entity-management-muted">-</span>
                       )}
                     </td>
                     <td className="entity-management-numeric-col">{row.usageCount}</td>
@@ -173,7 +173,7 @@ export function EntityManagementTable({
                 Previous
               </button>
               <span className="entity-management-page-info">
-                Page {safePage} of {totalPages} · {sorted.length} total
+                Page {safePage} of {totalPages} - {sorted.length} total
               </span>
               <button
                 type="button"

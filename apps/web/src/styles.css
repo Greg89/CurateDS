@@ -195,7 +195,7 @@ textarea {
   max-width: 56rem;
 }
 
-/* Tab navigation � full-width strip below the title row */
+/* Tab navigation - full-width strip below the title row */
 .tab-nav {
   display: flex;
   gap: 0.5rem;
@@ -430,6 +430,41 @@ h1 {
   margin-bottom: 0.75rem;
 }
 
+.media-detail-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.media-detail-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  background: oklch(0.25 0.04 260 / 0.03);
+}
+
+.media-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.media-detail-name {
+  color: var(--c-text);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.media-detail-meta {
+  color: var(--c-text-muted);
+  font-size: 0.84rem;
+}
+
 .media-thumb {
   position: relative;
   width: 100px;
@@ -588,10 +623,19 @@ h1 {
 
 .media-lightbox-info {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
   flex: 1 1 0;
   min-width: 0;
+}
+
+.media-lightbox-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .media-lightbox-filename {
@@ -606,6 +650,14 @@ h1 {
   color: oklch(0.58 0 0);
   font-size: 0.85rem;
   white-space: nowrap;
+}
+
+.media-lightbox-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  color: oklch(0.7 0 0);
+  font-size: 0.8rem;
 }
 
 .media-lightbox-actions {
@@ -1434,7 +1486,7 @@ h1 {
   color: oklch(0.25 0.04 260);
 }
 
-/* --- Responsive � narrow desktop (sidebar becomes drawer) ----------------- */
+/* --- Responsive - narrow desktop (sidebar becomes drawer) ----------------- */
 @media (max-width: 1120px) {
   .app-shell {
     grid-template-columns: minmax(0, 1fr);
@@ -1497,7 +1549,7 @@ h1 {
   }
 }
 
-/* --- Responsive � small screens ------------------------------------------ */
+/* --- Responsive - small screens ------------------------------------------ */
 @media (max-width: 860px) {
   .content-grid,
   .metric-grid,

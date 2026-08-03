@@ -51,19 +51,19 @@ function renderCamera() {
 }
 
 describe('CameraScreen', () => {
-  it('shows loading indicator while permissions are loading', () => {
+  it('shows loading indicator while permissions are loading', async () => {
     mockUseCameraPermissions.mockReturnValue([null, mockRequestPermission, jest.fn()]);
-    const { getByTestId } = renderCamera();
+    const { getByTestId } = await renderCamera();
     expect(getByTestId('camera-permission-loading')).toBeTruthy();
   });
 
-  it('shows permission request UI when camera access is denied', () => {
+  it('shows permission request UI when camera access is denied', async () => {
     mockUseCameraPermissions.mockReturnValue([
       { granted: false, expires: 'never', canAskAgain: true, status: 'denied' },
       mockRequestPermission,
       jest.fn(),
     ]);
-    const { getByTestId } = renderCamera();
+    const { getByTestId } = await renderCamera();
     expect(getByTestId('request-permission-button')).toBeTruthy();
     expect(getByTestId('gallery-fallback-button')).toBeTruthy();
   });
@@ -74,43 +74,43 @@ describe('CameraScreen', () => {
       mockRequestPermission,
       jest.fn(),
     ]);
-    const { getByTestId } = renderCamera();
-    fireEvent.press(getByTestId('request-permission-button'));
+    const { getByTestId } = await renderCamera();
+    await fireEvent.press(getByTestId('request-permission-button'));
     await waitFor(() => expect(mockRequestPermission).toHaveBeenCalled());
   });
 
-  it('calls onCancel when cancel is pressed on permission screen', () => {
+  it('calls onCancel when cancel is pressed on permission screen', async () => {
     mockUseCameraPermissions.mockReturnValue([
       { granted: false, expires: 'never', canAskAgain: true, status: 'denied' },
       mockRequestPermission,
       jest.fn(),
     ]);
-    const { getByTestId } = renderCamera();
-    fireEvent.press(getByTestId('cancel-button'));
+    const { getByTestId } = await renderCamera();
+    await fireEvent.press(getByTestId('cancel-button'));
     expect(mockOnCancel).toHaveBeenCalled();
   });
 
-  it('shows camera view when permission is granted', () => {
+  it('shows camera view when permission is granted', async () => {
     mockUseCameraPermissions.mockReturnValue([
       { granted: true, expires: 'never', canAskAgain: true, status: 'granted' },
       mockRequestPermission,
       jest.fn(),
     ]);
-    const { getByTestId } = renderCamera();
+    const { getByTestId } = await renderCamera();
     expect(getByTestId('camera-view')).toBeTruthy();
     expect(getByTestId('capture-button')).toBeTruthy();
     expect(getByTestId('flash-toggle-button')).toBeTruthy();
   });
 
-  it('toggles flash label when flash button is pressed', () => {
+  it('toggles flash label when flash button is pressed', async () => {
     mockUseCameraPermissions.mockReturnValue([
       { granted: true, expires: 'never', canAskAgain: true, status: 'granted' },
       mockRequestPermission,
       jest.fn(),
     ]);
-    const { getByTestId, getByText } = renderCamera();
+    const { getByTestId, getByText } = await renderCamera();
     expect(getByText('⚡ Off')).toBeTruthy();
-    fireEvent.press(getByTestId('flash-toggle-button'));
+    await fireEvent.press(getByTestId('flash-toggle-button'));
     expect(getByText('⚡ On')).toBeTruthy();
   });
 
@@ -121,8 +121,8 @@ describe('CameraScreen', () => {
       jest.fn(),
     ]);
     mockTakePictureAsync.mockResolvedValueOnce({ uri: 'file:///tmp/snap.jpg' });
-    const { getByTestId } = renderCamera();
-    fireEvent.press(getByTestId('capture-button'));
+    const { getByTestId } = await renderCamera();
+    await fireEvent.press(getByTestId('capture-button'));
     await waitFor(() =>
       expect(mockOnPhotoCaptured).toHaveBeenCalledWith(
         expect.objectContaining({ uri: 'file:///tmp/snap.jpg', contentType: 'image/jpeg' }),
@@ -140,8 +140,8 @@ describe('CameraScreen', () => {
       canceled: false,
       assets: [{ uri: 'file:///gallery/img.jpg', fileName: 'img.jpg', mimeType: 'image/jpeg', width: 100, height: 100, assetId: null, base64: null, duration: null, exif: null, type: 'image' }],
     });
-    const { getByTestId } = renderCamera();
-    fireEvent.press(getByTestId('gallery-fallback-button'));
+    const { getByTestId } = await renderCamera();
+    await fireEvent.press(getByTestId('gallery-fallback-button'));
     await waitFor(() =>
       expect(mockOnPhotoCaptured).toHaveBeenCalledWith(
         expect.objectContaining({ uri: 'file:///gallery/img.jpg', fileName: 'img.jpg' }),
@@ -156,8 +156,8 @@ describe('CameraScreen', () => {
       jest.fn(),
     ]);
     mockLaunchGallery.mockResolvedValueOnce({ canceled: true, assets: null });
-    const { getByTestId } = renderCamera();
-    fireEvent.press(getByTestId('gallery-fallback-button'));
+    const { getByTestId } = await renderCamera();
+    await fireEvent.press(getByTestId('gallery-fallback-button'));
     await waitFor(() => expect(mockLaunchGallery).toHaveBeenCalled());
     expect(mockOnPhotoCaptured).not.toHaveBeenCalled();
   });

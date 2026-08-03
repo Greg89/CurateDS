@@ -19,6 +19,9 @@
     "test:mobile:coverage": "npm run test:coverage --workspace @curateds/mobile"
   },
   "overrides": {
+    "postcss": "8.5.25",
+    "undici": "7.29.0",
+    "vite": "^8.1.0",
     "uuid": "^14.0.0",
     "xcode": {
       "uuid": "^14.0.0"
@@ -27,7 +30,7 @@
       "http-proxy-agent": "^6.1.1"
     },
     "@expo/metro-config": {
-      "postcss": "^8.5.10"
+      "postcss": "^8.5.25"
     },
     "@expo/cli": {
       "ws": "^8.20.1",
@@ -35,7 +38,9 @@
     }
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.8",
+    "@emnapi/core": "1.11.3",
+    "@emnapi/runtime": "1.11.3",
+    "@vitest/coverage-v8": "^4.1.10",
     "react-test-renderer": "^19.2.7",
     "uuid": "^14.0.0",
     "vitest": "^4.1.6"

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { Auth0Provider, useAuth0, type AppState } from "@auth0/auth0-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, useNavigate } from "react-router-dom";
+import { BrowserRouter, useNavigate } from "react-router";
 import { App } from "./App";
 import { appConfig } from "./config";
 import { setTokenProvider } from "./api";

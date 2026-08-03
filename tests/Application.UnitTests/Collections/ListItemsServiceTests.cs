@@ -99,7 +99,6 @@ public sealed class ListItemsServiceTests
         public Task<Item?> GetByIdAsync(Guid itemId, Guid collectionId, CancellationToken cancellationToken) => Task.FromResult<Item?>(null);
         public Task<IReadOnlyList<Item>> ListByCollectionAsync(Guid collectionId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Item>>([]);
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
         public void AddMediaAsset(MediaAsset asset) { }
         public Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task SoftDeleteByCollectionAsync(Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken) => Task.CompletedTask;

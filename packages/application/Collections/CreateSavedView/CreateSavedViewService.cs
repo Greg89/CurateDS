@@ -9,15 +9,18 @@ public sealed class CreateSavedViewService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly ISavedViewRepository _savedViewRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly IValidator<CreateSavedViewCommand> _validator;
 
     public CreateSavedViewService(
         ICollectionRepository collectionRepository,
         ISavedViewRepository savedViewRepository,
+        ICatalogUnitOfWork unitOfWork,
         IValidator<CreateSavedViewCommand> validator)
     {
         _collectionRepository = collectionRepository;
         _savedViewRepository = savedViewRepository;
+        _unitOfWork = unitOfWork;
         _validator = validator;
     }
 
@@ -39,8 +42,9 @@ public sealed class CreateSavedViewService
             command.FiltersJson,
             DateTime.UtcNow);
 
-        await _savedViewRepository.AddAsync(view, cancellationToken);
-        await _savedViewRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            innerCancellationToken => _savedViewRepository.AddAsync(view, innerCancellationToken),
+            cancellationToken);
 
         return new SavedViewDto(view.Id, view.CollectionId, view.Name, view.FiltersJson, view.CreatedUtc);
     }

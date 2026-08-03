@@ -36,7 +36,7 @@ export function ItemDetailDrawer({
       ariaLabel="Item detail"
       className={`item-drawer detail-drawer${isOpen ? " open" : ""}`}
       isOpen={isOpen}
-      keepMounted
+      initialFocusSelector="[aria-label='Close item detail']"
       onRequestClose={onClose}
     >
       <div className="drawer-header">

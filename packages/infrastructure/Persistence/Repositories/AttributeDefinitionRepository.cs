@@ -16,7 +16,6 @@ public sealed class AttributeDefinitionRepository : IAttributeDefinitionReposito
     public async Task AddAsync(AttributeDefinition attributeDefinition, CancellationToken cancellationToken)
     {
         await _dbContext.AttributeDefinitions.AddAsync(attributeDefinition, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<int> GetNextSortOrderAsync(Guid collectionId, CancellationToken cancellationToken)
@@ -70,12 +69,7 @@ public sealed class AttributeDefinitionRepository : IAttributeDefinitionReposito
         _dbContext.ItemAttributeValues.RemoveRange(attributeValues);
 
         attributeDefinition.SoftDelete(deletedUtc, deletedBy);
-        await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 
-    public async Task SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
 }

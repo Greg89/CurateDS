@@ -25,8 +25,6 @@ public interface IItemRepository
 
     Task<PagedResult<ItemSummaryProjection>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken);
 
-    Task SaveChangesAsync(CancellationToken cancellationToken);
-
     void AddMediaAsset(MediaAsset asset);
 
     Task<bool> SoftDeleteAsync(Guid itemId, Guid collectionId, DateTime deletedUtc, string deletedBy, CancellationToken cancellationToken);

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  buildItemFiltersSearchParams,
   getCollectionReports,
   listCollectionActivity,
   type Collection,
@@ -30,17 +31,14 @@ export function ReportsPage({ selectedCollection }: ReportsPageProps) {
   const activity = activityQuery.data;
 
   function drillToLocation(locationId: string | null) {
-    const search = new URLSearchParams();
-    if (locationId) {
-      search.set("locationId", locationId);
-    } else {
-      search.set("hasNoLocation", "1");
-    }
+    const search = buildItemFiltersSearchParams(
+      locationId ? { locationId } : { hasNoLocation: true }
+    );
     navigate(`/collections/${selectedCollection.id}/items?${search.toString()}`);
   }
 
   function drillToTag(tagId: string) {
-    const search = new URLSearchParams({ tagId });
+    const search = buildItemFiltersSearchParams({ tagIds: [tagId] });
     navigate(`/collections/${selectedCollection.id}/items?${search.toString()}`);
   }
 
@@ -57,7 +55,7 @@ export function ReportsPage({ selectedCollection }: ReportsPageProps) {
             <h2>Items by Location</h2>
             <p className="reports-card-subtitle">Click a location to view its items.</p>
           </header>
-          {reportsQuery.isLoading ? <p className="reports-loading">Loading…</p> : null}
+          {reportsQuery.isLoading ? <p className="reports-loading">Loading...</p> : null}
           {reports ? (
             <table className="reports-table">
               <thead>
@@ -98,7 +96,7 @@ export function ReportsPage({ selectedCollection }: ReportsPageProps) {
             <h2>Items by Tag</h2>
             <p className="reports-card-subtitle">Click a tag to view items with it.</p>
           </header>
-          {reportsQuery.isLoading ? <p className="reports-loading">Loading…</p> : null}
+          {reportsQuery.isLoading ? <p className="reports-loading">Loading...</p> : null}
           {reports ? (
             <table className="reports-table">
               <thead>
@@ -140,7 +138,7 @@ export function ReportsPage({ selectedCollection }: ReportsPageProps) {
           <h2>Recent Activity</h2>
           <p className="reports-card-subtitle">Latest changes across this collection.</p>
         </header>
-        {activityQuery.isLoading ? <p className="reports-loading">Loading…</p> : null}
+        {activityQuery.isLoading ? <p className="reports-loading">Loading...</p> : null}
         {activity ? (
           <>
             <table className="reports-table">
@@ -161,7 +159,7 @@ export function ReportsPage({ selectedCollection }: ReportsPageProps) {
                     <td>{e.eventType}</td>
                     <td>{new Date(e.occurredUtc).toLocaleString()}</td>
                     <td>{e.occurredBy}</td>
-                    <td className="entity-management-muted">{e.notes ?? "—"}</td>
+                    <td className="entity-management-muted">{e.notes ?? "-"}</td>
                     <td className="reports-numeric">
                       <button
                         type="button"

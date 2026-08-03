@@ -19,7 +19,8 @@ public sealed class UpdateAttributeDefinitionServiceTests
     private static UpdateAttributeDefinitionService BuildService(
         Collection collection,
         AttributeDefinition[] attributeDefinitions,
-        ItemType[]? itemTypes = null)
+        ItemType[]? itemTypes = null,
+        FakeCatalogUnitOfWork? unitOfWork = null)
     {
         var collectionRepository = new FakeCollectionRepository(collection);
         var attributeRepository = new FakeAttributeDefinitionRepository(attributeDefinitions);
@@ -28,6 +29,7 @@ public sealed class UpdateAttributeDefinitionServiceTests
             collectionRepository,
             attributeRepository,
             itemTypeRepository,
+            unitOfWork ?? new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateAttributeDefinitionCommandValidator());
     }
@@ -45,7 +47,8 @@ public sealed class UpdateAttributeDefinitionServiceTests
             sortOrder: 0,
             createdUtc: DateTime.UtcNow,
             createdBy: "system");
-        var service = BuildService(collection, [attribute]);
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = BuildService(collection, [attribute], unitOfWork: unitOfWork);
 
         var result = await service.ExecuteAsync(
             new UpdateAttributeDefinitionCommand(
@@ -64,6 +67,7 @@ public sealed class UpdateAttributeDefinitionServiceTests
         result.IsRequired.Should().BeTrue();
         result.IsFilterable.Should().BeTrue();
         result.UpdatedUtc.Should().NotBeNull();
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -75,7 +79,8 @@ public sealed class UpdateAttributeDefinitionServiceTests
         var rival = AttributeDefinition.Create(
             collection.Id, "Studio", AttributeDataType.Text, false, false, 1, DateTime.UtcNow, "system");
 
-        var service = BuildService(collection, [subject, rival]);
+        var unitOfWork = new FakeCatalogUnitOfWork();
+        var service = BuildService(collection, [subject, rival], unitOfWork: unitOfWork);
 
         var act = () => service.ExecuteAsync(
             new UpdateAttributeDefinitionCommand(
@@ -84,6 +89,7 @@ public sealed class UpdateAttributeDefinitionServiceTests
 
         await act.Should().ThrowAsync<ValidationException>()
             .Where(exception => exception.Errors.Any(error => error.ErrorCode == "duplicate_attribute"));
+        unitOfWork.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -112,6 +118,7 @@ public sealed class UpdateAttributeDefinitionServiceTests
             collectionRepository,
             attributeRepository,
             new FakeItemTypeRepository(),
+            new FakeCatalogUnitOfWork(),
             new FakeCurrentUserService(),
             new UpdateAttributeDefinitionCommandValidator());
 
@@ -235,7 +242,5 @@ public sealed class UpdateAttributeDefinitionServiceTests
 
         public Task<bool> ExistsByKeyExcludingAsync(Guid collectionId, string key, Guid excludeAttributeDefinitionId, CancellationToken cancellationToken)
             => Task.FromResult(_attributeDefinitions.Any(d => d.CollectionId == collectionId && d.Key == key && d.Id != excludeAttributeDefinitionId));
-
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

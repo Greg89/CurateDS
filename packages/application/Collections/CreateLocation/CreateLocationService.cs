@@ -9,12 +9,18 @@ namespace CurateDS.Application.Collections.CreateLocation;
 public sealed class CreateLocationService
 {
     private readonly ILocationRepository _locationRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
     private readonly IValidator<CreateLocationCommand> _validator;
 
-    public CreateLocationService(ILocationRepository locationRepository, ICurrentUserService currentUser, IValidator<CreateLocationCommand> validator)
+    public CreateLocationService(
+        ILocationRepository locationRepository,
+        ICatalogUnitOfWork unitOfWork,
+        ICurrentUserService currentUser,
+        IValidator<CreateLocationCommand> validator)
     {
         _locationRepository = locationRepository;
+        _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _validator = validator;
     }
@@ -34,7 +40,9 @@ public sealed class CreateLocationService
         }
 
         var location = Location.Create(command.OwnerId, command.Name, command.Description, DateTime.UtcNow, _currentUser.GetCurrentUser());
-        await _locationRepository.AddAsync(location, cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            innerCancellationToken => _locationRepository.AddAsync(location, innerCancellationToken),
+            cancellationToken);
 
         return new CreateLocationResult(location.Id, location.Name, location.Description, location.CreatedUtc);
     }

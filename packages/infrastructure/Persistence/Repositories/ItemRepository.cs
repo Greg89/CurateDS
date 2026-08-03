@@ -19,7 +19,6 @@ public sealed class ItemRepository : IItemRepository
     public async Task AddAsync(Item item, CancellationToken cancellationToken)
     {
         await _dbContext.Items.AddAsync(item, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public void AddMediaAsset(MediaAsset asset)
@@ -72,11 +71,6 @@ public sealed class ItemRepository : IItemRepository
             .Where(item => item.CollectionId == collectionId)
             .OrderByDescending(item => item.CreatedUtc)
             .ToListAsync(cancellationToken);
-    }
-
-    public Task SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        return _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<PagedResult<ItemSummaryProjection>> QueryAsync(ListItemsQuery query, CancellationToken cancellationToken)
@@ -153,7 +147,6 @@ public sealed class ItemRepository : IItemRepository
         }
 
         item.SoftDelete(deletedUtc, deletedBy);
-        await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 
@@ -166,11 +159,6 @@ public sealed class ItemRepository : IItemRepository
         foreach (var item in items)
         {
             item.SoftDelete(deletedUtc, deletedBy);
-        }
-
-        if (items.Count > 0)
-        {
-            await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

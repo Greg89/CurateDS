@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router";
 import { useAuth0 } from "@auth0/auth0-react";
 import { CatalogApp } from "./catalog/CatalogApp";
 

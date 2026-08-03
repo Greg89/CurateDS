@@ -8,15 +8,18 @@ public sealed class DeleteItemMediaService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly IItemRepository _itemRepository;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly IMediaStorageService _mediaStorageService;
 
     public DeleteItemMediaService(
         ICollectionRepository collectionRepository,
         IItemRepository itemRepository,
+        ICatalogUnitOfWork unitOfWork,
         IMediaStorageService mediaStorageService)
     {
         _collectionRepository = collectionRepository;
         _itemRepository = itemRepository;
+        _unitOfWork = unitOfWork;
         _mediaStorageService = mediaStorageService;
     }
 
@@ -50,9 +53,14 @@ public sealed class DeleteItemMediaService
         }
 
         var storageKey = asset.StorageKey;
-        item.RemoveMedia(command.MediaAssetId);
 
-        await _itemRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            innerCancellationToken =>
+            {
+                item.RemoveMedia(command.MediaAssetId);
+                return Task.CompletedTask;
+            },
+            cancellationToken);
 
         // Best-effort: delete from storage after the DB record is removed.
         await _mediaStorageService.DeleteAsync(storageKey, cancellationToken);

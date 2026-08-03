@@ -42,18 +42,18 @@ const items: ItemSummary[] = [
 
 describe('CollectionDetailScreen', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    jest.resetAllMocks();
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   });
 
   afterEach(() => {
     queryClient.clear();
   });
 
-  it('shows a loading indicator while fetching', () => {
-    mockedApi.listItems.mockReturnValue(new Promise(() => {}));
+  it('shows a loading indicator while fetching', async () => {
+    mockedApi.listItems.mockResolvedValueOnce([]);
 
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
@@ -64,7 +64,7 @@ describe('CollectionDetailScreen', () => {
   it('renders item names and metadata on success', async () => {
     mockedApi.listItems.mockResolvedValueOnce(items);
 
-    const { findByText } = render(
+    const { findByText } = await render(
       <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
@@ -79,7 +79,7 @@ describe('CollectionDetailScreen', () => {
   it('shows empty state when items array is empty', async () => {
     mockedApi.listItems.mockResolvedValueOnce([]);
 
-    const { findByText } = render(
+    const { findByText } = await render(
       <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );
@@ -90,7 +90,7 @@ describe('CollectionDetailScreen', () => {
   it('shows error state on fetch failure', async () => {
     mockedApi.listItems.mockRejectedValueOnce(new Error('Network error'));
 
-    const { findByText } = render(
+    const { findByText } = await render(
       <CollectionDetailScreen route={mockRoute} navigation={mockNavigation} />,
       { wrapper },
     );

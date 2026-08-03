@@ -67,7 +67,7 @@ export function ItemFormDrawer({
       ariaLabel={isEditing ? "Edit item" : "Create item"}
       className={`item-drawer form-drawer${isOpen ? " open" : ""}`}
       isOpen={isOpen}
-      keepMounted
+      initialFocusSelector="[data-autofocus='true']"
       onRequestClose={onClose}
     >
       <div className="drawer-header">
@@ -97,6 +97,7 @@ export function ItemFormDrawer({
         <label className="field">
           <span>Name</span>
           <input
+            data-autofocus="true"
             value={name}
             onChange={(event) => onNameChange(event.target.value)}
             placeholder="Kind of Blue"
