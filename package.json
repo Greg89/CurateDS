@@ -19,7 +19,8 @@
     "test:mobile:coverage": "npm run test:coverage --workspace @curateds/mobile"
   },
   "overrides": {
-    "undici": "7.28.0",
+    "postcss": "8.5.25",
+    "undici": "7.29.0",
     "vite": "^8.1.0",
     "uuid": "^14.0.0",
     "xcode": {
@@ -29,7 +30,7 @@
       "http-proxy-agent": "^6.1.1"
     },
     "@expo/metro-config": {
-      "postcss": "^8.5.10"
+      "postcss": "^8.5.25"
     },
     "@expo/cli": {
       "ws": "^8.20.1",
