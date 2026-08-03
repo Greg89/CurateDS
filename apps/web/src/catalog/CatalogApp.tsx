@@ -1,5 +1,5 @@
 import { FormEvent, ReactElement, useEffect, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createCollection,

@@ -21,7 +21,7 @@ import { AttributeDefinitionsSection } from "../components/AttributeDefinitionsS
 import { CollectionActionsSection } from "../components/CollectionActionsSection";
 import { ItemTypesSection } from "../components/ItemTypesSection";
 import { OrganizationSettingsSection } from "../components/OrganizationSettingsSection";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 export function SettingsPage({
   selectedCollection
