@@ -1,3 +1,3 @@
 # Milestones
 
-MVP -> Metadata -> Reporting -> Mobile.
+MVP -> Metadata -> Reporting -> V2 Web Foundation.

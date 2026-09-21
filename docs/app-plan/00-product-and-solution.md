@@ -25,7 +25,7 @@ The product should stay flexible where hobby-specific variation matters:
 
 - Hobby agnostic, but not schema-less chaos.
 - Relational data model first, with controlled extensibility.
-- Web-first user experience, mobile-ready backend and contracts.
+- Web-first user experience with a focused API contract.
 - Single-user or small-user-set friendly at launch, but structured so multi-user ownership is still possible.
 - Build in milestones with usable value at each stage.
 - Logging, error handling, and deployment readiness are part of the MVP foundation, not cleanup work.
@@ -55,7 +55,7 @@ The first release should let a user:
 
 ## Non-Goals For MVP
 
-- native mobile app
+- additional client apps
 - social features
 - marketplace integrations
 - barcode scanning or OCR-heavy workflows

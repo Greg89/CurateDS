@@ -83,17 +83,18 @@ Deliverables:
 - export options
 - simple reports by collection, tag, location, or status
 
-## Milestone 4: Mobile Readiness
+## Milestone 4: V2 Experience Foundation
 
 Goal:
-Prepare for a mobile client without rewriting core behavior.
+Rebuild the web product foundation around cleaner workflows, contracts, and reusable UI primitives.
 
 Deliverables:
 
-- API cleanup and version review
+- API contract review
 - auth/session hardening if needed
-- client contract review
-- spike for React Native / Expo
+- web design system seed
+- collection workspace redesign
+- typed client/runtime validation strategy
 
 ## Suggested Backlog Themes
 
@@ -118,6 +119,7 @@ Deliverables:
 9. Scalable item query and pagination slice
 10. Media/event slice
 11. Dashboard/reporting slice
+12. V2 web experience pass
 
 ## Immediate Next Roadmap
 
@@ -125,4 +127,4 @@ Deliverables:
 2. Introduce a paged item-list API contract and update the web client to consume it.
 3. Preserve the current Problem Details strategy while tightening list and pagination contracts.
 4. Split the routed web client into smaller feature components and hooks for maintainability and TDD.
-5. Resume the remaining MVP feature work with media metadata, item history, and denser browsing views.
+5. Shape the V2 web experience before adding another client surface.

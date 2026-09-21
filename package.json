@@ -3,20 +3,16 @@
   "private": true,
   "workspaces": [
     "apps/web",
-    "apps/mobile",
     "tests/Web.UnitTests",
     "tests/EndToEndTests"
   ],
   "scripts": {
-    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web -- --run && npm run typecheck:mobile && npm run test:mobile",
+    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web -- --run",
     "build:web": "npm run build --workspace @curateds/web",
     "test:web": "npm run test --workspace @curateds/web-tests",
     "test:web:coverage": "npm run test:coverage --workspace @curateds/web-tests",
     "test:web:watch": "npm run test:watch --workspace @curateds/web-tests",
-    "test:e2e": "npm run test --workspace @curateds/e2e",
-    "typecheck:mobile": "npm run typecheck --workspace @curateds/mobile",
-    "test:mobile": "npm run test --workspace @curateds/mobile",
-    "test:mobile:coverage": "npm run test:coverage --workspace @curateds/mobile"
+    "test:e2e": "npm run test --workspace @curateds/e2e"
   },
   "overrides": {
     "postcss": "8.5.25",
@@ -24,18 +20,8 @@
     "undici": "7.29.0",
     "vite": "^8.1.0",
     "uuid": "^14.0.0",
-    "xcode": {
-      "uuid": "^14.0.0"
-    },
     "jest-environment-jsdom": {
       "http-proxy-agent": "^6.1.1"
-    },
-    "@expo/metro-config": {
-      "postcss": "^8.5.25"
-    },
-    "@expo/cli": {
-      "ws": "^8.20.1",
-      "brace-expansion": "^5.0.6"
     }
   },
   "devDependencies": {

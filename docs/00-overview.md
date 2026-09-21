@@ -1,3 +1,3 @@
 # Collection Curator Overview
 
-Web-first, mobile-ready collector platform.
+API-backed web catalog platform for flexible personal collections.
