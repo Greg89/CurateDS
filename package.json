@@ -29,7 +29,7 @@
     "@emnapi/runtime": "1.11.3",
     "@vitest/coverage-v8": "^4.1.11",
     "jsdom": "^30.0.1",
-    "react-test-renderer": "^19.2.7",
+    "react-test-renderer": "^19.3.0",
     "uuid": "^14.0.0",
     "vitest": "^4.1.11"
   }
