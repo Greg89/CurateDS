@@ -2,7 +2,7 @@
 
 A web-first, hobby-agnostic catalog platform for curating personal collections.
 
-Organise anything - books, vinyl, board games, tools - with custom attributes, tags, locations, and saved views. Built with a clean API-first architecture so a mobile client can follow later.
+Organise anything - books, vinyl, board games, tools - with custom attributes, tags, locations, and saved views. V2 is focused on a cleaner API and web experience before any additional clients are introduced.
 
 ## Features
 
@@ -45,6 +45,18 @@ tests/
   Web.UnitTests/
   EndToEndTests/
 ```
+
+## V2 Direction
+
+CurateDS V2 keeps the existing core use case: a flexible personal catalog for real collections. The rewrite work should preserve useful backend/domain lessons while trimming unused surfaces and rebuilding the product experience around API and web only.
+
+Current V2 boundaries:
+
+- keep the .NET API, application, domain, and infrastructure projects as the backend foundation
+- keep the React web app as the primary user experience
+- remove inactive client surfaces and planning docs until the web product is strong enough to justify another app
+- keep CI focused on backend and frontend checks
+- avoid adding coverage, dependency-bot, or static-analysis services until they are worth their maintenance cost
 
 ## Local Development
 
@@ -113,4 +125,4 @@ GitHub Actions runs two required checks on every PR - `backend` and `frontend`. 
 2. Follow the TDD workflow - write the failing test first
 3. Ensure `dotnet test CurateDS.sln` and `npm run test:web` are green
 4. Open a PR into `develop`; CI must pass before merge
-5. return to the remaining MVP features once the browsing path is scalable enough to support larger collections
+5. Keep V2 changes scoped to the API and web foundation unless the product direction changes deliberately

@@ -6,8 +6,8 @@ The plan assumes:
 
 - Hobby-agnostic cataloging is a core product rule.
 - The system should stay relational and PostgreSQL-backed.
-- The first release is a web app.
-- The backend should be structured so a future mobile client can reuse the same API and domain rules.
+- V2 is an API and web app only.
+- Mobile is out of scope until the web product earns a fresh mobile strategy.
 - Logging and observability are first-class from day one, with Serilog as the primary application logger.
 - Hosting targets Railway.
 - Delivery happens in clear milestones.
