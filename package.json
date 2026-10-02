@@ -3,11 +3,15 @@
   "private": true,
   "workspaces": [
     "apps/web",
+    "apps/web-v2",
     "tests/Web.UnitTests",
     "tests/EndToEndTests"
   ],
   "scripts": {
-    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web -- --run",
+    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web -- --run && npm run build:web-v2 && npm run test:web-v2",
+    "dev:web-v2": "npm run dev --workspace @curateds/web-v2",
+    "build:web-v2": "npm run build --workspace @curateds/web-v2",
+    "test:web-v2": "npm run test --workspace @curateds/web-v2",
     "build:web": "npm run build --workspace @curateds/web",
     "test:web": "npm run test --workspace @curateds/web-tests",
     "test:web:coverage": "npm run test:coverage --workspace @curateds/web-tests",
@@ -17,7 +21,7 @@
   "overrides": {
     "postcss": "8.5.25",
     "nanoid": "^3.3.18",
-    "undici": "7.29.0",
+    "undici": "7.29.1",
     "vite": "^8.1.0",
     "uuid": "^14.0.0",
     "jest-environment-jsdom": {

@@ -24,7 +24,7 @@ public static class CollectionCrudEndpoints
             var collections = await service.ExecuteAsync(new ListCollectionsQuery(ownerId), cancellationToken);
 
             return Results.Ok(collections.Select(CollectionResponseMappers.ToCollectionResponse));
-        });
+        }).Produces<CollectionResponse[]>();
 
         group.MapPost("/", async (
             CreateCollectionRequest request,

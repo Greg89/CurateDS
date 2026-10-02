@@ -48,6 +48,8 @@ Exit criteria:
 
 Goal: establish the new web application shell without rebuilding feature workflows yet.
 
+Status (2026-10-02): Implementation complete in `apps/web-v2`. Automated session-boundary, API-contract, component, and desktop/mobile browser checks are in place. Live Auth0 tenant configuration and login/callback/refresh/logout validation remain before live acceptance. See [Slice 1 handoff](refactor/05-v2-foundation-handoff.md) and [workspace setup](../apps/web-v2/README.md). Slice 2 has not started.
+
 Deliverables:
 
 - Next.js app under `apps/web` or a temporary V2 web workspace

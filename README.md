@@ -58,6 +58,10 @@ Current V2 boundaries:
 - keep CI focused on backend and frontend checks
 - avoid adding coverage, dependency-bot, or static-analysis services until they are worth their maintenance cost
 
+### V2 foundation workspace
+
+The Next.js foundation is in [`apps/web-v2`](apps/web-v2/README.md), alongside the current Vite web app. Run `npm run dev:web-v2` on Node 24.15+ for port 3001. Its README covers the separate Auth0 Regular Web Application setup, generated contracts, browser tests, and standalone Docker/Railway configuration. The existing deployment remains on the current web app.
+
 ## Local Development
 
 Requires Docker Desktop.

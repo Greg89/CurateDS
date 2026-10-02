@@ -8,7 +8,7 @@ This folder tracks the incremental refactor originally reviewed in June 2026. Th
 
 1. Relational rollback coverage is complete for item create/update/delete using SQLite and PostgreSQL 17 with real services/repositories. PostgreSQL mode applies repository migrations to fresh databases; see the [test runner](../../tests/Infrastructure.IntegrationTests/README.md).
 2. Storage-test portability is complete: Kestrel binds an ephemeral loopback port directly, captures requests asynchronously, and awaits shutdown. Wire-level assertions and concurrent-server isolation are covered.
-3. Next implementation slice: V2 Slice 1 in `apps/web-v2`. Remaining interaction audits and feature decomposition are recorded follow-ups.
+3. V2 Slice 1 is implemented in `apps/web-v2`; finish live Auth0 setup and acceptance before starting Slice 2. See [the foundation handoff](05-v2-foundation-handoff.md). Remaining interaction audits and feature decomposition are recorded follow-ups.
 
 ## After the first refactor pass
 
@@ -32,3 +32,4 @@ Slice 0 is already complete, with decisions accepted on 2026-09-20: start a temp
 3. [Remaining roadmap](02-prioritized-refactor-roadmap.md)
 4. [Validation notes](03-validation-notes.md)
 5. [Transaction design and implementation status](04-transaction-boundary-design.md)
+6. [V2 foundation handoff](05-v2-foundation-handoff.md)

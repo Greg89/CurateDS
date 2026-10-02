@@ -71,3 +71,15 @@ jobs:
 
       - name: Test web
         run: npm run test:web -- --run
+
+      - name: Build V2 web
+        run: npm run build:web-v2
+
+      - name: Test V2 web
+        run: npm run test:web-v2
+
+      - name: Install V2 browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Test V2 browser flows
+        run: npm run test:e2e --workspace @curateds/web-v2
