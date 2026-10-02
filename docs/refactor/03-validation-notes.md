@@ -4,7 +4,7 @@ Status updated: 2026-10-02
 
 ## V2 Foundation (2026-10-02)
 
-The first V2 foundation is implemented after completion of the refactor pass. See [the Slice 1 handoff](05-v2-foundation-handoff.md) for setup and verification: 17 V2 unit/component tests, 8 desktop/mobile browser checks, 136 existing web tests, and 100 API integration tests passed. Both web builds, the V2 Docker build/runtime smoke, and npm audit passed. Live Auth0 configuration remains an explicit acceptance step before Slice 2.
+The first V2 foundation is implemented after completion of the refactor pass. See [the Slice 1 handoff](05-v2-foundation-handoff.md) for setup and verification: 17 V2 unit/component tests, 8 desktop/mobile browser checks, 136 existing web tests, and 100 API integration tests passed. Both web builds, the V2 Docker build/runtime smoke, and npm audit passed. The user confirmed live login/callback and authenticated collection-list access via the signed-in empty state. Live logout, protected-route access after logout, and token refresh remain acceptance checks before Slice 2.
 
 ## Portable Storage Fixture (2026-10-02)
 

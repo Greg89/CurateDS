@@ -10,9 +10,11 @@ From the repository root:
 
 ```powershell
 npm ci --ignore-scripts
-Copy-Item apps/web-v2/.env.example apps/web-v2/.env.local
+npm run setup:local --workspace @curateds/web-v2
 npm run dev:web-v2
 ```
+
+The setup command creates the ignored `.env.local` only if it does not exist, generates a new cookie-encryption secret, and copies the tenant domain and API audience from the root `.env` when available. It never copies the existing SPA client ID or prints credentials. Fill in the Regular Web Application client ID and secret before testing live sign-in. Rerunning setup leaves the existing file unchanged.
 
 Open http://localhost:3001. Without Auth0 configuration the public page displays a sign-in availability message; protected pages redirect home and API requests fail closed.
 
@@ -93,4 +95,3 @@ The image runs the standalone Next.js server as the non-root Node user. Set the 
 For a local production preview after building, run `npm run start --workspace @curateds/web-v2`. The helper copies static assets into the standalone output and starts it on loopback port 3001.
 
 Deployment and live Auth0 tenant configuration are not performed by this slice.
-
