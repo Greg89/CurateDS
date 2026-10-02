@@ -77,9 +77,9 @@ The item form and detail drawers now unmount when closed. This fixed the beta sm
 
 `UploadItemMediaService` attempts object deletion if database persistence fails. Cleanup failure preserves the original exception; orphan repair remains a follow-up.
 
-## Open: Relational rollback coverage
+## Done: Relational rollback coverage for item writes
 
-No relational rollback test fixture was found. `CollectionApiFactory` uses EF InMemory. Add failure-injection coverage against a relational provider before considering transaction behavior verified end to end.
+`ItemTransactionTests` supports SQLite and PostgreSQL 17, using real application services/repositories and a rejecting audit-event trigger. Create/update/delete each have rollback and commit cases. The failure path flushes item changes before inserting the event and checks persistence with a fresh context. `CollectionApiFactory` still uses EF InMemory; PostgreSQL mode applies migrations to fresh test databases and has passed all six cases. Existing production data and broader provider queries are outside this fixture.
 
 ## Open: Portable storage tests
 

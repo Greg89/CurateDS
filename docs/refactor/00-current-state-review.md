@@ -14,11 +14,11 @@ The repository is an API/web catalog application with a broader V2 plan in `docs
 
 ## Remaining Gaps
 
-- Relational rollback is not covered by an integration fixture; API tests use EF InMemory.
+- Item create/update/delete now have SQLite and PostgreSQL 17 commit/rollback integration coverage, including migration startup on fresh PostgreSQL databases. Existing-data migration safety and broader provider queries remain separate.
 - Storage wire tests still depend on `HttpListener` and a probe-then-bind port allocation.
 - Media compensation is best effort; deletion failure can still leave an orphaned object.
 - Interaction audits and larger feature decomposition remain incremental work.
 
 ## Current Slice
 
-Finish tag-picker focus behavior and reconcile these handoff notes. Continue with relational rollback coverage and storage test portability before treating write consistency as fully validated.
+Tag-picker focus behavior and relational rollback coverage are complete. Continue with storage test portability, then use the documented V2 handoff; keep existing-data migration safety and broader provider queries visible as follow-ups.

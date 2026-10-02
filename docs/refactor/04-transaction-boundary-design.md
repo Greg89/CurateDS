@@ -8,7 +8,7 @@ The design below is the original proposal. `ICatalogUnitOfWork` and `EfCatalogUn
 
 Media upload now attempts storage deletion when metadata persistence fails. This is best effort and uses the request cancellation token; orphan cleanup remains a follow-up.
 
-The main uncompleted testing step is relational rollback coverage. Existing API integration tests use EF InMemory and cannot prove transaction rollback. See the current roadmap for the next slice.
+Relational rollback coverage now exists in `ItemTransactionTests`: six cases, verified on SQLite and PostgreSQL 17, exercise real create/update/delete services, with an early item flush and an event-insert rejection for failure cases. Fresh contexts verify rollback and paired success cases verify commit. Existing API tests still use EF InMemory; the Docker runner additionally verifies migrations from an empty PostgreSQL database, while existing-data migration safety and broader provider queries need separate validation.
 
 ## Decision
 

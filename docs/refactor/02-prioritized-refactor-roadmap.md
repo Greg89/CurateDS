@@ -2,7 +2,7 @@
 
 Status updated: 2026-10-02
 
-The June roadmap predates merged implementation. Use this status when resuming; see the app-plan folder for the broader V2 plan.
+The June roadmap predates merged implementation. Use this status when resuming; keep the [V2 roadmap](../15-v2-roadmap.md) in view as the next product phase.
 
 ## Completed implementation
 
@@ -21,13 +21,21 @@ The June roadmap predates merged implementation. Use this status when resuming; 
 - Close and reset when disabled, preventing the clear action from remaining interactive.
 - Preserve Escape focus return and outside-click behavior.
 
-## Next: Transaction Validation
+## Completed: Transaction Validation
 
-Add a relational fixture and force a failure after staging item state/event changes. Verify from a fresh context that no partial write persists. Cover create, update, and delete as appropriate. EF InMemory service/API tests do not establish rollback behavior.
+Added six integration cases, verified against SQLite and PostgreSQL 17, through the real item create/update/delete services and repositories. A test decorator flushes item changes before the event insert, then a database trigger rejects that insert. Fresh contexts verify rollback restores item state and leaves no event; paired success cases verify both writes commit. The default SQLite mode needs no Docker. The optional PostgreSQL runner applies migrations to isolated fresh databases and verifies the same scenarios on the production provider. Existing-data migration safety and broader provider queries remain separate.
 
 ## Next: Validation Reliability
 
 Replace the `HttpListener`-based fake S3 endpoint with a portable server fixture. Preserve checks for Content-Length, chunked encoding, and payload-signing compatibility. Run the infrastructure suite on supported development/CI hosts.
+
+## First-pass Exit And V2 Handoff
+
+- Complete relational rollback coverage and the portable storage-test fixture, recording test results and any remaining environment limitations.
+- Record unresolved interaction, decomposition, and media-cleanup work as follow-ups so this pass has a bounded finish.
+- Continue with [V2 Slice 1: Next.js Web Foundation](../15-v2-roadmap.md#slice-1-nextjs-web-foundation). Slice 0 decisions are already accepted; use the temporary `apps/web-v2` workspace and preserve the existing web as a reference.
+- Preserve the tested filters, saved views, ownership checks, transaction behavior, and media workflows while building the collection-first experience.
+- Reconcile completed transaction work with V2 Slice 7 when reaching that slice; retain its broader privacy, cleanup, import/export, and scale goals.
 
 ## Follow-up
 
