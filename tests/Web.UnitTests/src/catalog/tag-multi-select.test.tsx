@@ -9,6 +9,62 @@ const tags = [
 ];
 
 describe("TagMultiSelect", () => {
+  it("supports keyboard opening, checkbox selection, and tabbing out", async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+    render(
+      <div>
+        <TagMultiSelect disabled={false} emptyLabel="Select tags" selectedTagIds={[]}
+          tags={tags} onToggle={onToggle} />
+        <button type="button">Next field</button>
+      </div>
+    );
+
+    await user.tab();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("checkbox", { name: "Alpha" })).toHaveFocus();
+    await user.keyboard(" ");
+    expect(onToggle).toHaveBeenCalledWith("tag-a");
+    await user.tab();
+    expect(screen.getByRole("checkbox", { name: "Beta" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Next field" })).toHaveFocus();
+    expect(screen.queryByRole("group", { name: "Tag options" })).not.toBeInTheDocument();
+  });
+
+  it("keeps reverse tab navigation available through clear and the trigger", async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <button type="button">Previous field</button>
+        <TagMultiSelect disabled={false} emptyLabel="Select tags" selectedTagIds={["tag-a"]}
+          tags={tags} onToggle={vi.fn()} />
+      </div>
+    );
+
+    const trigger = screen.getByRole("button", { name: "Alpha" });
+    await user.click(trigger);
+    expect(screen.getByRole("checkbox", { name: "Alpha" })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByRole("button", { name: "Clear 1 selected" })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(trigger).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByRole("button", { name: "Previous field" })).toHaveFocus();
+    expect(screen.queryByRole("group", { name: "Tag options" })).not.toBeInTheDocument();
+  });
+
+  it("closes when disabled and stays closed when enabled again", async () => {
+    const user = userEvent.setup();
+    const props = { emptyLabel: "Select tags", selectedTagIds: ["tag-a"], tags, onToggle: vi.fn() };
+    const { rerender } = render(<TagMultiSelect {...props} disabled={false} />);
+    await user.click(screen.getByRole("button", { name: "Alpha" }));
+    rerender(<TagMultiSelect {...props} disabled />);
+    expect(screen.queryByRole("group", { name: "Tag options" })).not.toBeInTheDocument();
+    rerender(<TagMultiSelect {...props} disabled={false} />);
+    expect(screen.getByRole("button", { name: "Alpha" })).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("closes when pressing Escape", async () => {
     const user = userEvent.setup();
     const onToggle = vi.fn();

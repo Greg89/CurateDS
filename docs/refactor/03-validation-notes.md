@@ -1,6 +1,18 @@
 # Validation Notes
 
-Status updated: 2026-06-29
+Status updated: 2026-10-02
+
+## Current Continuation (2026-10-02)
+
+- `npm run test:web -- src/catalog/tag-multi-select.test.tsx`: the three new regression tests failed before the component change; all six passed after it.
+- `npm run test:web -- src/catalog/tag-multi-select.test.tsx src/catalog/catalog-ui.test.tsx src/catalog/dialog-surface.test.tsx`: 29 tests passed across three files.
+- `npm run build:web`: passed; Vite reported a bundle larger than 500 kB.
+- `dotnet test tests/Application.UnitTests/CurateDS.Application.UnitTests.csproj --no-restore --filter "FullyQualifiedName~CreateSavedView|FullyQualifiedName~CreateItemService|FullyQualifiedName~UpdateItemService|FullyQualifiedName~DeleteItemService|FullyQualifiedName~UploadItemMedia" --verbosity minimal`: 48 tests passed using SDK 10.0.203.
+- No API, infrastructure, full-solution, Docker, or browser smoke run was performed in this continuation. Relational rollback remains unverified.
+
+## Historical Validation (2026-06-29)
+
+The results below belong to the earlier environment and are not fresh validation of this checkout.
 
 ## What Was Checked
 

@@ -1,27 +1,28 @@
 # Refactor Review
 
-This folder captures a focused review of the app as of 2026-06-26, with status refreshed on 2026-06-29 after the filter/saved-view/report fixes and the item drawer smoke-test fix.
+Status refreshed: 2026-10-02
 
-Contents:
+This folder tracks the incremental refactor originally reviewed in June 2026. The October reconciliation checked the implementation at `c61f0a6`; the original notes had not caught up with merged work. The broader API/web V2 direction is in [the app plan](../app-plan/README.md).
 
-- `00-current-state-review.md`
-- `01-concrete-findings.md`
-- `02-prioritized-refactor-roadmap.md`
-- `03-validation-notes.md`
-- `04-transaction-boundary-design.md`
+## Where to resume
 
-Recommended reading order:
+1. Add relational rollback integration coverage for `EfCatalogUnitOfWork`. Existing API tests use EF InMemory, which cannot prove transactional rollback.
+2. Replace the `HttpListener` fake S3 server with a portable test fixture, preserving wire-level upload assertions.
+3. Audit remaining drawer/popover interactions and continue decomposing large feature surfaces as needed.
 
-1. `00-current-state-review.md`
-2. `01-concrete-findings.md`
-3. `02-prioritized-refactor-roadmap.md`
-4. `03-validation-notes.md`
-5. `04-transaction-boundary-design.md`
+## Implemented
 
-Current near-term phases:
+- Shared item-filter serialization, report drill-through, saved-view restoration, and malformed-row handling.
+- Item drawers unmount after closing.
+- Saved-view JSON shape validation with `invalid_saved_view_filters`, plus application and API tests.
+- `ICatalogUnitOfWork` and its EF implementation; item writes and other catalog writes use the abstraction.
+- Best-effort object-storage deletion when media metadata persistence fails.
+- Tag picker outside-click/Escape handling; the current continuation adds focus on open, close on focus leaving, and reset when disabled. Native checkbox Tab/Space navigation is retained.
 
-1. Documentation and status refresh.
-2. Encoding/mojibake cleanup.
-3. `TagMultiSelect` interaction hardening.
-4. Server-side saved-view filter validation.
-5. Transaction-boundary design for multi-step writes.
+## Reading order
+
+1. [Current state](00-current-state-review.md)
+2. [Concrete findings](01-concrete-findings.md)
+3. [Remaining roadmap](02-prioritized-refactor-roadmap.md)
+4. [Validation notes](03-validation-notes.md)
+5. [Transaction design and implementation status](04-transaction-boundary-design.md)

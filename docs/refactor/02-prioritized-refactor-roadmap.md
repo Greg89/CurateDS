@@ -1,79 +1,37 @@
 # Prioritized Refactor Roadmap
 
-Status updated: 2026-06-29
+Status updated: 2026-10-02
 
-## Phase 1: Documentation And Status Refresh
+The June roadmap predates merged implementation. Use this status when resuming; see the app-plan folder for the broader V2 plan.
 
-Goal:
-Make the refactor notes match the repo before planning more work.
+## Completed implementation
 
-Work:
+- Filter/query symmetry, saved-view restoration and malformed-row handling.
+- Drawer unmount fix.
+- Saved-view write validation with application and API coverage.
+- Application unit-of-work abstraction and EF transaction implementation, used by item and other catalog write services.
+- Best-effort media-upload compensation after database failure.
+- Baseline tag-picker outside-click and Escape handling.
 
-1. Mark completed filter, saved-view, and report drill-through fixes as done.
-2. Record the item drawer unmount fix and green beta smoke test.
-3. Keep the remaining open work visible: encoding cleanup, `TagMultiSelect`, saved-view write validation, and transaction-boundary design.
+## Current continuation: Tag Picker Focus
 
-## Phase 2: Polish And Encoding Cleanup
+- Focus the first checkbox when opening.
+- Keep native Tab/Shift+Tab and Space interaction for the checkbox group.
+- Close when focus leaves without stealing focus from the destination.
+- Close and reset when disabled, preventing the clear action from remaining interactive.
+- Preserve Escape focus return and outside-click behavior.
 
-Goal:
-Clean obvious presentation debt while refactor momentum is already active.
+## Next: Transaction Validation
 
-Work:
+Add a relational fixture and force a failure after staging item state/event changes. Verify from a fresh context that no partial write persists. Cover create, update, and delete as appropriate. EF InMemory service/API tests do not establish rollback behavior.
 
-1. Fix mojibake and content-encoding regressions.
-2. Review top-level docs for outdated statements.
-3. Consider a small contributor-facing quality checklist for:
-   - encoding
-   - accessibility
-   - filter/query symmetry
+## Next: Validation Reliability
 
-## Phase 3: UI Hardening
+Replace the `HttpListener`-based fake S3 endpoint with a portable server fixture. Preserve checks for Content-Length, chunked encoding, and payload-signing compatibility. Run the infrastructure suite on supported development/CI hosts.
 
-Goal:
-Stabilize newer interactive controls and keep the shell maintainable.
+## Follow-up
 
-Work:
-
-1. Harden `TagMultiSelect` behavior.
-2. Audit other drawer and popover interactions for consistent close/focus behavior.
-3. Continue decomposing feature surfaces like the items workspace into smaller tested units.
-
-## Phase 4: Saved-View Write Validation
-
-Goal:
-Prevent invalid saved-view filter payloads from entering persistence.
-
-Work:
-
-1. Validate `FiltersJson` in `CreateSavedViewCommandValidator` or `CreateSavedViewService`.
-2. Reuse the same supported item-filter shape as the web client.
-3. Add application and API integration tests for malformed JSON and unsupported shapes.
-
-## Phase 5: Transaction-Boundary Design
-
-Goal:
-Define the write consistency approach before adding more multi-table domain features.
-
-Work:
-
-1. Document the unit-of-work transaction abstraction.
-2. Start implementation with item create, update, and delete flows.
-3. Define compensation behavior separately for object storage plus database writes.
-
-Status:
-
-The design direction is captured in `04-transaction-boundary-design.md`. Implementation remains open.
-
-## Phase 6: Validation Reliability
-
-Goal:
-Reduce environment-specific failures in local and CI feedback loops.
-
-Work:
-
-1. Revisit infrastructure tests that depend on `HttpListener`.
-2. Decide whether to:
-   - swap to a more portable fake server
-   - isolate those tests behind explicit environment assumptions
-   - move them to a different integration-test style
-3. Make repo validation notes clearer when failures are environment-specific rather than product regressions.
+- Audit other drawers and popovers for consistent close/focus behavior.
+- Continue extracting large feature surfaces into tested units when changing them.
+- Keep contributor docs aligned with the API/web-only V2 scope and actual SDK requirements.
+- Consider orphan-media repair and cancellation-independent compensation; current storage cleanup is best effort and uses the request cancellation token.

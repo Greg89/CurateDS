@@ -68,9 +68,16 @@ export function TagMultiSelect({
   }
 
   useEffect(() => {
+    if (disabled) {
+      setIsOpen(false);
+      return;
+    }
+
     if (!isOpen) {
       return;
     }
+
+    containerRef.current?.querySelector<HTMLInputElement>('input[type="checkbox"]:not(:disabled)')?.focus();
 
     function handlePointerDown(event: PointerEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
@@ -92,15 +99,22 @@ export function TagMultiSelect({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [disabled, isOpen]);
 
   return (
-    <div className={`multi-select${isOpen ? " open" : ""}`} ref={containerRef}>
+    <div
+      className={`multi-select${isOpen ? " open" : ""}`}
+      ref={containerRef}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          closeMenu();
+        }
+      }}
+    >
       <button
         ref={triggerRef}
         aria-controls={isOpen ? menuId : undefined}
         aria-expanded={isOpen}
-        aria-haspopup="true"
         className="multi-select-trigger"
         disabled={disabled}
         onClick={() => setIsOpen((currentValue) => !currentValue)}
@@ -123,6 +137,7 @@ export function TagMultiSelect({
             <div className="multi-select-actions">
               <button
                 className="secondary-button"
+                disabled={disabled}
                 onClick={() => {
                   for (const tagId of selectedTagIds) {
                     onToggle(tagId);

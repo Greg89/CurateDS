@@ -1,6 +1,6 @@
 # Concrete Findings
 
-Status updated: 2026-06-29
+Status updated: 2026-10-02
 
 ## Done: Item list cache keys include all active filters
 
@@ -63,96 +63,28 @@ Status:
 
 The item form and detail drawers now unmount when closed. This fixed the beta smoke-test regression where the Create Item drawer could appear over Settings and refuse to close.
 
-## P1: Saved-view filter JSON is not validated on write
+## Done: Saved-view filter JSON shape is validated on write
 
-Files:
+`CreateSavedViewCommandValidator` parses JSON and checks supported field names/types and sort values. Invalid nonempty payloads use `invalid_saved_view_filters`. Application validator tests and API integration coverage are present. This is shape validation, not reference-existence validation.
 
-- `packages/application/Collections/CreateSavedView/CreateSavedViewCommandValidator.cs`
-- `packages/application/Collections/CreateSavedView/CreateSavedViewService.cs`
+## Done: Tag picker baseline and focus hardening
 
-Problem:
+`TagMultiSelect` already supported outside-click and Escape close with focus return. The October continuation adds initial checkbox focus, close when focus leaves the component, and reset when disabled. The control remains a group of native checkboxes with Tab/Shift+Tab and Space navigation; it does not advertise menu semantics. Dedicated tests cover these behaviors.
 
-The web client now safely ignores malformed saved views, but the API still accepts raw `FiltersJson` when a saved view is created. Bad data can still enter persistence through old clients, manual requests, or future client drift.
+## Done: Explicit transaction implementation
 
-Impact:
+`ICatalogUnitOfWork` and `EfCatalogUnitOfWork` coordinate writes, including item create/update/delete and other catalog services. The relational path opens and commits a transaction unless one is already active. Non-relational providers save without a database transaction.
 
-One malformed row no longer breaks the web query, but the server still allows corrupted saved-view data to accumulate.
+`UploadItemMediaService` attempts object deletion if database persistence fails. Cleanup failure preserves the original exception; orphan repair remains a follow-up.
 
-Recommendation:
+## Open: Relational rollback coverage
 
-- validate that `FiltersJson` is valid JSON
-- validate the JSON shape against the supported item-filter fields
-- return a stable validation error code for invalid saved-view filters
+No relational rollback test fixture was found. `CollectionApiFactory` uses EF InMemory. Add failure-injection coverage against a relational provider before considering transaction behavior verified end to end.
 
-## P2: Tag multi-select still needs interaction hardening
+## Open: Portable storage tests
 
-Files:
+`MinioMediaStorageServiceTests` still uses `HttpListener` and briefly reserves/releases a TCP port before binding the listener. Replace this with a portable fixture that binds an ephemeral port directly while retaining the wire-level assertions.
 
-- `apps/web/src/catalog/components/TagMultiSelect.tsx:38`
+## Follow-up: Documentation maintenance
 
-Problem:
-
-The newer tag multi-select is directionally better than the previous checkbox wall, but it is still interaction-fragile:
-
-- no click-outside close behavior
-- no Escape-key close behavior
-- no focus management after open/close
-- no keyboard navigation model beyond native checkbox tabbing
-
-Impact:
-
-As tag counts grow, this control becomes a frequent interaction point. Without basic menu behavior, it will feel rough on keyboard and assistive-tech paths.
-
-Recommendation:
-
-- treat it as a first-class popover/listbox-style control
-- add outside-click and Escape handling
-- return focus to the trigger after close
-- add web tests for keyboard interaction
-
-## P3: Repository documentation has visible encoding regressions
-
-Files:
-
-- `README.md:5`
-- `README.md:9`
-- `README.md:26`
-- `apps/web/src/catalog/pages/ReportsPage.tsx:60`
-- `apps/web/src/catalog/pages/ReportsPage.tsx:101`
-
-Problem:
-
-Several files contain mojibake or shell-fragile punctuation such as broken dashes, arrows, and ellipses.
-
-Impact:
-
-- lowers polish for contributors and reviewers
-- makes product copy feel less maintained
-- can hide real content-review issues because broken characters become normalized
-
-Recommendation:
-
-- normalize these files to UTF-8 clean text
-- add a lightweight docs/content pass as part of the next refactor batch
-
-## P2: Multi-step writes need explicit transaction boundaries
-
-Files:
-
-- `packages/application/Collections/CreateItem/CreateItemService.cs`
-- `packages/application/Collections/UpdateItem/UpdateItemService.cs`
-- `packages/application/Collections/DeleteItem/DeleteItemService.cs`
-
-Problem:
-
-Item create, update, and delete flows write item state and item events as separate steps without an explicit transaction boundary.
-
-Impact:
-
-If a later write fails, the earlier state change can already be persisted. That risk grows as acquisition, valuation, condition, and other multi-table features are added.
-
-Recommendation:
-
-- follow the design in `04-transaction-boundary-design.md`
-- wrap the item write plus item-event write in one transaction
-- define separate compensation behavior for object storage plus database flows
+The top-level README now lists .NET 10, matching the project target and SDK family in `global.json`. The June encoding observations are historical; a broader content audit remains optional follow-up. Broader V2 planning lives in `docs/app-plan`; keep future refactor notes aligned with that scope.

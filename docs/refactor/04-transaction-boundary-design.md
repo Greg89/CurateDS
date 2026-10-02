@@ -2,6 +2,14 @@
 
 Status created: 2026-06-29
 
+## Implementation Status (2026-10-02)
+
+The design below is the original proposal. `ICatalogUnitOfWork` and `EfCatalogUnitOfWork` are now implemented, including result-returning operations. Item create/update/delete and other catalog write services use them. The implementation saves inside an existing transaction without committing that caller-owned transaction.
+
+Media upload now attempts storage deletion when metadata persistence fails. This is best effort and uses the request cancellation token; orphan cleanup remains a follow-up.
+
+The main uncompleted testing step is relational rollback coverage. Existing API integration tests use EF InMemory and cannot prove transaction rollback. See the current roadmap for the next slice.
+
 ## Decision
 
 Add an application-layer transaction abstraction and implement it in infrastructure with EF Core.

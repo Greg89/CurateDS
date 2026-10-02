@@ -19,7 +19,7 @@ Organise anything - books, vinyl, board games, tools - with custom attributes, t
 
 | Layer | Technology |
 |---|---|
-| API | .NET 9, ASP.NET Core minimal APIs |
+| API | .NET 10, ASP.NET Core minimal APIs |
 | ORM | EF Core + Npgsql (PostgreSQL) |
 | Frontend | React 19, Vite, TypeScript, React Router 7, TanStack Query |
 | Auth | Auth0 |

@@ -1,48 +1,24 @@
 # Current State Review
 
-Status updated: 2026-06-29
+Status updated: 2026-10-02
 
-## Overall Assessment
+The repository is an API/web catalog application with a broader V2 plan in `docs/app-plan`. The June refactor notes lagged behind merged code: saved-view write validation, unit-of-work transactions, and media compensation are already implemented.
 
-CurateDS is in a strong "working MVP plus expansion" state:
+## Established Strengths
 
-- the app has a real vertical slice across collections, items, reports, saved views, media, and mobile groundwork
-- the repo structure is clearer than an early prototype and already shows meaningful separation between API, application, infrastructure, and web concerns
-- the recent client shell work moved the web app closer to a real product layout instead of a single-page workbench
-- the item-filter, saved-view, and report drill-through correctness fixes from the 2026-06-26 review are now in place
-- the item form/detail drawers no longer stay mounted after close, and beta smoke testing confirmed the stuck Create Item popup regression is resolved
+- Backend domain, application, and infrastructure boundaries.
+- Shared item-filter serialization across cache keys, URLs, and saved views.
+- Saved-view shape validation on write and defensive parsing on read.
+- Explicit application transaction ownership through `ICatalogUnitOfWork`.
+- Web and backend test coverage for core catalog workflows.
 
-The main refactor need is no longer foundational architecture. It is now consistency, hardening, and cleanup:
+## Remaining Gaps
 
-- harden interactive controls that are now central to everyday use
-- reduce brittle server-side validation gaps before more persistence-heavy features land
-- keep docs and contributor-facing notes aligned with the actual repo state
-- design transaction boundaries for multi-step writes before adding new domain entities
-- improve test reliability where environment-specific failures are still present
+- Relational rollback is not covered by an integration fixture; API tests use EF InMemory.
+- Storage wire tests still depend on `HttpListener` and a probe-then-bind port allocation.
+- Media compensation is best effort; deletion failure can still leave an orphaned object.
+- Interaction audits and larger feature decomposition remain incremental work.
 
-## Strengths
+## Current Slice
 
-- clear bounded layers in the backend
-- relational model with real query evolution already underway
-- meaningful web and API test coverage
-- explicit API DTOs and stronger Problem Details standardization
-- good local hosting and deployment story with Docker + Railway alignment
-- canonical item-filter serialization is now shared by cache keys, saved views, and URL handoff
-
-## Main Risks
-
-- a few newer UI flows are functionally useful but still interaction-fragile
-- server-side saved-view creation still accepts raw filter JSON
-- multi-step write paths do not yet have explicit transaction boundaries
-- repository docs and some UI copy still have visible encoding regressions
-- infrastructure tests still have host-environment coupling
-
-## Refactor Goal
-
-The next refactor phase should focus on:
-
-1. hardening UX components that are now core navigation or input controls
-2. cleaning docs/status notes so planning follows the current repo, not stale findings
-3. adding server-side validation for saved-view filter JSON
-4. designing explicit transaction boundaries for multi-step writes
-5. reducing environmental brittleness in validation and infrastructure tests
+Finish tag-picker focus behavior and reconcile these handoff notes. Continue with relational rollback coverage and storage test portability before treating write consistency as fully validated.
