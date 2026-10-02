@@ -81,9 +81,9 @@ The item form and detail drawers now unmount when closed. This fixed the beta sm
 
 `ItemTransactionTests` supports SQLite and PostgreSQL 17, using real application services/repositories and a rejecting audit-event trigger. Create/update/delete each have rollback and commit cases. The failure path flushes item changes before inserting the event and checks persistence with a fresh context. `CollectionApiFactory` still uses EF InMemory; PostgreSQL mode applies migrations to fresh test databases and has passed all six cases. Existing production data and broader provider queries are outside this fixture.
 
-## Open: Portable storage tests
+## Done: Portable storage tests
 
-`MinioMediaStorageServiceTests` still uses `HttpListener` and briefly reserves/releases a TCP port before binding the listener. Replace this with a portable fixture that binds an ephemeral port directly while retaining the wire-level assertions.
+`MinioMediaStorageServiceTests` now uses `FakeS3Server`, a Kestrel fixture that binds loopback port zero directly. It captures bodies asynchronously, stores snapshots in a concurrent queue, reports handler failures on disposal, and awaits shutdown. Existing HTTP wire assertions are retained; a parallel-upload test verifies endpoint isolation. The renamed HTTPS transport smoke test is explicitly not proof of the live signing header, which remains follow-up work.
 
 ## Follow-up: Documentation maintenance
 

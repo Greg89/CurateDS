@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text;
 using Amazon.S3;
 using CurateDS.Infrastructure.Storage;
@@ -9,10 +8,10 @@ using Microsoft.Extensions.Options;
 namespace CurateDS.Infrastructure.IntegrationTests;
 
 /// <summary>
-/// In-process tests that point the AWS SDK at a tiny HttpListener-backed fake
+/// In-process tests that point the AWS SDK at a tiny Kestrel-backed fake
 /// S3 endpoint. This lets us assert the wire-level behaviour of UploadAsync —
 /// specifically the Railway/MinIO compatibility fixes (no chunked encoding,
-/// fixed Content-Length, UNSIGNED-PAYLOAD) — without needing a real MinIO.
+/// fixed Content-Length, HTTP payload signing) — without needing a real MinIO.
 /// </summary>
 public sealed class MinioMediaStorageServiceTests
 {
@@ -22,114 +21,6 @@ public sealed class MinioMediaStorageServiceTests
         public string ApplicationName { get; set; } = "tests";
         public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
         public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } = null!;
-    }
-
-    /// <summary>
-    /// Starts a localhost HttpListener on a free port and routes every request
-    /// to <paramref name="handler"/>. Returns the base URL and a disposable
-    /// that stops the listener.
-    /// </summary>
-    private static (string BaseUrl, IDisposable Stop, List<HttpListenerRequestSnapshot> Requests)
-        StartFakeS3(Func<HttpListenerContext, HttpListenerRequestSnapshot, Task> handler)
-    {
-        var requests = new List<HttpListenerRequestSnapshot>();
-        // Pick a free port by binding a socket briefly.
-        int port;
-        using var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-
-        var baseUrl = $"http://127.0.0.1:{port}/";
-        var listener = new HttpListener();
-        listener.Prefixes.Add(baseUrl);
-        listener.Start();
-
-        var cts = new CancellationTokenSource();
-        _ = Task.Run(async () =>
-        {
-            while (!cts.IsCancellationRequested)
-            {
-                HttpListenerContext ctx;
-                try { ctx = await listener.GetContextAsync(); }
-                catch (HttpListenerException) when (cts.IsCancellationRequested) { return; }
-                catch (ObjectDisposedException) when (cts.IsCancellationRequested) { return; }
-
-                var snapshot = HttpListenerRequestSnapshot.Capture(ctx.Request);
-                lock (requests) { requests.Add(snapshot); }
-                try
-                {
-                    await handler(ctx, snapshot);
-                }
-                catch (HttpListenerException)
-                {
-                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); }
-                    catch (HttpListenerException) { }
-                    catch (ObjectDisposedException) { }
-                }
-                catch (ObjectDisposedException)
-                {
-                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); }
-                    catch (HttpListenerException) { }
-                    catch (ObjectDisposedException) { }
-                }
-                catch (InvalidOperationException)
-                {
-                    try { ctx.Response.StatusCode = 500; ctx.Response.Close(); }
-                    catch (HttpListenerException) { }
-                    catch (ObjectDisposedException) { }
-                }
-            }
-        });
-
-        var stop = new DelegateDisposable(() =>
-        {
-            cts.Cancel();
-            try { listener.Stop(); } catch { }
-            try { listener.Close(); } catch { }
-            try { cts.Dispose(); } catch { }
-        });
-
-        return (baseUrl.TrimEnd('/'), stop, requests);
-    }
-
-    private sealed class DelegateDisposable : IDisposable
-    {
-        private readonly Action _onDispose;
-        public DelegateDisposable(Action onDispose) => _onDispose = onDispose;
-        public void Dispose() => _onDispose();
-    }
-
-    private sealed class HttpListenerRequestSnapshot
-    {
-        public string HttpMethod { get; init; } = "";
-        public string Url { get; init; } = "";
-        public string AbsolutePath { get; init; } = "";
-        public long ContentLength64 { get; init; }
-        public Dictionary<string, string> Headers { get; init; } = new(StringComparer.OrdinalIgnoreCase);
-        public byte[] Body { get; init; } = Array.Empty<byte>();
-
-        public static HttpListenerRequestSnapshot Capture(HttpListenerRequest req)
-        {
-            using var ms = new MemoryStream();
-            req.InputStream.CopyTo(ms);
-            var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (string? name in req.Headers)
-            {
-                if (name is null) continue;
-                headers[name] = req.Headers[name] ?? string.Empty;
-            }
-
-            return new HttpListenerRequestSnapshot
-            {
-                HttpMethod = req.HttpMethod,
-                Url = req.Url?.ToString() ?? "",
-                AbsolutePath = req.Url?.AbsolutePath ?? "",
-                ContentLength64 = req.ContentLength64,
-                Headers = headers,
-                Body = ms.ToArray()
-            };
-        }
     }
 
     private static MinioMediaStorageService CreateService(string endpoint, string environment = "Development")
@@ -180,16 +71,15 @@ public sealed class MinioMediaStorageServiceTests
     [Fact]
     public async Task UploadAsync_ShouldReturnKeyWithEnvironmentCollectionItemAndExtension()
     {
-        var (baseUrl, stop, _) = StartFakeS3(async (ctx, _) =>
+        await using var server = await FakeS3Server.StartAsync((ctx, _) =>
         {
             ctx.Response.StatusCode = 200;
             ctx.Response.Headers["ETag"] = "\"deadbeef\"";
-            ctx.Response.Close();
-            await Task.CompletedTask;
-        });
-        using var _ = stop;
 
-        var sut = CreateService(baseUrl, environment: "Production");
+            return Task.CompletedTask;
+        });
+
+        var sut = CreateService(server.BaseUrl, environment: "Production");
         var collectionId = Guid.NewGuid();
         var itemId = Guid.NewGuid();
         var content = new MemoryStream(Encoding.UTF8.GetBytes("hello"));
@@ -203,15 +93,14 @@ public sealed class MinioMediaStorageServiceTests
     [Fact]
     public async Task UploadAsync_ShouldTrimLeadingDotFromFileExtension()
     {
-        var (baseUrl, stop, _) = StartFakeS3(async (ctx, _) =>
+        await using var server = await FakeS3Server.StartAsync((ctx, _) =>
         {
             ctx.Response.StatusCode = 200;
-            ctx.Response.Close();
-            await Task.CompletedTask;
-        });
-        using var _ = stop;
 
-        var sut = CreateService(baseUrl);
+            return Task.CompletedTask;
+        });
+
+        var sut = CreateService(server.BaseUrl);
         var content = new MemoryStream(new byte[] { 1, 2, 3 });
 
         var key = await sut.UploadAsync(Guid.NewGuid(), Guid.NewGuid(), content, "image/png", ".png", CancellationToken.None);
@@ -223,26 +112,25 @@ public sealed class MinioMediaStorageServiceTests
     [Fact]
     public async Task UploadAsync_ShouldSendFixedContentLengthAndNonChunkedBody_OverHttpInternalEndpoint()
     {
-        var (baseUrl, stop, requests) = StartFakeS3(async (ctx, _) =>
+        await using var server = await FakeS3Server.StartAsync((ctx, _) =>
         {
             ctx.Response.StatusCode = 200;
-            ctx.Response.Close();
-            await Task.CompletedTask;
-        });
-        using var _ = stop;
 
-        var sut = CreateService(baseUrl);
+            return Task.CompletedTask;
+        });
+
+        var sut = CreateService(server.BaseUrl);
         var bytes = Encoding.UTF8.GetBytes("hello-world-payload");
         var content = new MemoryStream(bytes);
 
         await sut.UploadAsync(Guid.NewGuid(), Guid.NewGuid(), content, "image/jpeg", "jpg", CancellationToken.None);
 
-        var put = requests.Single(r => r.HttpMethod == "PUT");
+        var put = server.Requests.Single(r => r.HttpMethod == "PUT");
 
         // The Railway-proxy fix: never send aws-chunked / Transfer-Encoding: chunked.
         // The SDK must send a single fixed Content-Length PUT.
         put.Headers.Should().NotContainKey("Transfer-Encoding");
-        put.ContentLength64.Should().Be(bytes.LongLength);
+        put.ContentLength.Should().Be(bytes.LongLength);
 
         // Body should be the raw bytes (not aws-chunked framing).
         put.Body.Should().Equal(bytes);
@@ -255,51 +143,39 @@ public sealed class MinioMediaStorageServiceTests
     }
 
     [Fact]
-    public async Task UploadAsync_ShouldRequestUnsignedPayload_WhenEndpointIsHttps()
+    public async Task UploadAsync_ShouldReportTransportFailure_WhenHttpsEndpointIsUnavailable()
     {
-        // We can't easily run an HTTPS HttpListener on Windows without a registered
-        // certificate, so we don't try to send the actual request — we only need to
-        // verify the SDK *would* be configured to send UNSIGNED-PAYLOAD. Pointing the
-        // service at an https endpoint and observing that the SDK fails *after* the
-        // payload-signing decision (here: a connection failure) is sufficient to
-        // demonstrate the branch is taken; the conversely-asserted negative case is
-        // already proven by the HTTP test above (the SDK throws
-        // "DisablePayloadSigning is true, the request must be sent over HTTPS" if the
-        // branch flips the wrong way).
+        // Transport smoke check only: this does not prove the HTTPS signing header.
+        // A trusted TLS fixture is still needed for a live UNSIGNED-PAYLOAD assertion.
         var sut = CreateService("https://127.0.0.1:1"); // unreachable port — request will fail at network layer
         var bytes = Encoding.UTF8.GetBytes("x");
 
         var act = async () => await sut.UploadAsync(
             Guid.NewGuid(), Guid.NewGuid(), new MemoryStream(bytes), "image/jpeg", "jpg", CancellationToken.None);
 
-        // The SDK's HTTPS-required guard would throw AmazonClientException with that
-        // exact message before any network I/O if our conditional were wrong. The
-        // request reaching the network layer (and failing there) confirms the
-        // DisablePayloadSigning branch was satisfied.
         var ex = await act.Should().ThrowAsync<Exception>();
         ex.Which.Should().NotBeOfType<Amazon.Runtime.AmazonClientException>(
-            because: "the SDK only throws AmazonClientException pre-flight when DisablePayloadSigning is true on a non-HTTPS endpoint; reaching the network layer proves the conditional held");
+            because: "an unavailable HTTPS endpoint should fail at the transport layer");
     }
 
     [Fact]
     public async Task UploadAsync_ShouldBufferNonSeekableStream_AndStillSendFixedContentLength()
     {
-        var (baseUrl, stop, requests) = StartFakeS3(async (ctx, _) =>
+        await using var server = await FakeS3Server.StartAsync((ctx, _) =>
         {
             ctx.Response.StatusCode = 200;
-            ctx.Response.Close();
-            await Task.CompletedTask;
-        });
-        using var _ = stop;
 
-        var sut = CreateService(baseUrl);
+            return Task.CompletedTask;
+        });
+
+        var sut = CreateService(server.BaseUrl);
         var bytes = Encoding.UTF8.GetBytes("non-seekable-payload-data");
         var content = new NonSeekableStream(bytes);
 
         await sut.UploadAsync(Guid.NewGuid(), Guid.NewGuid(), content, "image/png", "png", CancellationToken.None);
 
-        var put = requests.Single(r => r.HttpMethod == "PUT");
-        put.ContentLength64.Should().Be(bytes.LongLength);
+        var put = server.Requests.Single(r => r.HttpMethod == "PUT");
+        put.ContentLength.Should().Be(bytes.LongLength);
         put.Headers.Should().NotContainKey("Transfer-Encoding");
         put.Body.Should().Equal(bytes);
     }
@@ -307,26 +183,53 @@ public sealed class MinioMediaStorageServiceTests
     [Fact]
     public async Task UploadAsync_ShouldPutToBucketAndKeyPath()
     {
-        var (baseUrl, stop, requests) = StartFakeS3(async (ctx, _) =>
+        await using var server = await FakeS3Server.StartAsync((ctx, _) =>
         {
             ctx.Response.StatusCode = 200;
-            ctx.Response.Close();
-            await Task.CompletedTask;
-        });
-        using var _ = stop;
 
-        var sut = CreateService(baseUrl);
+            return Task.CompletedTask;
+        });
+
+        var sut = CreateService(server.BaseUrl);
         var collectionId = Guid.NewGuid();
         var itemId = Guid.NewGuid();
         var content = new MemoryStream(new byte[] { 0xAA, 0xBB });
 
         var key = await sut.UploadAsync(collectionId, itemId, content, "image/jpeg", "jpg", CancellationToken.None);
 
-        var put = requests.Single(r => r.HttpMethod == "PUT");
+        var put = server.Requests.Single(r => r.HttpMethod == "PUT");
         put.AbsolutePath.Should().StartWith("/test-bucket/");
         put.AbsolutePath.Should().EndWith("/" + key.Split('/').Last());
         put.AbsolutePath.Should().Contain(collectionId.ToString());
         put.AbsolutePath.Should().Contain(itemId.ToString());
+    }
+
+    [Fact]
+    public async Task UploadAsync_ShouldKeepConcurrentServerRequestsIsolated()
+    {
+        await using var first = await FakeS3Server.StartAsync((context, _) =>
+        {
+            context.Response.StatusCode = 200;
+            return Task.CompletedTask;
+        });
+        await using var second = await FakeS3Server.StartAsync((context, _) =>
+        {
+            context.Response.StatusCode = 200;
+            return Task.CompletedTask;
+        });
+        first.BaseUrl.Should().NotBe(second.BaseUrl);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var firstBody = new MemoryStream(Encoding.UTF8.GetBytes("first payload"));
+        using var secondBody = new MemoryStream(Encoding.UTF8.GetBytes("second payload"));
+
+        await Task.WhenAll(
+            CreateService(first.BaseUrl).UploadAsync(Guid.NewGuid(), Guid.NewGuid(), firstBody,
+                "image/jpeg", "jpg", timeout.Token),
+            CreateService(second.BaseUrl).UploadAsync(Guid.NewGuid(), Guid.NewGuid(), secondBody,
+                "image/jpeg", "jpg", timeout.Token));
+
+        first.Requests.Should().ContainSingle().Which.Body.Should().Equal(Encoding.UTF8.GetBytes("first payload"));
+        second.Requests.Should().ContainSingle().Which.Body.Should().Equal(Encoding.UTF8.GetBytes("second payload"));
     }
 
     // ---------- DeleteAsync ----------
@@ -334,19 +237,17 @@ public sealed class MinioMediaStorageServiceTests
     [Fact]
     public async Task DeleteAsync_ShouldSwallowNoSuchKey()
     {
-        var (baseUrl, stop, _) = StartFakeS3(async (ctx, _) =>
+        await using var server = await FakeS3Server.StartAsync(async (ctx, _) =>
         {
             ctx.Response.StatusCode = 404;
             var body = Encoding.UTF8.GetBytes(
                 "<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message></Error>");
             ctx.Response.ContentType = "application/xml";
-            ctx.Response.ContentLength64 = body.Length;
-            await ctx.Response.OutputStream.WriteAsync(body);
-            ctx.Response.Close();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
         });
-        using var _ = stop;
 
-        var sut = CreateService(baseUrl);
+        var sut = CreateService(server.BaseUrl);
 
         var act = async () => await sut.DeleteAsync("missing-key", CancellationToken.None);
 
@@ -356,19 +257,17 @@ public sealed class MinioMediaStorageServiceTests
     [Fact]
     public async Task DeleteAsync_ShouldRethrowOtherS3Errors()
     {
-        var (baseUrl, stop, _) = StartFakeS3(async (ctx, _) =>
+        await using var server = await FakeS3Server.StartAsync(async (ctx, _) =>
         {
             ctx.Response.StatusCode = 403;
             var body = Encoding.UTF8.GetBytes(
                 "<Error><Code>AccessDenied</Code><Message>Nope.</Message></Error>");
             ctx.Response.ContentType = "application/xml";
-            ctx.Response.ContentLength64 = body.Length;
-            await ctx.Response.OutputStream.WriteAsync(body);
-            ctx.Response.Close();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
         });
-        using var _ = stop;
 
-        var sut = CreateService(baseUrl);
+        var sut = CreateService(server.BaseUrl);
 
         var act = async () => await sut.DeleteAsync("forbidden-key", CancellationToken.None);
 

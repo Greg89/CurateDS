@@ -2,6 +2,17 @@
 
 Status updated: 2026-10-02
 
+## Portable Storage Fixture (2026-10-02)
+
+- Replaced the `HttpListener` fake with `FakeS3Server`, an in-process Kestrel host bound directly to an ephemeral loopback port. Request capture and server shutdown are awaited, snapshots are thread-safe, and handler failures are surfaced on disposal.
+- Existing HTTP upload/body/header/path and S3 deletion-error assertions remain. Added concurrent uploads to independent endpoints to verify port and request isolation.
+- Renamed the HTTPS test to describe its actual transport-failure assertion. It does not prove `UNSIGNED-PAYLOAD`; a trusted live TLS fixture remains a recorded follow-up.
+- Windows: `dotnet test tests/Infrastructure.IntegrationTests/CurateDS.Infrastructure.IntegrationTests.csproj --no-restore --verbosity minimal`: 18 passed.
+- Linux: ran the infrastructure project in disposable `mcr.microsoft.com/dotnet/sdk:10.0`, copying source from a read-only workspace mount and excluding host `bin`/`obj`. NuGet restore, build, and all 18 tests passed. The container used SQLite for transaction cases and was removed on exit.
+- Linux image digest: `sha256:35d40304542c8689331f8cab17c65926cdf48fe711e289321d71924b230a7d29`.
+- PostgreSQL coverage from the preceding continuation remains valid; this slice changed only storage tests and documentation. No product source was changed.
+- `git diff --check`: passed. The first refactor pass is complete; next is V2 Slice 1, with remaining follow-ups retained in the roadmap.
+
 ## PostgreSQL Docker Validation (2026-10-02)
 
 - After Docker startup, ran `tests/Infrastructure.IntegrationTests/Test-Postgres.ps1`: all 17 infrastructure tests passed, including the 6 item commit/rollback scenarios against PostgreSQL 17.
