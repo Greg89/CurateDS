@@ -78,7 +78,9 @@ npx playwright install chromium
 npm run test:e2e --workspace @curateds/web-v2
 ```
 
-Browser tests start isolated servers on loopback ports 3101 and 3102 and exercise the production standalone build. They cover unauthenticated denial, SDK test-session access, URL-driven switching/history, empty/missing collections, and API failure recovery on desktop and mobile. Build first. To use installed Edge on Windows, set `$env:PLAYWRIGHT_CHANNEL='msedge'`.
+Browser tests start isolated servers on loopback ports 3101 and 3102 and exercise the production standalone build. They cover unauthenticated denial, SDK test-session access, URL-driven switching/history, empty/missing collections, and API failure recovery on desktop and mobile. Session checks also cover consecutive refresh-token rotations, persistence of refreshed credentials across requests, missing/rejected refresh tokens, and logout revocation, cookie deletion, and protected-route denial. Build first. To use installed Edge on Windows, set `$env:PLAYWRIGHT_CHANNEL='msedge'`.
+
+The Playwright server command preloads `e2e/auth-transport.mjs` to route only the reserved `https://test.invalid` issuer to the local fixture. The production SDK and collection route execute normally; the fixture supplies discovery and token responses. This preload is not used by normal development, start, or Docker commands. These checks do not prove the live tenant's refresh grants or logout URL configuration.
 
 The existing web build/tests remain part of root `npm run verify`; the V2 build and unit tests are also included. CI additionally runs the focused browser suite.
 

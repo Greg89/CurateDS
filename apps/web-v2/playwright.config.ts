@@ -23,7 +23,7 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
-      command: "node scripts/start-standalone.mjs",
+      command: "node --import ./e2e/auth-transport.mjs scripts/start-standalone.mjs",
       url: "http://127.0.0.1:3101",
       reuseExistingServer: false,
       env: {

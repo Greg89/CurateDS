@@ -19,7 +19,8 @@ The first refactor pass is complete. This continuation implements the accepted S
 
 - V2 production build passed; generated collection types were regenerated from the checked-in API snapshot.
 - V2 unit/component tests: 17 passed.
-- Production standalone browser tests: 8 passed (desktop and mobile emulation in installed Edge), including encrypted SDK test sessions, the real web API boundary, switching/history, failure recovery, and empty/missing states. Desktop/mobile screenshots were visually reviewed and no viewport overflow was detected.
+- Production standalone browser tests: 14 passed (desktop and mobile emulation in installed Edge), including encrypted SDK test sessions, the real web API boundary, switching/history, failure recovery, and empty/missing states. Desktop/mobile screenshots were visually reviewed and no viewport overflow was detected.
+- Session lifecycle checks use the production SDK with an isolated identity-provider fixture: two consecutive refresh-token rotations persist across requests, a third request reuses the valid access token, missing/rejected refresh tokens return a safe 401 without calling the collection API, and logout revokes the refresh token, clears the cookie, and denies protected access. These checks do not establish live tenant configuration.
 - Existing Vite web: build passed and all 136 tests passed. Its existing large-bundle warning remains.
 - API integration suite: all 100 tests passed, including the new collection OpenAPI contract test.
 - Docker build passed on Node 24 Alpine. Runtime smoke: landing page 200, stylesheet 200, unconfigured API 503, runtime UID 1000. The disposable smoke container was stopped/removed.
