@@ -1457,3 +1457,140 @@ summary:focus-visible {
   font-weight: 600;
   padding: 0 0 1rem;
 }
+
+.overview-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+.overview-items {
+  margin: 2.5rem 0;
+}
+.overview-items ul {
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  list-style: none;
+}
+.overview-items li {
+  min-width: 0;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.overview-items h3 {
+  font-size: 1.4rem;
+  margin: 1rem 0 0.5rem;
+}
+.overview-items p {
+  font-size: 0.95rem;
+}
+.overview-items .item-image {
+  aspect-ratio: 4 / 3;
+}
+.overview-settings {
+  margin-top: 4rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 2rem;
+}
+.overview-settings h2 {
+  font-size: 2rem;
+  margin: 0.75rem 0;
+}
+.presentation-editor {
+  margin-top: 2rem;
+}
+.collection-settings .overview-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin-bottom: 2rem;
+}
+.overview-toggles label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.overview-toggles input {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+.pin-list {
+  padding-left: 1.5rem;
+  max-width: 750px;
+}
+.pin-list li {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.pin-list li > div {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+.pin-list button,
+.pin-candidates button,
+.pin-picker nav button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  background: var(--surface);
+  cursor: pointer;
+}
+.pin-list button:disabled,
+.pin-candidates button:disabled,
+.pin-picker nav button:disabled {
+  cursor: default;
+}
+.pin-picker {
+  margin: 1rem 0 2rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+}
+.pin-search {
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.pin-search label {
+  display: grid;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 150px;
+}
+.pin-search input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 0.25rem;
+}
+.pin-candidates {
+  padding: 0;
+  list-style: none;
+}
+.pin-candidates li {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.pin-candidates li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .overview-items ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { OverviewSettings } from "./overview-settings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useCollection } from "./collection-context";
@@ -178,6 +179,7 @@ export function CollectionSettings() {
           </small>
         </aside>
       </div>
+      <OverviewSettings collectionId={collection.id} />
     </section>
   );
 }

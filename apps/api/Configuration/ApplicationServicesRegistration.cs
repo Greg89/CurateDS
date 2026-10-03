@@ -1,3 +1,4 @@
+using CurateDS.Application.Collections.CollectionPresentation;
 using CurateDS.Application.Collections.UpdateCollection;
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
@@ -59,6 +60,11 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<IValidator<UpdateTagCommand>, UpdateTagCommandValidator>();
         services.AddScoped<IValidator<UpdateLocationCommand>, UpdateLocationCommandValidator>();
         services.AddScoped<IValidator<UpdateAttributeDefinitionCommand>, UpdateAttributeDefinitionCommandValidator>();
+
+        services.AddScoped<CollectionPresentationService>();
+        services.AddScoped<IValidator<UpdateCollectionPresentationCommand>, UpdateCollectionPresentationValidator>();
+        services.AddScoped<CurateDS.Application.Abstractions.Persistence.ICollectionPresentationRepository,
+            CurateDS.Infrastructure.Persistence.Repositories.CollectionPresentationRepository>();
 
         // Command/query services
         services.AddScoped<CreateAttributeDefinitionService>();

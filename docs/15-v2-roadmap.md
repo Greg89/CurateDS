@@ -136,7 +136,7 @@ Exit criteria:
 
 Goal: let each collection develop its own identity without creating configuration overload.
 
-Status (2026-10-03): In progress. Collection identity editing is implemented in V2 Settings, including cover/colour preview, failed-save recovery, and owner-scoped persistence. See [settings handoff](refactor/09-v2-collection-settings-handoff.md). Next: featured/pinned items and configurable overview sections; labels/metadata choices and richer presets remain in this slice.
+Status (2026-10-03): In progress. Collection identity editing is implemented in V2 Settings, including cover/colour preview, failed-save recovery, and owner-scoped persistence. See [settings handoff](refactor/09-v2-collection-settings-handoff.md). Pinned items and configurable overview sections are also implemented; see [overview customization handoff](refactor/10-v2-overview-customization-handoff.md). Next: collection-specific labels and metadata choices. The existing Forest/Clay/Slate presets remain the current visual options.
 
 Deliverables:
 

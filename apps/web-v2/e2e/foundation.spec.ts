@@ -584,6 +584,7 @@ test("collection settings preserve drafts, save identity, and isolate collection
   const other = "44444444-4444-4444-8444-444444444444";
   await page.goto(`/collections/${id}`);
   await page.getByRole("link", { name: "Settings" }).click();
+  await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole("link", { name: "Settings" })).toHaveAttribute(
     "aria-current",
     "page",
@@ -650,6 +651,7 @@ test("collection settings preserve drafts, save identity, and isolate collection
   );
   await expect(page.locator('[data-color="clay"]')).toBeVisible();
   await page.getByRole("link", { name: "Settings" }).click();
+  await expect(page).toHaveURL(/\/settings$/);
   await page.getByLabel("Your collection", { exact: true }).selectOption(other);
   await expect(page).toHaveURL(new RegExp(`/collections/${other}/settings$`));
   await expect(name).toHaveValue("Sunday records");
@@ -702,4 +704,197 @@ test("collection settings PUT requires session, origin, and valid identity", asy
     ).status(),
   ).toBe(400);
   expect((await context.request.get("/api/collections")).status()).toBe(200);
+});
+
+test("pinned items and overview sections persist, reorder, recover, and respect collection context", async ({
+  page,
+  context,
+  request,
+}, testInfo) => {
+  await request.post("http://127.0.0.1:3102/scenario/browse");
+  await signIn(context);
+  const id = "33333333-3333-4333-8333-333333333333";
+  const other = "44444444-4444-4444-8444-444444444444";
+  await page.goto(`/collections/${id}/settings#overview`);
+  const editor = page.locator("#overview");
+  await editor
+    .getByRole("button", { name: "Find items to pin", exact: true })
+    .click();
+  await editor
+    .getByRole("button", { name: "Pin Shelf book 01", exact: true })
+    .click();
+  await editor
+    .getByRole("button", { name: "Pin Shelf book 02", exact: true })
+    .click();
+  await editor
+    .getByRole("button", { name: "Move Shelf book 02 earlier" })
+    .click();
+  await expect(editor.locator(".pin-list li").first()).toContainText(
+    "Shelf book 02",
+  );
+  await editor.getByRole("button", { name: "Next items" }).click();
+  await editor
+    .getByRole("button", { name: "Pin Shelf book 07", exact: true })
+    .click();
+  await editor.getByLabel("Search your items").fill("14");
+  await editor
+    .getByRole("button", { name: "Search items", exact: true })
+    .click();
+  await editor
+    .getByRole("button", { name: "Pin Shelf book 14", exact: true })
+    .click();
+  await editor.getByLabel("Search your items").fill("");
+  await editor
+    .getByRole("button", { name: "Search items", exact: true })
+    .click();
+  await editor
+    .getByRole("button", { name: "Pin Shelf book 03", exact: true })
+    .click();
+  await editor
+    .getByRole("button", { name: "Pin Shelf book 04", exact: true })
+    .click();
+  await expect(
+    editor.getByRole("button", { name: "Pin Shelf book 05", exact: true }),
+  ).toBeDisabled();
+  await editor.getByRole("button", { name: "Unpin Shelf book 03" }).click();
+  await editor.getByRole("button", { name: "Unpin Shelf book 04" }).click();
+  await editor.getByLabel("Cover and story").uncheck();
+  await editor.getByLabel("Summary counts").uncheck();
+  await editor.getByLabel("Recently added", { exact: true }).uncheck();
+  await page.route(`**/api/collections/${id}/presentation`, (route) => {
+    if (route.request().method() === "PUT")
+      return route.fulfill({ status: 502, json: {} });
+    return route.continue();
+  });
+  await editor
+    .getByRole("button", { name: "Save overview", exact: true })
+    .click();
+  await expect(editor.getByRole("alert")).toContainText(
+    "choices are still here",
+  );
+  await expect(editor.locator(".pin-list li")).toHaveCount(4);
+  await page.unroute(`**/api/collections/${id}/presentation`);
+  await editor
+    .getByRole("button", { name: "Save overview", exact: true })
+    .click();
+  await expect(editor.getByRole("status")).toHaveText("Overview saved.");
+  await page.reload();
+  await expect(editor.getByLabel("Cover and story")).not.toBeChecked();
+  await expect(editor.locator(".pin-list li").first()).toContainText(
+    "Shelf book 02",
+  );
+  await page.screenshot({
+    path: testInfo.outputPath("overview-settings.png"),
+    fullPage: true,
+  });
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "Pinned items", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Recently added", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Collection summary")).toHaveCount(0);
+  await expect(page.locator(".identity-hero")).toHaveCount(0);
+  const pins = page.getByRole("region", { name: "Pinned items", exact: true });
+  await expect(pins.getByRole("heading", { level: 3 })).toHaveText([
+    "Shelf book 02",
+    "Shelf book 01",
+    "Shelf book 07",
+    "Shelf book 14",
+  ]);
+  await page.screenshot({
+    path: testInfo.outputPath("pinned-overview.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await pins.getByRole("link", { name: "Shelf book 02", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Shelf book 02",
+  );
+  const itemId = page.url().split("/").pop();
+  expect(
+    (
+      await context.request.delete(`/api/collections/${id}/items/${itemId}`, {
+        headers: { Origin: "http://127.0.0.1:3101" },
+      })
+    ).status(),
+  ).toBe(204);
+  await page.goto(`/collections/${id}`);
+  await expect(pins.getByRole("heading", { level: 3 })).toHaveText([
+    "Shelf book 01",
+    "Shelf book 07",
+    "Shelf book 14",
+  ]);
+  await page.getByRole("link", { name: "Customize overview" }).click();
+  await editor.getByLabel("Pinned items", { exact: true }).uncheck();
+  await editor
+    .getByRole("button", { name: "Save overview", exact: true })
+    .click();
+  await expect(editor.getByRole("status")).toHaveText("Overview saved.");
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "Pinned items", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Browse all items" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await editor.getByLabel("Pinned items", { exact: true }).check();
+  await editor
+    .getByRole("button", { name: "Discard overview changes" })
+    .click();
+  await expect(
+    editor.getByLabel("Pinned items", { exact: true }),
+  ).not.toBeChecked();
+  await page.getByLabel("Your collection", { exact: true }).selectOption(other);
+  await expect(editor.getByLabel("Cover and story")).toBeChecked();
+  await expect(editor.locator(".pin-list li")).toHaveCount(0);
+  await page.getByLabel("Your collection", { exact: true }).selectOption(id);
+  await expect(editor.locator(".pin-list li")).toHaveCount(3);
+});
+
+test("presentation updates require a session, same origin, and at most six distinct pins", async ({
+  context,
+  request,
+}) => {
+  const path =
+    "/api/collections/33333333-3333-4333-8333-333333333333/presentation";
+  const data = {
+    showCover: true,
+    showSummary: true,
+    showPinnedItems: true,
+    showRecentItems: true,
+    pinnedItemIds: [],
+  };
+  const headers = { Origin: "http://127.0.0.1:3101" };
+  expect((await request.put(path, { data, headers })).status()).toBe(401);
+  await signIn(context);
+  expect(
+    (
+      await context.request.put(path, {
+        data,
+        headers: { Origin: "https://other.invalid" },
+      })
+    ).status(),
+  ).toBe(403);
+  expect(
+    (
+      await context.request.put(path, {
+        data: {
+          ...data,
+          pinnedItemIds: [
+            "33333333-3333-4333-8333-333333333333",
+            "33333333-3333-4333-8333-333333333333",
+          ],
+        },
+        headers,
+      })
+    ).status(),
+  ).toBe(400);
 });

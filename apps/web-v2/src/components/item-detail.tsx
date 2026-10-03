@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCollection } from "./collection-context";
 import { ItemFailure, ItemImage } from "./item-shared";
 import { SaveError } from "./save-error";
-import { overviewKey } from "@/lib/collections";
+import { presentationKey, overviewKey } from "@/lib/collections";
 import { fetchItem, itemKey, itemsKey, writeItem } from "@/lib/items";
 import { imageTypes, maxImageBytes } from "@/lib/upload";
 
@@ -67,6 +67,7 @@ function Detail({
         client.invalidateQueries({ queryKey: activityKey(collectionId) }),
         client.invalidateQueries({ queryKey: itemsKey(collectionId) }),
         client.invalidateQueries({ queryKey: overviewKey(collectionId) }),
+        client.invalidateQueries({ queryKey: presentationKey(collectionId) }),
       ]);
       if (!suffix && method === "DELETE") {
         client.removeQueries({ queryKey: itemKey(collectionId, itemId) });

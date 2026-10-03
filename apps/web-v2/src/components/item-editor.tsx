@@ -1,6 +1,7 @@
 "use client";
 import { insightsKey, activityKey } from "@/lib/insights";
 import Link from "next/link";
+import { presentationKey } from "@/lib/collections";
 import { useParams, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -144,6 +145,9 @@ function EditorForm({
             client.invalidateQueries({ queryKey: activityKey(collectionId) }),
             client.invalidateQueries({ queryKey: itemsKey(collectionId) }),
             client.invalidateQueries({ queryKey: overviewKey(collectionId) }),
+            client.invalidateQueries({
+              queryKey: presentationKey(collectionId),
+            }),
             client.invalidateQueries({
               queryKey: itemKey(collectionId, saved.id),
             }),

@@ -2,6 +2,10 @@
 
 Status updated: 2026-10-03
 
+## V2 Pinned Items And Overview Sections (2026-10-03)
+
+The second Slice 5 task adds ordered pins and optional overview sections. The .NET solution passed 323 tests (one opt-in media test skipped); all 27 infrastructure cases passed in PostgreSQL 17, including an upgrade from the previous schema with existing collection data. V2 passed 62 tests and its production build. All 32 browser cases passed across the complete run and focused reruns after fixing a navigation wait in the existing Settings test. New checks cover the pin limit, ordering, owner isolation, deleted items, persisted false flags, failed-save recovery, and collection switching. See [the overview customization handoff](10-v2-overview-customization-handoff.md).
+
 ## V2 Collection Settings (2026-10-03)
 
 The first Slice 5 task adds persisted identity editing with preview, discard, and save-error recovery. The .NET solution passed 316 tests (one opt-in media test skipped); V2 passed 56 unit/component tests and its production build. All 28 desktop/mobile browser cases passed across the complete run and focused Settings reruns after scoping alert assertions and fixing the narrow-screen cover preview. API tests verify ownership, missing/deleted collections, validation without mutation, preservation of items/creation metadata, and clearing optional identity fields. No migration was needed. See [the Settings handoff](09-v2-collection-settings-handoff.md). Slice 5 remains in progress.

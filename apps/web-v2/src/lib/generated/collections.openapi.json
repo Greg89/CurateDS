@@ -94,6 +94,74 @@
         }
       }
     },
+    "/collections/{collectionId}/presentation": {
+      "get": {
+        "tags": [
+          "CurateDS.Api"
+        ],
+        "parameters": [
+          {
+            "name": "collectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionPresentationDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "CurateDS.Api"
+        ],
+        "parameters": [
+          {
+            "name": "collectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionPresentationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionPresentationDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/collections/{collectionId}/summary": {
       "get": {
         "tags": [
@@ -1041,6 +1109,112 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "CollectionPresentationDto": {
+        "required": [
+          "collectionId",
+          "showCover",
+          "showSummary",
+          "showPinnedItems",
+          "showRecentItems",
+          "pinnedItems"
+        ],
+        "type": "object",
+        "properties": {
+          "collectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "showCover": {
+            "type": "boolean"
+          },
+          "showSummary": {
+            "type": "boolean"
+          },
+          "showPinnedItems": {
+            "type": "boolean"
+          },
+          "showRecentItems": {
+            "type": "boolean"
+          },
+          "pinnedItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PinnedItemDto"
+            }
+          }
+        }
+      },
+      "PinnedItemDto": {
+        "required": [
+          "id",
+          "collectionId",
+          "name",
+          "description",
+          "createdUtc",
+          "primaryImageUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "collectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "primaryImageUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "UpdateCollectionPresentationRequest": {
+        "required": [
+          "showCover",
+          "showSummary",
+          "showPinnedItems",
+          "showRecentItems",
+          "pinnedItemIds"
+        ],
+        "type": "object",
+        "properties": {
+          "showCover": {
+            "type": "boolean"
+          },
+          "showSummary": {
+            "type": "boolean"
+          },
+          "showPinnedItems": {
+            "type": "boolean"
+          },
+          "showRecentItems": {
+            "type": "boolean"
+          },
+          "pinnedItemIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },

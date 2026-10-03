@@ -67,6 +67,47 @@ export const recentItemSchema: z.ZodType<RecentItem> = z.object({
   createdUtc: z.iso.datetime({ offset: true }),
   primaryImageUrl: z.string().nullable(),
 });
+export const presentationInputSchema = z.object({
+  showCover: z.boolean(),
+  showSummary: z.boolean(),
+  showPinnedItems: z.boolean(),
+  showRecentItems: z.boolean(),
+  pinnedItemIds: z
+    .array(z.uuid())
+    .max(6)
+    .refine(
+      (ids) => new Set(ids).size === ids.length,
+      "Choose different items.",
+    ),
+});
+export const presentationSchema = z.object({
+  collectionId: z.uuid(),
+  showCover: z.boolean(),
+  showSummary: z.boolean(),
+  showPinnedItems: z.boolean(),
+  showRecentItems: z.boolean(),
+  pinnedItems: z.array(recentItemSchema).max(6),
+}) satisfies z.ZodType<components["schemas"]["CollectionPresentationDto"]>;
+export type Presentation = z.infer<typeof presentationSchema>;
+export const presentationKey = (id: string) =>
+  ["collection-presentation", id] as const;
+export function validatePresentation(value: unknown, id: string) {
+  const parsed = presentationSchema.parse(value);
+  if (
+    parsed.collectionId !== id ||
+    parsed.pinnedItems.some((item) => item.collectionId !== id)
+  )
+    throw new CollectionsError(502);
+  return parsed;
+}
+export async function fetchPresentation(id: string, signal?: AbortSignal) {
+  const response = await fetch(`/api/collections/${id}/presentation`, {
+    signal,
+    cache: "no-store",
+  });
+  if (!response.ok) throw new CollectionsError(response.status);
+  return validatePresentation(await response.json(), id);
+}
 export const recentItemsSchema = z.object({
   items: z.array(recentItemSchema),
   totalCount: z.number().int().nonnegative(),
@@ -100,9 +141,10 @@ export const itemReceiptSchema = z.object({
 export const overviewKey = (id: string) => ["collection-overview", id] as const;
 
 export async function fetchOverview(id: string, signal?: AbortSignal) {
-  const [summary, recent] = await Promise.all([
+  const [summary, recent, presentation] = await Promise.all([
     fetch(`/api/collections/${id}/summary`, { signal, cache: "no-store" }),
     fetch(`/api/collections/${id}/items`, { signal, cache: "no-store" }),
+    fetchPresentation(id, signal),
   ]);
   if (!summary.ok || !recent.ok)
     throw new CollectionsError(!summary.ok ? summary.status : recent.status);
@@ -113,7 +155,7 @@ export async function fetchOverview(id: string, signal?: AbortSignal) {
     items.items.some((item) => item.collectionId !== id)
   )
     throw new CollectionsError(502);
-  return { summary: counts, items: items.items };
+  return { summary: counts, items: items.items, presentation };
 }
 
 export async function saveCollectionData(path: string, data: unknown) {

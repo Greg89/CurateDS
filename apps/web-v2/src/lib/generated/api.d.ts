@@ -98,6 +98,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/collections/{collectionId}/presentation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    collectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CollectionPresentationDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    collectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateCollectionPresentationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CollectionPresentationDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/collections/{collectionId}/summary": {
         parameters: {
             query?: never;
@@ -769,6 +831,33 @@ export interface components {
             description?: null | string;
             coverImageUrl?: null | string;
             color?: null | string;
+        };
+        CollectionPresentationDto: {
+            /** Format: uuid */
+            collectionId: string;
+            showCover: boolean;
+            showSummary: boolean;
+            showPinnedItems: boolean;
+            showRecentItems: boolean;
+            pinnedItems: components["schemas"]["PinnedItemDto"][];
+        };
+        PinnedItemDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            collectionId: string;
+            name: string;
+            description: null | string;
+            /** Format: date-time */
+            createdUtc: string;
+            primaryImageUrl: null | string;
+        };
+        UpdateCollectionPresentationRequest: {
+            showCover: boolean;
+            showSummary: boolean;
+            showPinnedItems: boolean;
+            showRecentItems: boolean;
+            pinnedItemIds: string[];
         };
         CollectionSummaryResponse: {
             /** Format: uuid */

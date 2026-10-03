@@ -27,6 +27,28 @@ public sealed class Collection : AuditableEntity
     public string? CoverImageUrl { get; private set; }
     public string? Color { get; private set; }
 
+    public bool ShowCover { get; private set; } = true;
+    public bool ShowSummary { get; private set; } = true;
+    public bool ShowPinnedItems { get; private set; } = true;
+    public bool ShowRecentItems { get; private set; } = true;
+    public IReadOnlyList<Guid> PinnedItemIds { get; private set; } = Array.Empty<Guid>();
+
+    public void UpdatePresentation(bool showCover, bool showSummary, bool showPinnedItems, bool showRecentItems,
+        IReadOnlyList<Guid> pinnedItemIds, DateTime updatedUtc, string updatedBy)
+    {
+        ArgumentNullException.ThrowIfNull(pinnedItemIds);
+        if (pinnedItemIds.Count > 6 || pinnedItemIds.Any(id => id == Guid.Empty) ||
+            pinnedItemIds.Distinct().Count() != pinnedItemIds.Count)
+            throw new ArgumentException("Choose up to six different items.", nameof(pinnedItemIds));
+
+        ShowCover = showCover;
+        ShowSummary = showSummary;
+        ShowPinnedItems = showPinnedItems;
+        ShowRecentItems = showRecentItems;
+        PinnedItemIds = Array.AsReadOnly(pinnedItemIds.ToArray());
+        SetUpdated(updatedUtc, updatedBy);
+    }
+
     public static bool IsValidCoverImageUrl(string? value) =>
         string.IsNullOrWhiteSpace(value) ||
         (Uri.TryCreate(value.Trim(), UriKind.Absolute, out var uri) &&

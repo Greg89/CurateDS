@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using CurateDS.Domain.Collections;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -33,6 +35,20 @@ internal sealed class CollectionConfiguration : IEntityTypeConfiguration<Collect
         builder.Property(collection => collection.Description).HasMaxLength(1000);
         builder.Property(collection => collection.CoverImageUrl).HasMaxLength(2048);
         builder.Property(collection => collection.Color).HasMaxLength(20);
+        builder.Property(collection => collection.ShowCover).HasDefaultValue(true);
+        builder.Property(collection => collection.ShowSummary).HasDefaultValue(true);
+        builder.Property(collection => collection.ShowPinnedItems).HasDefaultValue(true);
+        builder.Property(collection => collection.ShowRecentItems).HasDefaultValue(true);
+        builder.Property(collection => collection.PinnedItemIds)
+            .HasConversion(
+                ids => JsonSerializer.Serialize(ids, (JsonSerializerOptions?)null),
+                json => Array.AsReadOnly(JsonSerializer.Deserialize<Guid[]>(json, (JsonSerializerOptions?)null)!))
+            .HasColumnType("text")
+            .HasDefaultValueSql("'[]'")
+            .Metadata.SetValueComparer(new ValueComparer<IReadOnlyList<Guid>>(
+                (left, right) => left!.SequenceEqual(right!),
+                ids => ids.Aggregate(0, (hash, id) => HashCode.Combine(hash, id)),
+                ids => Array.AsReadOnly(ids.ToArray())));
 
         builder.Property(collection => collection.UpdatedBy)
             .HasMaxLength(200);

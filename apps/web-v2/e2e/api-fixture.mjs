@@ -15,6 +15,7 @@ const initialCollections = [
 let collections = structuredClone(initialCollections);
 let items = [];
 let savedViews = [];
+let presentations = {};
 const tag = {
   id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   name: "Favourites",
@@ -97,6 +98,7 @@ createServer(async (request, response) => {
           )
         : [];
     savedViews = [];
+    presentations = {};
     if (scenario === "insights")
       items.forEach((item, index) => {
         item.itemTypeId = type.id;
@@ -232,6 +234,41 @@ createServer(async (request, response) => {
   if (segments[2] === "item-types")
     return send(collectionId === type.collectionId ? [type] : []);
   const ownItems = items.filter((item) => item.collectionId === collectionId);
+  if (segments[2] === "presentation") {
+    if (request.method === "PUT") {
+      let body = "";
+      for await (const chunk of request) body += chunk;
+      presentations[collectionId] = JSON.parse(body);
+    }
+    const input = presentations[collectionId] || {
+      showCover: true,
+      showSummary: true,
+      showPinnedItems: true,
+      showRecentItems: true,
+      pinnedItemIds: [],
+    };
+    return send({
+      collectionId,
+      showCover: input.showCover,
+      showSummary: input.showSummary,
+      showPinnedItems: input.showPinnedItems,
+      showRecentItems: input.showRecentItems,
+      pinnedItems: input.pinnedItemIds
+        .map((id) => ownItems.find((item) => item.id === id))
+        .filter(Boolean)
+        .map((item) => ({
+          id: item.id,
+          collectionId,
+          name: item.name,
+          description: item.description,
+          createdUtc: item.createdUtc,
+          primaryImageUrl:
+            item.mediaAssets.find((asset) => asset.isPrimary)?.url ||
+            item.mediaAssets[0]?.url ||
+            null,
+        })),
+    });
+  }
   if (segments[2] === "saved-views") {
     if (request.method === "POST") {
       let body = "";
