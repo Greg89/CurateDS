@@ -29,6 +29,14 @@ if (source) {
     ["/collections", ["get", "post"]],
     ["/collections/{collectionId}/summary", ["get"]],
     ["/collections/{collectionId}/items", ["get", "post"]],
+    ["/collections/{collectionId}/items/{itemId}", ["get", "put", "delete"]],
+    ["/collections/{collectionId}/attribute-definitions", ["get"]],
+    ["/collections/{collectionId}/item-types", ["get"]],
+    ["/tags", ["get"]],
+    ["/locations", ["get"]],
+    ["/collections/{collectionId}/items/{itemId}/media", ["post"]],
+    ["/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}", ["delete"]],
+    ["/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}/primary", ["put"]],
   ]) {
     const key = Object.keys(full.paths).find(
       (entry) => entry.replace(/\/$/, "") === pattern,

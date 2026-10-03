@@ -157,7 +157,7 @@ public static class ItemEndpoints
             {
                 return ApiResponses.NotFound("Item was not found.");
             }
-        });
+        }).Produces<ItemDetailResponse>();
     }
 
     private static void MapListItemEvents(RouteGroupBuilder group)
@@ -245,7 +245,7 @@ public static class ItemEndpoints
             {
                 return ApiResponses.NotFound("Item or collection was not found.");
             }
-        });
+        }).Produces<ItemDetailResponse>();
     }
 
     private static void MapDeleteItem(RouteGroupBuilder group)

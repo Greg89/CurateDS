@@ -10,6 +10,7 @@ import {
   recentItemsSchema,
   summarySchema,
 } from "./collections";
+import { browseParams, itemDetailSchema, itemInputSchema, itemListSchema } from "./items";
 
 export async function collectionRoute(
   request?: Request,
@@ -21,6 +22,12 @@ export async function collectionRoute(
   if (!isAuthConfigured()) return reply({ code: "service_unavailable" }, 503);
   const auth = getAuthClient();
   const post = request?.method === "POST";
+  let itemQuery = "?page=1&pageSize=6&sortBy=createdUtc&sortDirection=desc";
+  const browsing = resource === "items" && !post && Boolean(request && new URL(request.url).search);
+  if (browsing) {
+    try { itemQuery = `?${browseParams(new URL(request!.url).searchParams)}`; }
+    catch { return reply({ code: "invalid_request" }, 400); }
+  }
   return handleCollections(
     {
       getSession: () => auth.getSession(),
@@ -31,20 +38,20 @@ export async function collectionRoute(
     {
       request,
       path: id
-        ? `/collections/${id}/${resource}${resource === "items" && !post ? "?page=1&pageSize=6&sortBy=createdUtc&sortDirection=desc" : ""}`
+        ? `/collections/${id}/${resource}${resource === "items" && !post ? itemQuery : ""}`
         : "/collections",
       schema:
         resource === "summary"
           ? summarySchema
           : resource === "items"
             ? post
-              ? itemReceiptSchema
-              : recentItemsSchema
+              ? itemDetailSchema
+              : browsing ? itemListSchema : recentItemsSchema
             : post
               ? collectionSchema
               : undefined,
       inputSchema:
-        resource === "items" ? createItemSchema : createCollectionSchema,
+        resource === "items" ? itemInputSchema : createCollectionSchema,
     },
   );
 }

@@ -51,7 +51,7 @@ public static class MediaEndpoints
             {
                 return ApiResponses.Validation(ex);
             }
-        });
+        }).Produces<CurateDS.Application.Collections.MediaAssetDto>(StatusCodes.Status201Created);
 
         group.MapDelete("/{mediaAssetId:guid}", async (
             Guid collectionId,

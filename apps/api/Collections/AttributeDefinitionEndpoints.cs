@@ -35,7 +35,7 @@ public static class AttributeDefinitionEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<AttributeDefinitionResponse[]>();
 
         group.MapPost("/{collectionId:guid}/attribute-definitions", async (
             Guid collectionId,

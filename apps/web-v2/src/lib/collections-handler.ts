@@ -1,6 +1,7 @@
 import "server-only";
 import { collectionsSchema } from "./collections";
 import type { z } from "zod";
+import { BodyTooLarge, imageTypes, maxImageBytes, readBody } from "./upload";
 
 export type Dependencies = {
   getSession: () => Promise<unknown>;
@@ -25,9 +26,12 @@ export async function handleCollections(
     schema?: z.ZodType;
     request?: Request;
     inputSchema?: z.ZodType;
+    upload?: boolean;
   } = {},
 ) {
-  const mutation = options.request?.method === "POST";
+  const method = options.request?.method ?? "GET";
+  if (!["GET", "POST", "PUT", "DELETE"].includes(method)) return reply({ code: "method_not_allowed" }, 405);
+  const mutation = method !== "GET";
   let body: unknown;
   if (mutation) {
     try {
@@ -48,14 +52,23 @@ export async function handleCollections(
     return reply({ code: "sign_in_required" }, 401);
   }
 
-  if (mutation) {
+  if (mutation && (options.inputSchema || options.upload)) {
     try {
-      const text = await options.request!.text();
-      if (text.length > 16_384) return reply({ code: "invalid_request" }, 400);
-      const parsed = options.inputSchema?.safeParse(JSON.parse(text));
-      if (!parsed?.success) return reply({ code: "invalid_request" }, 400);
-      body = parsed.data;
-    } catch {
+      const bytes = await readBody(options.request!, options.upload ? maxImageBytes + 65536 : 262144);
+      if (options.upload) {
+        const form = await new Response(bytes, { headers: { "Content-Type": options.request!.headers.get("content-type") ?? "" } }).formData();
+        const file = form.get("file");
+        if (!(file instanceof File) || form.getAll("file").length !== 1 || !file.size || !imageTypes.includes(file.type))
+          return reply({ code: "invalid_image" }, 400);
+        if (file.size > maxImageBytes) return reply({ code: "image_too_large" }, 413);
+        const upload = new FormData(); upload.set("file", file); body = upload;
+      } else {
+        const parsed = options.inputSchema!.safeParse(JSON.parse(new TextDecoder().decode(bytes)));
+        if (!parsed.success) return reply({ code: "invalid_request" }, 400);
+        body = parsed.data;
+      }
+    } catch (error) {
+      if (error instanceof BodyTooLarge) return reply({ code: "request_too_large" }, 413);
       return reply({ code: "invalid_request" }, 400);
     }
   }
@@ -75,16 +88,16 @@ export async function handleCollections(
       base.toString().replace(/\/$/, "") + (options.path ?? "/collections"),
     );
     const response = await (dependencies.fetcher ?? fetch)(url, {
-      method: mutation ? "POST" : "GET",
+      method,
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
-        ...(mutation ? { "Content-Type": "application/json" } : {}),
+        ...(body !== undefined && !options.upload ? { "Content-Type": "application/json" } : {}),
       },
-      ...(mutation ? { body: JSON.stringify(body) } : {}),
+      ...(body !== undefined ? { body: options.upload ? body as FormData : JSON.stringify(body) } : {}),
       cache: "no-store",
       redirect: "error",
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(options.upload ? 60_000 : 10_000),
     });
     if (response.status === 401 || response.status === 403) {
       return reply(
@@ -94,17 +107,18 @@ export async function handleCollections(
         response.status,
       );
     }
-    if ([400, 404, 409].includes(response.status))
+    if ([400, 404, 409, 413].includes(response.status))
       return reply(
         { code: response.status === 404 ? "not_found" : "invalid_request" },
         response.status,
       );
     if (!response.ok) return reply({ code: "collections_unavailable" }, 502);
+    if (response.status === 204) return new Response(null, { status: 204, headers: { "Cache-Control": "private, no-store" } });
     const parsed = (options.schema ?? collectionsSchema).safeParse(
       await response.json(),
     );
     if (!parsed.success) return reply({ code: "invalid_api_response" }, 502);
-    return reply(parsed.data, mutation ? 201 : 200);
+    return reply(parsed.data, method === "POST" ? 201 : 200);
   } catch {
     return reply({ code: "collections_unavailable" }, 502);
   }
