@@ -35,6 +35,8 @@ internal sealed class CollectionConfiguration : IEntityTypeConfiguration<Collect
         builder.Property(collection => collection.Description).HasMaxLength(1000);
         builder.Property(collection => collection.CoverImageUrl).HasMaxLength(2048);
         builder.Property(collection => collection.Color).HasMaxLength(20);
+        builder.Property(collection => collection.ItemLabel).HasMaxLength(40).HasDefaultValue("item");
+        builder.Property(collection => collection.ItemsLabel).HasMaxLength(40).HasDefaultValue("items");
         builder.Property(collection => collection.ShowCover).HasDefaultValue(true);
         builder.Property(collection => collection.ShowSummary).HasDefaultValue(true);
         builder.Property(collection => collection.ShowPinnedItems).HasDefaultValue(true);

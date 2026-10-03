@@ -22,7 +22,7 @@ public sealed class UpdateCollectionService(
             collection.UpdateIdentity(command.Name, command.Category, command.Description, command.CoverImageUrl,
                 command.Color, DateTime.UtcNow, currentUser.GetCurrentUser());
             return Task.FromResult(new CollectionDto(collection.Id, collection.Name, collection.CreatedUtc,
-                collection.Category, collection.Description, collection.CoverImageUrl, collection.Color));
+                collection.Category, collection.Description, collection.CoverImageUrl, collection.Color, collection.ItemLabel, collection.ItemsLabel));
         }, cancellationToken);
     }
 }

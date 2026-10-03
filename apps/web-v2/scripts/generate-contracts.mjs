@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import openapiTS, { astToString } from "openapi-typescript";
 
-// Keep only the operations consumed by the collection overview and creation flows.
+// Keep only the operations consumed by the V2 collection workspace.
 // Omit the URL argument to regenerate from the checked-in snapshot without a running API.
 const snapshot = new URL(
   "../src/lib/generated/collections.openapi.json",
@@ -28,6 +28,7 @@ if (source) {
   for (const [pattern, methods] of [
     ["/collections", ["get", "post"]],
     ["/collections/{collectionId}", ["put"]],
+    ["/collections/{collectionId}/vocabulary", ["put"]],
     ["/collections/{collectionId}/presentation", ["get", "put"]],
     ["/collections/{collectionId}/summary", ["get"]],
     ["/collections/{collectionId}/insights", ["get"]],
@@ -36,7 +37,11 @@ if (source) {
     ["/collections/{collectionId}/saved-views/{viewId}", ["delete"]],
     ["/collections/{collectionId}/items", ["get", "post"]],
     ["/collections/{collectionId}/items/{itemId}", ["get", "put", "delete"]],
-    ["/collections/{collectionId}/attribute-definitions", ["get"]],
+    ["/collections/{collectionId}/attribute-definitions", ["get", "post"]],
+    [
+      "/collections/{collectionId}/attribute-definitions/{attributeDefinitionId}",
+      ["put", "delete"],
+    ],
     ["/collections/{collectionId}/item-types", ["get"]],
     ["/tags", ["get"]],
     ["/locations", ["get"]],

@@ -7,7 +7,7 @@ public sealed record UpdateCollectionRequest(string Name,
     string? Category = null, string? Description = null, string? CoverImageUrl = null, string? Color = null);
 
 public sealed record CollectionResponse(Guid Id, string Name, DateTime CreatedUtc,
-    string? Category = null, string? Description = null, string? CoverImageUrl = null, string? Color = null);
+    string? Category = null, string? Description = null, string? CoverImageUrl = null, string? Color = null, string ItemLabel = "item", string ItemsLabel = "items");
 
 public sealed record CollectionSummaryResponse(
     Guid CollectionId,

@@ -1,6 +1,6 @@
 # V2 Slice 5: Pinned Items And Overview Handoff
 
-Status (2026-10-03): this task is implemented. Slice 5 remains in progress.
+Status (2026-10-03): this task is implemented. Subsequent Slice 5 completion is recorded in [the labels and fields handoff](11-v2-labels-and-fields-handoff.md).
 
 ## Delivered
 
@@ -24,6 +24,6 @@ Status (2026-10-03): this task is implemented. Slice 5 remains in progress.
 
 ## Continue here
 
-The existing Forest/Clay/Slate presets, identity editing, pinned content, and configurable overview sections are available. Continue Slice 5 with collection-specific labels and metadata choices. Definition management still lives in the legacy web; decide its V2 scope against the roadmap. Showcase remains Slice 6.
+The existing Forest/Clay/Slate presets, identity editing, pinned content, and configurable overview sections are available. Collection-specific labels and custom-field definition choices are now complete; see [the labels and fields handoff](11-v2-labels-and-fields-handoff.md). Continue with Slice 6: Showcase V1.
 
 Pins are private workspace presentation choices. This task does not create a public showcase or sharing controls. Optional section order is fixed; only pinned-item order is editable.

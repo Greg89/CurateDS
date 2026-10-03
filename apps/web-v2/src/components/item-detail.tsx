@@ -1,4 +1,5 @@
 "use client";
+import { vocabulary } from "@/lib/customization";
 import { insightsKey, activityKey } from "@/lib/insights";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -13,6 +14,7 @@ import { imageTypes, maxImageBytes } from "@/lib/upload";
 
 export function ItemDetailView() {
   const collection = useCollection();
+
   const { itemId } = useParams<{ itemId: string }>();
   return (
     <Detail
@@ -30,6 +32,7 @@ function Detail({
   itemId: string;
 }) {
   const collection = useCollection();
+  const words = vocabulary(collection);
   const router = useRouter();
   const client = useQueryClient();
   const guard = useRef(false);
@@ -92,7 +95,7 @@ function Detail({
       setBusy(false);
     }
   }
-  if (query.isPending) return <p role="status">Opening your item…</p>;
+  if (query.isPending) return <p role="status">Opening your {words.one}…</p>;
   if (query.isError)
     return (
       <ItemFailure
@@ -108,11 +111,13 @@ function Detail({
         ← Browse {collection.name}
       </Link>
       <header className="collection-heading item-detail-heading">
-        <span className="eyebrow">{collection.name} / Item</span>
+        <span className="eyebrow">
+          {collection.name} / {words.One}
+        </span>
         <h1>{item.name}</h1>
         <p>{item.description || "A part of your collection."}</p>
         <Link className="button" href={`${base}/edit`}>
-          Edit item
+          Edit {words.one}
         </Link>
       </header>
       <dl className="item-facts">
@@ -262,13 +267,13 @@ function Detail({
           disabled={busy}
           onClick={() => setConfirm("item")}
         >
-          Delete item
+          Delete {words.one}
         </button>
         {confirm === "item" && (
           <div
             className="confirm-panel"
             role="group"
-            aria-label="Confirm item deletion"
+            aria-label={`Confirm ${words.one} deletion`}
           >
             <p>Delete {item.name} and its image records permanently?</p>
             <button
@@ -285,7 +290,7 @@ function Detail({
                 deleteButton.current?.focus();
               }}
             >
-              Keep item
+              Keep {words.one}
             </button>
           </div>
         )}

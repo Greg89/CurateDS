@@ -1,4 +1,5 @@
 "use client";
+import { vocabulary } from "@/lib/customization";
 import Link from "next/link";
 import { SavedViews } from "./saved-views";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -17,6 +18,7 @@ import { CollectionsError } from "@/lib/collections";
 
 export function ItemBrowse() {
   const collection = useCollection();
+  const words = vocabulary(collection);
   const router = useRouter();
   const search = useSearchParams();
   const raw = search.toString();
@@ -79,7 +81,7 @@ export function ItemBrowse() {
           className="button"
           href={`/collections/${collection.id}/items/new`}
         >
-          Add an item
+          {words.add}
         </Link>
       </header>
       {extraKeys.some((key) => search.has(key)) && (
@@ -175,7 +177,7 @@ export function ItemBrowse() {
               </select>
             </label>
             <label>
-              Item type
+              {words.One} type
               <select
                 key={options.data ? "types-ready" : "types-pending"}
                 disabled={options.isPending}
@@ -213,7 +215,7 @@ export function ItemBrowse() {
               </select>
             </label>
             <label>
-              Items per page
+              {words.Many} per page
               <select
                 name="pageSize"
                 defaultValue={search.get("pageSize") || "12"}
@@ -257,7 +259,7 @@ export function ItemBrowse() {
                 value="true"
                 defaultChecked={search.get("hasNoItemType") === "true"}
               />
-              Without an item type
+              Without a type
             </label>
             <label>
               <input
@@ -303,9 +305,9 @@ export function ItemBrowse() {
       <div className="browse-result-heading">
         <p role="status">
           {query.data
-            ? `${query.data.totalCount} ${query.data.totalCount === 1 ? "item" : "items"}`
+            ? `${query.data.totalCount} ${query.data.totalCount === 1 ? words.one : words.many}`
             : query.isFetching
-              ? "Finding your items…"
+              ? `Finding your ${words.many}…`
               : ""}
         </p>
         <div aria-label="Item presentation" className="view-toggle">
@@ -342,11 +344,11 @@ export function ItemBrowse() {
         <p role="status">Opening the collection…</p>
       ) : query.data.items.length === 0 ? (
         <section className="workspace-note">
-          <h2>No items in this view.</h2>
+          <h2>No {words.many} in this view.</h2>
           <p>Try another search or reset your filters.</p>
           <Link href={path}>Reset filters</Link> ·{" "}
           <Link href={`/collections/${collection.id}/items/new`}>
-            Add an item
+            {words.add}
           </Link>
         </section>
       ) : (

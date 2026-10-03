@@ -1,4 +1,5 @@
 "use client";
+import { vocabulary } from "@/lib/customization";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ function Breakdown({
   note?: string;
   rows: { key: string; name: string; count: number; href: string }[];
 }) {
+  const words = vocabulary(useCollection());
   const max = Math.max(1, ...rows.map((row) => row.count));
   return (
     <section className="insight-panel">
@@ -43,13 +45,14 @@ function Breakdown({
           ))}
         </ul>
       ) : (
-        <p>No items to group yet.</p>
+        <p>No {words.many} to group yet.</p>
       )}
     </section>
   );
 }
 export function CollectionInsights() {
   const collection = useCollection();
+  const words = vocabulary(collection);
   const search = useSearchParams(),
     router = useRouter();
   const attribute = search.get("attributeDefinitionId") || "";
@@ -117,16 +120,16 @@ export function CollectionInsights() {
             {Number(data.summary.totalItems) === 0 && (
               <section className="workspace-note">
                 <h2>Every collection starts with one find.</h2>
-                <p>Your patterns will take shape as you add items.</p>
+                <p>Your patterns will take shape as you add {words.many}.</p>
                 <Link className="button" href={`${base}/items/new`}>
-                  Add your first item
+                  Add your first {words.one}
                 </Link>
               </section>
             )}
             <div className="insight-cards">
               {[
                 {
-                  label: "Items kept",
+                  label: `${words.Many} kept`,
                   count: data.summary.totalItems,
                   href: browse(),
                 },
@@ -152,7 +155,7 @@ export function CollectionInsights() {
                 <Link key={card.label} href={card.href}>
                   <strong>{card.count}</strong>
                   <span>{card.label}</span>
-                  <small>View items ↗</small>
+                  <small>View {words.many} ↗</small>
                 </Link>
               ))}
             </div>
@@ -160,8 +163,8 @@ export function CollectionInsights() {
               <span className="eyebrow">The last twelve months</span>
               <h2>New finds, month by month.</h2>
               <p>
-                Items still in your collection, grouped by when they were added.
-                Dates use UTC; deleted items are excluded.
+                {words.Many} still in your collection, grouped by when they were
+                added. Dates use UTC; deleted {words.many} are excluded.
               </p>
               <ol className="growth-chart">
                 {data.addedByMonth.map((month) => (
@@ -171,7 +174,7 @@ export function CollectionInsights() {
                         createdAfter: month.fromUtc,
                         createdBeforeExclusive: month.toUtc,
                       })}
-                      aria-label={`${new Date(month.fromUtc).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}: ${month.count} items`}
+                      aria-label={`${new Date(month.fromUtc).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}: ${month.count} ${words.many}`}
                     >
                       <strong>{month.count}</strong>
                       <span className="growth-track">
@@ -272,7 +275,7 @@ export function CollectionInsights() {
                   <>
                     <Breakdown
                       title={data.attribute.name}
-                      note={`${data.attribute.totalWithValue} items have a value. Showing up to 20 most common values; each link matches that exact value.`}
+                      note={`${data.attribute.totalWithValue} ${words.many} have a value. Showing up to 20 most common values; each link matches that exact value.`}
                       rows={data.attribute.values.map((row) => ({
                         key: row.value,
                         name: row.value,
@@ -293,8 +296,8 @@ export function CollectionInsights() {
       <section className="insight-panel">
         <h2>Recently in your collection</h2>
         <p>
-          A history of changes. Deleted items may no longer be available to
-          open.
+          A history of changes. Deleted {words.many} may no longer be available
+          to open.
         </p>
         {!validPage ? (
           <p role="alert">

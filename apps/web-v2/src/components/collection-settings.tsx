@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { VocabularySettings } from "./vocabulary-settings";
+import { FieldSettings } from "./field-settings";
 import { OverviewSettings } from "./overview-settings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
@@ -179,7 +181,9 @@ export function CollectionSettings() {
           </small>
         </aside>
       </div>
+      <VocabularySettings />
       <OverviewSettings collectionId={collection.id} />
+      <FieldSettings />
     </section>
   );
 }

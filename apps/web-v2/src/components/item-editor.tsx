@@ -1,4 +1,5 @@
 "use client";
+import { vocabulary } from "@/lib/customization";
 import { insightsKey, activityKey } from "@/lib/insights";
 import Link from "next/link";
 import { presentationKey } from "@/lib/collections";
@@ -24,6 +25,7 @@ import {
 
 export function ItemEditor({ editing = false }: { editing?: boolean }) {
   const collection = useCollection();
+  const words = vocabulary(collection);
   const { itemId } = useParams<{ itemId: string }>();
   const options = useQuery({
     queryKey: optionsKey(collection.id),
@@ -46,17 +48,18 @@ export function ItemEditor({ editing = false }: { editing?: boolean }) {
       />
     );
   if (options.isPending || (editing && item.isPending))
-    return <p role="status">Preparing your item…</p>;
+    return <p role="status">Preparing your {words.one}…</p>;
   return (
     <section data-color={collection.color || "forest"}>
       <header className="collection-heading">
         <span className="eyebrow">
-          {collection.name} / {editing ? "Edit item" : "New item"}
+          {collection.name} /{" "}
+          {editing ? `Edit ${words.one}` : `New ${words.one}`}
         </span>
         <h1>{editing ? "A little more of the story." : "A new find."}</h1>
         <p>
-          Add the details that make this item yours. Images can be added after
-          saving.
+          Add the details that make this {words.one} yours. Images can be added
+          after saving.
         </p>
       </header>
       <EditorForm
@@ -78,6 +81,7 @@ function EditorForm({
   options: ItemOptions;
   item?: ItemDetail;
 }) {
+  const words = vocabulary(useCollection());
   const router = useRouter();
   const client = useQueryClient();
   const guard = useRef(false);
@@ -162,7 +166,7 @@ function EditorForm({
     >
       <fieldset disabled={busy} className="editor-fields">
         <label>
-          Item name
+          {words.One} name
           <input
             name="name"
             autoFocus
@@ -207,7 +211,7 @@ function EditorForm({
           </label>
         </div>
         <label>
-          Item type
+          {words.One} type
           <select
             value={typeId}
             onChange={(event) => setTypeId(event.target.value)}
@@ -290,7 +294,7 @@ function EditorForm({
       {error && <SaveError error={error} />}
       <div className="form-actions">
         <button className="button" disabled={busy}>
-          {busy ? "Saving…" : "Save item"}
+          {busy ? "Saving…" : `Save ${words.one}`}
         </button>
         {!busy && (
           <Link

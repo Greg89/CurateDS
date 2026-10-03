@@ -26,6 +26,20 @@ public sealed class Collection : AuditableEntity
     public string? Description { get; private set; }
     public string? CoverImageUrl { get; private set; }
     public string? Color { get; private set; }
+    public string ItemLabel { get; private set; } = "item";
+    public string ItemsLabel { get; private set; } = "items";
+
+    public static bool IsValidItemLabel(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && value.Trim().Length <= 40 && !value.Any(char.IsControl);
+
+    public void UpdateVocabulary(string itemLabel, string itemsLabel, DateTime updatedUtc, string updatedBy)
+    {
+        if (!IsValidItemLabel(itemLabel) || !IsValidItemLabel(itemsLabel))
+            throw new ArgumentException("Use labels between 1 and 40 characters without line breaks.");
+        ItemLabel = itemLabel.Trim();
+        ItemsLabel = itemsLabel.Trim();
+        SetUpdated(updatedUtc, updatedBy);
+    }
 
     public bool ShowCover { get; private set; } = true;
     public bool ShowSummary { get; private set; } = true;

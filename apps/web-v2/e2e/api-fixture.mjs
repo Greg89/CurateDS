@@ -47,6 +47,7 @@ const definition = {
   sortOrder: 0,
   createdUtc: tag.createdUtc,
 };
+let definitions = [structuredClone(definition)];
 function makeItem(input, collectionId) {
   return {
     id: randomUUID(),
@@ -63,9 +64,15 @@ function makeItem(input, collectionId) {
     mediaAssets: [],
     attributeValues: (input.attributeValues || []).map((value) => ({
       ...value,
-      attributeName: definition.name,
-      attributeKey: definition.key,
-      dataType: definition.dataType,
+      attributeName:
+        definitions.find((field) => field.id === value.attributeDefinitionId)
+          ?.name || "Unknown",
+      attributeKey:
+        definitions.find((field) => field.id === value.attributeDefinitionId)
+          ?.key || "unknown",
+      dataType:
+        definitions.find((field) => field.id === value.attributeDefinitionId)
+          ?.dataType || "Text",
     })),
   };
 }
@@ -99,6 +106,7 @@ createServer(async (request, response) => {
         : [];
     savedViews = [];
     presentations = {};
+    definitions = [structuredClone(definition)];
     if (scenario === "insights")
       items.forEach((item, index) => {
         item.itemTypeId = type.id;
@@ -229,8 +237,58 @@ createServer(async (request, response) => {
     });
     return send(collection);
   }
-  if (segments[2] === "attribute-definitions")
-    return send(collectionId === type.collectionId ? [definition] : []);
+  if (segments[2] === "vocabulary" && request.method === "PUT") {
+    let body = "";
+    for await (const chunk of request) body += chunk;
+    const collection = collections.find((c) => c.id === collectionId);
+    Object.assign(collection, JSON.parse(body));
+    return send(collection);
+  }
+  if (segments[2] === "attribute-definitions") {
+    const fields = definitions.filter(
+      (field) => field.collectionId === collectionId,
+    );
+    if (request.method === "GET") return send(fields);
+    const current = fields.find((field) => field.id === segments[3]);
+    if (request.method !== "POST" && !current) return send({}, 404);
+    if (request.method === "DELETE") {
+      definitions = definitions.filter((field) => field !== current);
+      for (const item of items)
+        item.attributeValues = item.attributeValues.filter(
+          (value) => value.attributeDefinitionId !== current.id,
+        );
+      return send(null, 204);
+    }
+    let body = "";
+    for await (const chunk of request) body += chunk;
+    const input = JSON.parse(body);
+    const key = input.name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+    if (fields.some((field) => field !== current && field.key === key))
+      return send({}, 400);
+    if (current) {
+      Object.assign(current, input, { key });
+      for (const item of items)
+        for (const value of item.attributeValues)
+          if (value.attributeDefinitionId === current.id) {
+            value.attributeName = current.name;
+            value.attributeKey = key;
+          }
+      return send(current);
+    }
+    const created = {
+      ...input,
+      key,
+      id: randomUUID(),
+      collectionId,
+      sortOrder: fields.length,
+      createdUtc: new Date().toISOString(),
+    };
+    definitions.push(created);
+    return send(created, 201);
+  }
   if (segments[2] === "item-types")
     return send(collectionId === type.collectionId ? [type] : []);
   const ownItems = items.filter((item) => item.collectionId === collectionId);
@@ -443,10 +501,15 @@ createServer(async (request, response) => {
     for await (const chunk of request) body += chunk;
     const input = JSON.parse(body);
     if (
-      input.itemTypeId === type.id &&
-      !input.attributeValues?.some(
-        (value) =>
-          value.attributeDefinitionId === definition.id && value.value.trim(),
+      definitions.some(
+        (field) =>
+          field.collectionId === collectionId &&
+          field.isRequired &&
+          (!field.itemTypeId || field.itemTypeId === input.itemTypeId) &&
+          !input.attributeValues?.some(
+            (value) =>
+              value.attributeDefinitionId === field.id && value.value.trim(),
+          ),
       )
     )
       return send({}, 400);

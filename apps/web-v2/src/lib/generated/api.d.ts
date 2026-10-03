@@ -98,6 +98,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/collections/{collectionId}/vocabulary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    collectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateCollectionVocabularyRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CollectionResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/collections/{collectionId}/presentation": {
         parameters: {
             query?: never;
@@ -571,8 +612,95 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    collectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateAttributeDefinitionRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AttributeDefinitionResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{collectionId}/attribute-definitions/{attributeDefinitionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    collectionId: string;
+                    attributeDefinitionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateAttributeDefinitionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AttributeDefinitionResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    collectionId: string;
+                    attributeDefinitionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -817,6 +945,10 @@ export interface components {
             description?: null | string;
             coverImageUrl?: null | string;
             color?: null | string;
+            /** @default item */
+            itemLabel: string;
+            /** @default items */
+            itemsLabel: string;
         };
         CreateCollectionRequest: {
             name: string;
@@ -831,6 +963,10 @@ export interface components {
             description?: null | string;
             coverImageUrl?: null | string;
             color?: null | string;
+        };
+        UpdateCollectionVocabularyRequest: {
+            itemLabel: string;
+            itemsLabel: string;
         };
         CollectionPresentationDto: {
             /** Format: uuid */
@@ -1117,6 +1253,21 @@ export interface components {
             itemTypeId: null | string;
             /** Format: date-time */
             createdUtc: string;
+        };
+        CreateAttributeDefinitionRequest: {
+            name: string;
+            dataType: components["schemas"]["AttributeDataType"];
+            isRequired: boolean;
+            isFilterable: boolean;
+            /** Format: uuid */
+            itemTypeId?: null | string;
+        };
+        UpdateAttributeDefinitionRequest: {
+            name: string;
+            isRequired: boolean;
+            isFilterable: boolean;
+            /** Format: uuid */
+            itemTypeId?: null | string;
         };
         ItemTypeResponse: {
             /** Format: uuid */

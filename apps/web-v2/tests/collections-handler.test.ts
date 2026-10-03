@@ -33,7 +33,9 @@ describe("collection API boundary", () => {
     const deps = dependencies();
     const response = await handleCollections(deps);
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual([collection]);
+    expect(await response.json()).toEqual([
+      { ...collection, itemLabel: "item", itemsLabel: "items" },
+    ]);
     const [url, options] = deps.fetcher.mock.calls[0];
     expect(String(url)).toBe("http://api.example/collections");
     expect(options).toMatchObject({

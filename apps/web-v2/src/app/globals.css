@@ -1594,3 +1594,34 @@ summary:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.field-list {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0;
+}
+.field-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding: 1.25rem 0;
+}
+.field-list h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  overflow-wrap: anywhere;
+}
+.field-list p {
+  margin: 0.5rem 0 0;
+}
+.field-editor {
+  margin-top: 2rem;
+}
+@media (max-width: 600px) {
+  .field-list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

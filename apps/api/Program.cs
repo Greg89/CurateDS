@@ -45,6 +45,7 @@ app.UseAuthorization();
 app.MapDefaultEndpoints();
 app.MapCollectionCrudEndpoints();
 app.MapCollectionPresentationEndpoints();
+app.MapCollectionVocabularyEndpoints();
 app.MapCollectionReportEndpoints();
 app.MapSavedViewEndpoints();
 app.MapOrganizationEndpoints();

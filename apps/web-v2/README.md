@@ -1,6 +1,6 @@
 # CurateDS V2 web foundation
 
-This temporary Next.js App Router workspace implements V2 Slices 1–4. The existing Vite app remains in `apps/web`. Users can create collections, browse and edit items with custom fields and images, explore collection insights, and save filtered views. Collection identity editing is also available in Settings as the first part of Slice 5. Ordered pinned items and optional overview sections are available too. Collection-specific labels/metadata choices and showcase remain later workflows.
+This temporary Next.js App Router workspace implements V2 Slices 1–5. The existing Vite app remains in `apps/web`. Users can create collections, browse and edit items with custom fields and images, explore insights, and save filtered views. Settings supports collection identity, ordered pins, optional overview sections, collection vocabulary, and custom-field definitions. Showcase is the next roadmap slice.
 
 ## Run locally
 
@@ -66,8 +66,10 @@ To trigger renewal immediately, the checker uses the local cookie secret and SDK
 - `/collections/[collectionId]/items/new`, `/items/[itemId]`, and `/items/[itemId]/edit`: full creation, detail, editing, and image management within the collection.
 - `/collections/[collectionId]/insights`: collection cards, twelve-month growth, location/tag/type/custom-field breakdowns, paged activity, and saved views.
 - `/api/collections/[collectionId]/insights`, `/activity`, and `/saved-views`: validated session boundaries; saved-view creation/removal require same-origin writes.
-- `/collections/[collectionId]/settings`: edit collection identity, cover URL, and colour with preview, discard, and recoverable saves; select/reorder up to six pinned items and choose which overview sections appear.
+- `/collections/[collectionId]/settings`: edit collection identity, cover URL, and colour with preview, discard, and recoverable saves; select/reorder up to six pinned items and choose which overview sections appear; customize singular/plural labels and field definitions.
 - `/api/collections/[collectionId]`: authenticated, same-origin collection identity update (PUT).
+- `/api/collections/[collectionId]/vocabulary`: independent singular/plural label update (PUT).
+- `/api/collections/[collectionId]/fields` and `/fields/[fieldId]`: custom-field creation, update, and confirmed removal (POST/PUT/DELETE), using the existing API attribute-definition services.
 - `/api/collections/[collectionId]/presentation`: owner-scoped overview preferences and ordered pinned items (GET/PUT).
 - `/api/collections`: authenticated collection list and creation boundary.
 - `/api/collections/[collectionId]/summary`: authenticated overview counts.
@@ -85,6 +87,14 @@ In Settings, **Shape your overview** toggles the cover/story, summary counts, pi
 
 Start the updated API to apply the additive `AddCollectionPresentation` migration. Existing collections default to all sections enabled and no pins. Pinned item references are checked against active collection items on both reads and writes. The overview keeps its add/browse/settings links even with every optional section hidden. These are private workspace choices; showcase is a later slice.
 
+## Collection words and custom fields
+
+In Settings, **What do you collect?** saves singular/plural labels (for example, book/books) independently of identity and overview preferences. Labels can be reset to item/items. Start the updated API to apply `AddCollectionVocabulary`; existing collections keep the defaults.
+
+**Choose your custom fields** creates or edits the details an item can carry. Choose text, whole number, decimal, yes/no, or date, and set required/filterable behavior and optional scope to an existing item type. The kind of detail stays fixed after creation. Required values are enforced on the next applicable item save. Changes refresh collection-scoped editor and insight data.
+
+Removing a field requires confirmation because it permanently deletes its saved values. Renaming keeps values but changes the field's filter key under existing API behavior; recreate saved views using that field. Item-type creation, account-wide tags/locations, and predefined choice lists are outside this workflow. Existing SingleSelect fields remain editable as text choices.
+
 ## Insights and saved views
 
 Insights aggregate currently kept items; the twelve-month chart uses UTC creation dates and excludes deleted items. Collection category stays in the header, while item types provide the within-collection grouping. Custom-field breakdowns show up to twenty most common values and use exact typed-value filters when opening Browse. Month links use an inclusive start and exclusive end. Activity includes deleted-item history; those items may no longer open.
@@ -93,7 +103,7 @@ Browse preserves these report filters when ordinary filters are applied. Named s
 
 ## API contract generation
 
-The checked-in contract snapshot contains collection creation/update/summary/presentation, Insights/activity/saved-view, item CRUD, option-listing, and media operations with their referenced schemas. It was extracted from the running .NET OpenAPI document, not authored as a parallel schema. These endpoints explicitly advertise their response types.
+The checked-in contract snapshot contains collection creation/update/vocabulary/summary/presentation, custom-field writes, Insights/activity/saved-view, item CRUD, option-listing, and media operations with their referenced schemas. It was extracted from the running .NET OpenAPI document, not authored as a parallel schema. These endpoints explicitly advertise their response types.
 
 Regenerate from a running API in Development:
 

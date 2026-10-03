@@ -19,7 +19,7 @@ public sealed class ListCollectionsService
 
         return collections
             .Select(collection => new CollectionDto(collection.Id, collection.Name, collection.CreatedUtc,
-                collection.Category, collection.Description, collection.CoverImageUrl, collection.Color))
+                collection.Category, collection.Description, collection.CoverImageUrl, collection.Color, collection.ItemLabel, collection.ItemsLabel))
             .ToArray();
     }
 }

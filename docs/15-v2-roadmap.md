@@ -136,7 +136,7 @@ Exit criteria:
 
 Goal: let each collection develop its own identity without creating configuration overload.
 
-Status (2026-10-03): In progress. Collection identity editing is implemented in V2 Settings, including cover/colour preview, failed-save recovery, and owner-scoped persistence. See [settings handoff](refactor/09-v2-collection-settings-handoff.md). Pinned items and configurable overview sections are also implemented; see [overview customization handoff](refactor/10-v2-overview-customization-handoff.md). Next: collection-specific labels and metadata choices. The existing Forest/Clay/Slate presets remain the current visual options.
+Status (2026-10-03): Complete in `apps/web-v2`. Settings supports identity and Forest/Clay/Slate presets, ordered pins, optional overview sections, collection-specific singular/plural labels, and custom-field definition choices. See [settings handoff](refactor/09-v2-collection-settings-handoff.md), [overview customization handoff](refactor/10-v2-overview-customization-handoff.md), and [labels and fields handoff](refactor/11-v2-labels-and-fields-handoff.md). API, migration/persistence, and desktop/mobile checks passed. Item-type creation and account-wide tag/location management remain in the legacy client; predefined field choice lists are not part of this slice. Next: Slice 6, beginning with private showcase preview.
 
 Deliverables:
 

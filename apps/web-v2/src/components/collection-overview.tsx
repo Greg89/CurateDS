@@ -1,4 +1,5 @@
 "use client";
+import { vocabulary } from "@/lib/customization";
 import { OverviewItems } from "./overview-items";
 
 import Link from "next/link";
@@ -13,6 +14,7 @@ import {
 
 export function CollectionOverview() {
   const collection = useCollection();
+  const words = vocabulary(collection);
   const query = useQuery({
     queryKey: overviewKey(collection.id),
     queryFn: ({ signal }) => fetchOverview(collection.id, signal),
@@ -37,11 +39,11 @@ export function CollectionOverview() {
           className="button"
           href={`/collections/${collection.id}/items/new`}
         >
-          Add an item
+          {words.add}
         </Link>
         <div className="overview-links">
           <Link href={`/collections/${collection.id}/browse`}>
-            Browse all items
+            Browse all {words.many}
           </Link>
           <Link href={`/collections/${collection.id}/settings#overview`}>
             Customize overview
@@ -87,7 +89,7 @@ export function CollectionOverview() {
           {query.data.presentation.showSummary && (
             <dl className="summary-cards" aria-label="Collection summary">
               <div>
-                <dt>Items</dt>
+                <dt>{words.Many}</dt>
                 <dd>{query.data.summary.totalItems}</dd>
               </div>
               <div>
@@ -107,12 +109,12 @@ export function CollectionOverview() {
           {query.data.summary.totalItems === 0 ? (
             <section className="workspace-note empty-overview">
               <h2>What will you keep first?</h2>
-              <p>Start with one item and give it a story.</p>
+              <p>Start with one {words.one} and give it a story.</p>
               <Link
                 className="button"
                 href={`/collections/${collection.id}/items/new`}
               >
-                Add your first item
+                Add your first {words.one}
               </Link>
             </section>
           ) : (
@@ -120,7 +122,7 @@ export function CollectionOverview() {
               {query.data.presentation.showPinnedItems &&
                 (query.data.presentation.pinnedItems.length ? (
                   <OverviewItems
-                    title="Pinned items"
+                    title={`Pinned ${words.many}`}
                     items={query.data.presentation.pinnedItems}
                     collectionId={collection.id}
                   />
@@ -128,13 +130,13 @@ export function CollectionOverview() {
                   <section className="workspace-note">
                     <h2>Your favourites, up front.</h2>
                     <p>
-                      Choose up to six items to give them a place on your
+                      Choose up to six {words.many} to give them a place on your
                       overview.
                     </p>
                     <Link
                       href={`/collections/${collection.id}/settings#overview`}
                     >
-                      Choose pinned items
+                      Choose pinned {words.many}
                     </Link>
                   </section>
                 ))}

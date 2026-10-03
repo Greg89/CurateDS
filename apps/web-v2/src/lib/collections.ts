@@ -10,6 +10,8 @@ export const collectionSchema: z.ZodType<Collection> = z.object({
   description: z.string().nullable().optional(),
   coverImageUrl: z.string().nullable().optional(),
   color: z.string().nullable().optional(),
+  itemLabel: z.string().min(1).max(40).default("item"),
+  itemsLabel: z.string().min(1).max(40).default("items"),
 });
 export const collectionsSchema = z.array(collectionSchema);
 export const collectionQueryKey = ["collections"] as const;

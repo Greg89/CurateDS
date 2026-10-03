@@ -615,7 +615,7 @@ test("collection settings preserve drafts, save identity, and isolate collection
   await expect(name).toHaveValue("  My reading nook  ");
   await page.unroute(`**/api/collections/${id}`);
   await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page.getByRole("status")).toHaveText(
+  await expect(page.locator(".settings-layout").getByRole("status")).toHaveText(
     "Collection settings saved.",
   );
   await expect(name).toHaveValue("My reading nook");
@@ -663,7 +663,7 @@ test("collection settings preserve drafts, save identity, and isolate collection
   await page.getByRole("textbox", { name: "Hobby or category" }).fill("");
   await page.getByRole("textbox", { name: "Description" }).fill("");
   await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page.getByRole("status")).toHaveText(
+  await expect(page.locator(".settings-layout").getByRole("status")).toHaveText(
     "Collection settings saved.",
   );
   await page.reload();
@@ -897,4 +897,243 @@ test("presentation updates require a session, same origin, and at most six disti
       })
     ).status(),
   ).toBe(400);
+});
+
+test("collection words persist, recover from failed saves, and stay collection scoped", async ({
+  page,
+  context,
+}, testInfo) => {
+  await signIn(context);
+  const id = "33333333-3333-4333-8333-333333333333";
+  const other = "44444444-4444-4444-8444-444444444444";
+  await page.goto(`/collections/${id}/settings`);
+  const words = page.getByRole("region", { name: "What do you collect?" });
+  await words.getByLabel("One", { exact: true }).fill("book");
+  await words.getByLabel("More than one").fill("books");
+  await page.route(`**/api/collections/${id}/vocabulary`, (route) =>
+    route.fulfill({ status: 502, json: {} }),
+  );
+  await words.getByRole("button", { name: "Save collection words" }).click();
+  await expect(words.getByRole("alert")).toContainText(
+    "entries are still here",
+  );
+  await expect(words.getByLabel("One", { exact: true })).toHaveValue("book");
+  await page.unroute(`**/api/collections/${id}/vocabulary`);
+  await words.getByRole("button", { name: "Save collection words" }).click();
+  await expect(words.getByRole("status")).toHaveText("Collection words saved.");
+  await page.reload();
+  await expect(words.getByLabel("More than one")).toHaveValue("books");
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: "Add book", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Browse all books" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Add book", exact: true }).click();
+  await page.getByLabel("Book name").fill("A vocabulary example");
+  await page.getByRole("button", { name: "Save book", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Edit book" })).toBeVisible();
+  await page.getByRole("link", { name: "Browse", exact: true }).click();
+  await expect(
+    page.locator(".browse-result-heading").getByRole("status"),
+  ).toHaveText("1 book");
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await page.getByLabel("Your collection", { exact: true }).selectOption(other);
+  await expect(words.getByLabel("One", { exact: true })).toHaveValue("item");
+  await page.getByLabel("Your collection", { exact: true }).selectOption(id);
+  await expect(words.getByLabel("One", { exact: true })).toHaveValue("book");
+  await words.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("collection-words.png") });
+  await words.getByRole("button", { name: "Use item / items" }).click();
+  await words.getByRole("button", { name: "Discard word changes" }).click();
+  await expect(words.getByLabel("One", { exact: true })).toHaveValue("book");
+  await words.getByRole("button", { name: "Use item / items" }).click();
+  await words.getByRole("button", { name: "Save collection words" }).click();
+  await expect(words.getByRole("status")).toHaveText("Collection words saved.");
+  await page.reload();
+  await expect(words.getByLabel("One", { exact: true })).toHaveValue("item");
+});
+
+test("custom fields support create, required values, rename, scope, and confirmed removal", async ({
+  page,
+  context,
+}, testInfo) => {
+  await signIn(context);
+  const id = "33333333-3333-4333-8333-333333333333";
+  const other = "44444444-4444-4444-8444-444444444444";
+  await page.goto(`/collections/${id}/settings#custom-fields`);
+  const fields = page.getByRole("region", {
+    name: "Choose your custom fields.",
+  });
+  await fields.getByRole("button", { name: "Add a custom field" }).click();
+  const form = fields.getByRole("form", { name: "New custom field" });
+  await form.getByLabel("Field name").fill("Maker");
+  await form.getByLabel("Required when saving").check();
+  await page.route(`**/api/collections/${id}/fields`, (route) =>
+    route.fulfill({ status: 502, json: {} }),
+  );
+  await form.getByRole("button", { name: "Save custom field" }).click();
+  await expect(form.getByRole("alert")).toContainText("entries are still here");
+  await expect(form.getByLabel("Field name")).toHaveValue("Maker");
+  await page.unroute(`**/api/collections/${id}/fields`);
+  await form.getByRole("button", { name: "Save custom field" }).click();
+  await expect(fields.getByRole("status")).toHaveText("Custom field saved.");
+  await page.reload();
+  await expect(
+    fields.getByRole("heading", { name: "Maker", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await page.getByRole("link", { name: "Add an item", exact: true }).click();
+  await page.getByLabel("Item name").fill("Handmade notebook");
+  await page.getByRole("button", { name: "Save item" }).click();
+  await expect(page).toHaveURL(/\/items\/new$/);
+  await expect(page.getByLabel("Maker (required)")).toHaveAttribute(
+    "required",
+    "",
+  );
+  await page.getByLabel("Maker (required)").fill("Local bindery");
+  await page.getByRole("button", { name: "Save item" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Handmade notebook" }),
+  ).toBeVisible();
+  const itemUrl = page.url();
+  await expect(page.locator(".item-facts")).toContainText("Local bindery");
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
+  await fields.getByRole("button", { name: "Edit Maker field" }).click();
+  const edit = fields.getByRole("form", { name: "Edit Maker field" });
+  await expect(edit.getByLabel("Kind of detail")).toBeDisabled();
+  await edit.getByLabel("Field name").fill("Edition");
+  await edit.getByRole("button", { name: "Save custom field" }).click();
+  await expect(edit.getByRole("alert")).toContainText("already use this name");
+  await edit.getByLabel("Field name").fill("Craftsperson");
+  await edit.getByLabel("Applies to").selectOption({ label: "Book" });
+  await edit.getByLabel("Required when saving").uncheck();
+  await edit.getByLabel("Available in filters and insights").uncheck();
+  await edit.screenshot({
+    path: testInfo.outputPath("custom-field-editor.png"),
+  });
+  await edit.getByRole("button", { name: "Save custom field" }).click();
+  await expect(fields.getByRole("status")).toHaveText("Custom field saved.");
+  await fields.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("custom-fields.png") });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.goto(itemUrl);
+  await expect(page.locator(".item-facts")).toContainText("Craftsperson");
+  await expect(page.locator(".item-facts")).toContainText("Local bindery");
+  await page.getByRole("link", { name: "Edit item" }).click();
+  await expect(page.getByLabel("Craftsperson (optional)")).toHaveCount(0);
+  await page.getByLabel("Item type").selectOption({ label: "Book" });
+  await expect(page.getByLabel("Craftsperson (optional)")).toHaveValue(
+    "Local bindery",
+  );
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await page.getByLabel("Your collection", { exact: true }).selectOption(other);
+  await expect(fields).toContainText("No custom fields yet");
+  await page.getByLabel("Your collection", { exact: true }).selectOption(id);
+  await fields
+    .getByRole("button", { name: "Remove Craftsperson field" })
+    .click();
+  await expect(fields.getByRole("form")).toContainText(
+    "permanently deletes its saved values",
+  );
+  await fields.getByRole("button", { name: "Keep field" }).click();
+  await expect(
+    fields.getByRole("button", { name: "Add a custom field" }),
+  ).toBeFocused();
+  await expect(
+    fields.getByRole("heading", { name: "Craftsperson" }),
+  ).toBeVisible();
+  await fields
+    .getByRole("button", { name: "Remove Craftsperson field" })
+    .click();
+  await fields.getByRole("button", { name: "Remove field and values" }).click();
+  await expect(fields.getByRole("status")).toHaveText("Custom field removed.");
+  await page.goto(itemUrl);
+  await expect(
+    page.getByRole("heading", { name: "Handmade notebook" }),
+  ).toBeVisible();
+  await expect(page.locator(".item-facts")).not.toContainText("Local bindery");
+});
+
+test("customization writes enforce session, origin, input, and scoped paths", async ({
+  context,
+  request,
+}) => {
+  const base = "/api/collections/33333333-3333-4333-8333-333333333333";
+  const headers = { Origin: "http://127.0.0.1:3101" };
+  const labels = { itemLabel: "book", itemsLabel: "books" };
+  const field = {
+    name: "Maker",
+    dataType: "Text",
+    isRequired: false,
+    isFilterable: true,
+    itemTypeId: null,
+  };
+  expect(
+    (
+      await request.put(`${base}/vocabulary`, { data: labels, headers })
+    ).status(),
+  ).toBe(401);
+  expect(
+    (await request.post(`${base}/fields`, { data: field, headers })).status(),
+  ).toBe(401);
+  await signIn(context);
+  for (const method of ["post", "put", "delete"] as const) {
+    const path = `${base}/fields${method === "post" ? "" : "/dddddddd-dddd-4ddd-8ddd-dddddddddddd"}`;
+    expect(
+      (
+        await context.request[method](path, {
+          data: field,
+          headers: { Origin: "https://other.test" },
+        })
+      ).status(),
+    ).toBe(403);
+  }
+  expect(
+    (
+      await context.request.put(`${base}/vocabulary`, {
+        data: labels,
+        headers: { Origin: "https://other.test" },
+      })
+    ).status(),
+  ).toBe(403);
+  expect(
+    (
+      await context.request.put(`${base}/vocabulary`, {
+        data: { ...labels, itemLabel: "" },
+        headers,
+      })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await context.request.post(`${base}/fields`, {
+        data: { ...field, dataType: "Unknown" },
+        headers,
+      })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await context.request.put(`${base}/fields/not-an-id`, {
+        data: field,
+        headers,
+      })
+    ).status(),
+  ).toBe(404);
+  expect(
+    (
+      await context.request.delete(
+        `${base}/fields/dddddddd-dddd-4ddd-8ddd-dddddddddddd/extra`,
+        { headers },
+      )
+    ).status(),
+  ).toBe(404);
 });

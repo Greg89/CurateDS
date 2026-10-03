@@ -1,4 +1,6 @@
 "use client";
+import { useCollection } from "./collection-context";
+import { vocabulary } from "@/lib/customization";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -63,6 +65,7 @@ function PresentationEditor({
   collectionId: string;
   initial: Presentation;
 }) {
+  const words = vocabulary(useCollection());
   const client = useQueryClient();
   const [saved, setSaved] = useState(initial);
   const [flags, setFlags] = useState(asInput(initial));
@@ -119,7 +122,7 @@ function PresentationEditor({
           [
             ["showCover", "Cover and story"],
             ["showSummary", "Summary counts"],
-            ["showPinnedItems", "Pinned items"],
+            ["showPinnedItems", `Pinned ${words.many}`],
             ["showRecentItems", "Recently added"],
           ] as const
         ).map(([key, label]) => (
@@ -136,10 +139,10 @@ function PresentationEditor({
           </label>
         ))}
       </fieldset>
-      <h3>Your pinned items</h3>
+      <h3>Your pinned {words.many}</h3>
       <p>
-        Choose up to six items. Move them into the order you want; hiding the
-        section keeps your choices.
+        Choose up to six {words.many}. Move them into the order you want; hiding
+        the section keeps your choices.
       </p>
       {pins.length ? (
         <ol className="pin-list">
@@ -179,7 +182,7 @@ function PresentationEditor({
           ))}
         </ol>
       ) : (
-        <p>No pinned items yet.</p>
+        <p>No pinned {words.many} yet.</p>
       )}
       <button
         type="button"
@@ -188,13 +191,16 @@ function PresentationEditor({
         aria-expanded={picker}
         onClick={() => setPicker(!picker)}
       >
-        {picker ? "Close item finder" : "Find items to pin"}
+        {picker ? `Close ${words.one} finder` : `Find ${words.many} to pin`}
       </button>
       {pins.length === 6 && (
-        <p>You have six pinned items. Remove one to choose another.</p>
+        <p>You have six pinned {words.many}. Remove one to choose another.</p>
       )}
       {picker && (
-        <section className="pin-picker" aria-label="Find items to pin">
+        <section
+          className="pin-picker"
+          aria-label={`Find ${words.many} to pin`}
+        >
           <form
             className="pin-search"
             onSubmit={(event) => {
@@ -204,17 +210,17 @@ function PresentationEditor({
             }}
           >
             <label>
-              Search your items
+              Search your {words.many}
               <input
                 value={search}
                 maxLength={200}
                 onChange={(event) => setSearch(event.target.value)}
               />
             </label>
-            <button className="button">Search items</button>
+            <button className="button">Search {words.many}</button>
           </form>
           {candidates.isPending ? (
-            <p role="status">Finding items…</p>
+            <p role="status">Finding {words.many}…</p>
           ) : candidates.isError ? (
             <ItemFailure
               collectionId={collectionId}
@@ -250,7 +256,7 @@ function PresentationEditor({
                 </ul>
               ) : (
                 <p>
-                  No items match. Try another search or add an item to this
+                  No {words.many} match. Try another search or add to this
                   collection.
                 </p>
               )}
@@ -260,7 +266,7 @@ function PresentationEditor({
                   disabled={page === 1}
                   onClick={() => setPage(page - 1)}
                 >
-                  Previous items
+                  Previous {words.many}
                 </button>
                 <span>
                   Page {page} of {Math.max(1, candidates.data.totalPages)}
@@ -270,7 +276,7 @@ function PresentationEditor({
                   disabled={page >= candidates.data.totalPages}
                   onClick={() => setPage(page + 1)}
                 >
-                  Next items
+                  Next {words.many}
                 </button>
               </nav>
             </>
