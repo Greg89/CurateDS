@@ -1,8 +1,6 @@
 # V2 Slice 1 Handoff
 
-Status: implementation complete; live login, callback, collection-list access, and manual logout confirmed. Live token refresh and protected-route denial after logout remain to be verified.
-
-Current live acceptance issue: the interactive checker passed login/callback and authenticated collection access, then stopped at the first refresh check because the actual session contained no refresh token. Confirm the application's Refresh Token grant and the API's Allow Offline Access setting, then rerun with a fresh sign-in. The app already requests `offline_access`.
+Status: complete; implementation and live Auth0 acceptance passed. Ready for Slice 2.
 
 The first refactor pass is complete. This continuation implements the accepted Slice 1 foundation in `apps/web-v2`; Slice 2 has not started.
 
@@ -28,16 +26,16 @@ The first refactor pass is complete. This continuation implements the accepted S
 - Docker build passed on Node 24 Alpine. Runtime smoke: landing page 200, stylesheet 200, unconfigured API 503, runtime UID 1000. The disposable smoke container was stopped/removed.
 - `npm ci --ignore-scripts` succeeded in the Docker build; npm audit reported zero vulnerabilities after updating the existing undici override from 7.29.0 to 7.29.1.
 - `git diff --check` passed.
-- Live Auth0 smoke: the user reached `http://localhost:3001/collections` with a signed-in account and the successful empty-collection state after resolving the callback URL mismatch. This confirms login, callback/session establishment, and authenticated collection-list access. The user subsequently confirmed signing in and signing out locally. Token refresh and protected-route denial after logout have not been verified against the live tenant. Railway deployment has not been tested.
+- Live Auth0 acceptance passed after the user updated the tenant configuration and ran `scripts/live-auth-smoke.ts` locally. The user-provided terminal results confirm login/callback and authenticated collection access, two consecutive token refreshes with successful API access and persisted session cookies, logout return/session removal/protected-route denial, and successful sign-in/API access after logout. The checker signed out the isolated test session on completion. This resolves the earlier missing-refresh-token issue. Railway deployment has not been tested.
 
-## Remaining checks before live acceptance
+## Live acceptance and reruns
 
-Verify denial of protected-route access after live logout and successful sign-in again. Separately verify token refresh against the intended .NET API; an initial successful login does not establish refresh behavior. Local callback registration must include `http://localhost:3001/auth/callback`, and logout registration must include `http://localhost:3001`. The automated browser suite uses SDK-generated encrypted test sessions and a local API fixture; it does not contact a live tenant.
+No Slice 1 live acceptance checks remain. Preserve the working Auth0 configuration: the local callback registration includes `http://localhost:3001/auth/callback`, the logout registration includes `http://localhost:3001`, and refresh-token issuance requires the application's Refresh Token grant and the API's Allow Offline Access setting. The automated browser suite uses SDK-generated encrypted test sessions and a local API fixture; the separate interactive checker exercises the live tenant and intended .NET API.
 
-The interactive `npm run test:auth:live --workspace @curateds/web-v2` checker now covers these remaining checks against the configured localhost app and live tenant. It requires normal user sign-in in an isolated browser, expires only the SDK access-token timestamp in that real session, verifies two renewals and cookie persistence, and checks logout plus sign-in again. No credentials or browser state are written to disk. Its session read/expiry helpers passed the fixture suite; a prepared checker alone does not establish live acceptance. See [the interactive instructions](../../apps/web-v2/README.md#interactive-live-acceptance).
+Rerun `npm run test:auth:live --workspace @curateds/web-v2` when changing tenant or session configuration. It requires normal user sign-in in an isolated browser, expires only the SDK access-token timestamp in that real session, verifies two renewals and cookie persistence, and checks logout plus sign-in again. No credentials or browser state are written to disk. Its session read/expiry helpers also passed the fixture suite. See [the interactive instructions](../../apps/web-v2/README.md#interactive-live-acceptance).
 
 The current foundation intentionally leaves create/browse/insights/showcase/settings workflows for later slices. No sample collections are shipped to production, no auth bypass is added, and no deployment has been performed.
 
 ## Next scope
 
-Finish live setup/smoke validation for Slice 1 before proceeding to [Slice 2](../15-v2-roadmap.md#slice-2-first-collection-and-overview). Keep the current web available as the behavioral reference.
+Proceed to [Slice 2: First Collection And Overview](../15-v2-roadmap.md#slice-2-first-collection-and-overview). Keep the current web available as the behavioral reference.

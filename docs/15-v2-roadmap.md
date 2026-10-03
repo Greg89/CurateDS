@@ -48,7 +48,7 @@ Exit criteria:
 
 Goal: establish the new web application shell without rebuilding feature workflows yet.
 
-Status (2026-10-02): Implementation complete in `apps/web-v2`. Automated session-boundary, API-contract, component, and desktop/mobile browser checks are in place, including refresh-token rotation/persistence, refresh failure, and logout access removal against a local identity-provider fixture. User-observed live login, callback, and authenticated collection-list access succeeded. The user also confirmed manual sign-in/sign-out. Protected-route access after logout and token refresh remain to be verified before live acceptance. See [Slice 1 handoff](refactor/05-v2-foundation-handoff.md) and [workspace setup](../apps/web-v2/README.md). Slice 2 has not started.
+Status (2026-10-02): Complete in `apps/web-v2`, including live Auth0 acceptance. Automated session-boundary, API-contract, component, and desktop/mobile browser checks passed. The user's interactive live-check results confirm login/callback, authenticated collection access, two token refreshes with persisted session cookies, logout/session removal/protected-route denial, and sign-in/API access after logout. See [Slice 1 handoff](refactor/05-v2-foundation-handoff.md) and [workspace setup](../apps/web-v2/README.md). Slice 2 is next and has not started.
 
 Deliverables:
 
