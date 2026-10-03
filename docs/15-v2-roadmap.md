@@ -136,6 +136,8 @@ Exit criteria:
 
 Goal: let each collection develop its own identity without creating configuration overload.
 
+Status (2026-10-03): In progress. Collection identity editing is implemented in V2 Settings, including cover/colour preview, failed-save recovery, and owner-scoped persistence. See [settings handoff](refactor/09-v2-collection-settings-handoff.md). Next: featured/pinned items and configurable overview sections; labels/metadata choices and richer presets remain in this slice.
+
 Deliverables:
 
 - collection themes or visual presets

@@ -213,6 +213,20 @@ createServer(async (request, response) => {
     return send(collections);
   }
   if (!collections.some((c) => c.id === collectionId)) return send({}, 404);
+  if (segments.length === 2 && request.method === "PUT") {
+    let body = "";
+    for await (const chunk of request) body += chunk;
+    const input = JSON.parse(body);
+    const collection = collections.find((c) => c.id === collectionId);
+    Object.assign(collection, {
+      name: input.name.trim(),
+      category: input.category?.trim() || null,
+      description: input.description?.trim() || null,
+      coverImageUrl: input.coverImageUrl?.trim() || null,
+      color: input.color || null,
+    });
+    return send(collection);
+  }
   if (segments[2] === "attribute-definitions")
     return send(collectionId === type.collectionId ? [definition] : []);
   if (segments[2] === "item-types")

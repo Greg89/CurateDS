@@ -574,3 +574,132 @@ test("insight failures recover while the collection shell remains available", as
     }),
   ).toBeVisible();
 });
+
+test("collection settings preserve drafts, save identity, and isolate collection context", async ({
+  page,
+  context,
+}, testInfo) => {
+  await signIn(context);
+  const id = "33333333-3333-4333-8333-333333333333";
+  const other = "44444444-4444-4444-8444-444444444444";
+  await page.goto(`/collections/${id}`);
+  await page.getByRole("link", { name: "Settings" }).click();
+  await expect(page.getByRole("link", { name: "Settings" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  const name = page.getByRole("textbox", { name: "Collection name" });
+  await expect(name).toHaveValue("The reading room");
+  await name.fill("  My reading nook  ");
+  await page.getByRole("textbox", { name: "Hobby or category" }).fill("Books");
+  await page
+    .getByRole("textbox", { name: "Description" })
+    .fill("Stories gathered over the years.");
+  await page.getByLabel("Collection colour").selectOption("clay");
+  const cover = page.getByRole("textbox", { name: "Cover image URL" });
+  await cover.fill("http://example.org/cover.jpg");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(
+    page.locator(".collection-settings").getByRole("alert"),
+  ).toContainText("HTTPS");
+  await expect(cover).toBeFocused();
+  await cover.fill("");
+  await page.route(`**/api/collections/${id}`, (route) =>
+    route.fulfill({ status: 502, json: {} }),
+  );
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(
+    page.locator(".collection-settings").getByRole("alert"),
+  ).toContainText("changes are still here");
+  await expect(name).toHaveValue("  My reading nook  ");
+  await page.unroute(`**/api/collections/${id}`);
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toHaveText(
+    "Collection settings saved.",
+  );
+  await expect(name).toHaveValue("My reading nook");
+  await expect(page.locator("#collection-switcher option:checked")).toHaveText(
+    "My reading nook",
+  );
+  const previewBounds = await page
+    .getByRole("complementary", { name: "Collection preview" })
+    .boundingBox();
+  const coverBounds = await page
+    .locator(".settings-preview .collection-cover")
+    .boundingBox();
+  expect(coverBounds!.x + coverBounds!.width).toBeLessThanOrEqual(
+    previewBounds!.x + previewBounds!.width,
+  );
+  await page.screenshot({
+    path: testInfo.outputPath("settings.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await name.fill("Unsaved replacement");
+  await page.getByRole("button", { name: "Discard changes" }).click();
+  await expect(name).toHaveValue("My reading nook");
+  await page.reload();
+  await expect(name).toHaveValue("My reading nook");
+  await page.getByRole("link", { name: "Back to overview" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "My reading nook",
+  );
+  await expect(page.locator('[data-color="clay"]')).toBeVisible();
+  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByLabel("Your collection", { exact: true }).selectOption(other);
+  await expect(page).toHaveURL(new RegExp(`/collections/${other}/settings$`));
+  await expect(name).toHaveValue("Sunday records");
+  await expect(page.getByRole("textbox", { name: "Description" })).toHaveValue(
+    "",
+  );
+  await page.getByLabel("Your collection", { exact: true }).selectOption(id);
+  await expect(name).toHaveValue("My reading nook");
+  await page.getByRole("textbox", { name: "Hobby or category" }).fill("");
+  await page.getByRole("textbox", { name: "Description" }).fill("");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toHaveText(
+    "Collection settings saved.",
+  );
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Description" })).toHaveValue(
+    "",
+  );
+});
+
+test("collection settings PUT requires session, origin, and valid identity", async ({
+  context,
+  request,
+}) => {
+  const path = "/api/collections/33333333-3333-4333-8333-333333333333";
+  const input = { name: "Changed name", color: "forest" };
+  expect(
+    (
+      await request.put(path, {
+        data: input,
+        headers: { Origin: "http://127.0.0.1:3101" },
+      })
+    ).status(),
+  ).toBe(401);
+  await signIn(context);
+  expect(
+    (
+      await context.request.put(path, {
+        data: input,
+        headers: { Origin: "https://other.invalid" },
+      })
+    ).status(),
+  ).toBe(403);
+  expect(
+    (
+      await context.request.put(path, {
+        data: { ...input, color: "invalid" },
+        headers: { Origin: "http://127.0.0.1:3101" },
+      })
+    ).status(),
+  ).toBe(400);
+  expect((await context.request.get("/api/collections")).status()).toBe(200);
+});

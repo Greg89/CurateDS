@@ -10,9 +10,14 @@ import {
   saveCollectionData,
   type Collection,
 } from "@/lib/collections";
+import {
+  CollectionIdentityFields,
+  emptyIdentity,
+} from "./collection-identity-fields";
 import { SaveError } from "./save-error";
 
 export function CollectionCreate() {
+  const [draft, setDraft] = useState(emptyIdentity);
   const router = useRouter();
   const client = useQueryClient();
   const [validation, setValidation] = useState("");
@@ -64,59 +69,7 @@ export function CollectionCreate() {
           }
         }}
       >
-        <label>
-          Collection name
-          <input
-            name="name"
-            required
-            minLength={3}
-            maxLength={100}
-            autoFocus
-            placeholder="The reading room"
-          />
-        </label>
-        <label>
-          Hobby or category <span>(optional)</span>
-          <input
-            name="category"
-            maxLength={100}
-            placeholder="Books, records, little discoveries…"
-          />
-        </label>
-        <label>
-          Description <span>(optional)</span>
-          <textarea
-            name="description"
-            maxLength={1000}
-            rows={3}
-            placeholder="What makes this collection yours?"
-          />
-        </label>
-        <details>
-          <summary>Add a cover and colour</summary>
-          <label>
-            Cover image URL <span>(optional)</span>
-            <input
-              name="coverImageUrl"
-              type="url"
-              maxLength={2048}
-              placeholder="https://…"
-              aria-describedby="cover-hint"
-            />
-          </label>
-          <p id="cover-hint" className="field-hint">
-            Use an HTTPS link to an image. Leave it blank for a simple
-            illustrated cover.
-          </p>
-          <label>
-            Collection colour
-            <select name="color" defaultValue="forest">
-              <option value="forest">Forest</option>
-              <option value="clay">Clay</option>
-              <option value="slate">Slate</option>
-            </select>
-          </label>
-        </details>
+        <CollectionIdentityFields value={draft} onChange={setDraft} />
         {validation && <p role="alert">{validation}</p>}
         {mutation.isError && <SaveError error={mutation.error} />}
         <button

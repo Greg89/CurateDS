@@ -2,6 +2,10 @@
 
 Status updated: 2026-10-03
 
+## V2 Collection Settings (2026-10-03)
+
+The first Slice 5 task adds persisted identity editing with preview, discard, and save-error recovery. The .NET solution passed 316 tests (one opt-in media test skipped); V2 passed 56 unit/component tests and its production build. All 28 desktop/mobile browser cases passed across the complete run and focused Settings reruns after scoping alert assertions and fixing the narrow-screen cover preview. API tests verify ownership, missing/deleted collections, validation without mutation, preservation of items/creation metadata, and clearing optional identity fields. No migration was needed. See [the Settings handoff](09-v2-collection-settings-handoff.md). Slice 5 remains in progress.
+
 ## V2 Insights (2026-10-03)
 
 Slice 4 is complete. The full .NET solution passed 308 tests (one opt-in media test skipped); all 26 infrastructure cases also passed against isolated PostgreSQL 17. V2 passed 56 unit/component tests, its production build, and all 24 desktop/mobile browser cases. Screenshots were reviewed. The legacy web build and 137 tests passed; one reports-page timing failure in the initial concurrent run passed in the full rerun. New checks cover exact typed-value drill-through, UTC date boundaries, owner isolation, bounded aggregation, deleted-item activity, and saved-view compatibility. No migration was needed. See [the Slice 4 handoff](08-v2-insights-handoff.md).

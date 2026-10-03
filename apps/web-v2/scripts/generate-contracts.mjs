@@ -27,6 +27,7 @@ if (source) {
   };
   for (const [pattern, methods] of [
     ["/collections", ["get", "post"]],
+    ["/collections/{collectionId}", ["put"]],
     ["/collections/{collectionId}/summary", ["get"]],
     ["/collections/{collectionId}/insights", ["get"]],
     ["/collections/{collectionId}/activity", ["get"]],

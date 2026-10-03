@@ -40,12 +40,23 @@ public sealed class Collection : AuditableEntity
             throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
 
-        var normalizedName = name?.Trim() ?? "";
+        var collection = new Collection(Guid.NewGuid(), ownerId.Trim(), name, createdUtc, createdBy);
+        collection.SetIdentity(name, category, description, coverImageUrl, color);
+        return collection;
+    }
 
+    public void UpdateIdentity(string name, string? category, string? description,
+        string? coverImageUrl, string? color, DateTime updatedUtc, string updatedBy)
+    {
+        SetIdentity(name, category, description, coverImageUrl, color);
+        SetUpdated(updatedUtc, updatedBy);
+    }
+
+    private void SetIdentity(string name, string? category, string? description, string? coverImageUrl, string? color)
+    {
+        var normalizedName = name?.Trim() ?? "";
         if (normalizedName.Length is < 3 or > 100)
-        {
             throw new ArgumentException("Collection name must be between 3 and 100 characters.", nameof(name));
-        }
 
         static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         category = Normalize(category);
@@ -56,9 +67,11 @@ public sealed class Collection : AuditableEntity
             !IsValidCoverImageUrl(coverImageUrl) || color is not (null or "forest" or "clay" or "slate"))
             throw new ArgumentException("Collection identity is invalid.");
 
-        return new Collection(Guid.NewGuid(), ownerId.Trim(), normalizedName, createdUtc, createdBy)
-        {
-            Category = category, Description = description, CoverImageUrl = coverImageUrl, Color = color
-        };
+        // Validate the whole identity before mutating any field.
+        Name = normalizedName;
+        Category = category;
+        Description = description;
+        CoverImageUrl = coverImageUrl;
+        Color = color;
     }
 }

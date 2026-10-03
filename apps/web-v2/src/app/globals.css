@@ -1401,3 +1401,59 @@ summary:focus-visible {
     gap: 10px;
   }
 }
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 3rem;
+  align-items: start;
+}
+.collection-settings fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 1.5rem;
+}
+.settings-preview {
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 1rem;
+  overflow-wrap: anywhere;
+}
+.settings-preview .collection-cover {
+  width: 100%;
+  height: auto;
+  margin: 1rem 0 1.5rem;
+  aspect-ratio: 4 / 3;
+}
+.settings-preview h2 {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  margin: 0.75rem 0;
+}
+.settings-preview p {
+  white-space: pre-wrap;
+}
+.settings-preview small {
+  display: block;
+  margin-top: 1.5rem;
+}
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+@media (max-width: 760px) {
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+}
+.collection-settings legend {
+  font-size: 1.15rem;
+  font-weight: 600;
+  padding: 0 0 1rem;
+}

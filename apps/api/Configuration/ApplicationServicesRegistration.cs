@@ -1,3 +1,4 @@
+using CurateDS.Application.Collections.UpdateCollection;
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
@@ -62,6 +63,8 @@ internal static class ApplicationServicesRegistration
         // Command/query services
         services.AddScoped<CreateAttributeDefinitionService>();
         services.AddScoped<CreateCollectionService>();
+        services.AddScoped<UpdateCollectionService>();
+        services.AddScoped<IValidator<UpdateCollectionCommand>, UpdateCollectionCommandValidator>();
         services.AddScoped<CreateItemService>();
         services.AddScoped<CreateLocationService>();
         services.AddScoped<CreateTagService>();

@@ -15,6 +15,7 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
   const { collectionId } = useParams<{ collectionId: string }>();
   const router = useRouter();
   const section = usePathname().split("/")[3];
+  const settings = section === "settings";
   const insights = section === "insights";
   const browsing = section === "browse" || section === "items";
   const query = useQuery({
@@ -48,7 +49,7 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
             value={collection.id}
             onChange={(event) =>
               router.push(
-                `/collections/${event.target.value}${insights ? "/insights" : browsing ? "/browse" : ""}`,
+                `/collections/${event.target.value}${settings ? "/settings" : insights ? "/insights" : browsing ? "/browse" : ""}`,
               )
             }
           >
@@ -63,8 +64,10 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
           </Link>
           <nav aria-label="Collection">
             <Link
-              className={`nav-link ${!browsing && !insights ? "active" : ""}`}
-              aria-current={!browsing && !insights ? "page" : undefined}
+              className={`nav-link ${!browsing && !insights && !settings ? "active" : ""}`}
+              aria-current={
+                !browsing && !insights && !settings ? "page" : undefined
+              }
               href={`/collections/${collection.id}`}
             >
               Overview <span aria-hidden="true">↗</span>
@@ -83,7 +86,14 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
             >
               Insights <span aria-hidden="true">↗</span>
             </Link>
-            {["Showcase", "Settings"].map((label) => (
+            <Link
+              className={`nav-link ${settings ? "active" : ""}`}
+              aria-current={settings ? "page" : undefined}
+              href={`/collections/${collection.id}/settings`}
+            >
+              Settings <span aria-hidden="true">↗</span>
+            </Link>
+            {["Showcase"].map((label) => (
               <span className="nav-link forthcoming" key={label}>
                 {label}
                 <small>Soon</small>
