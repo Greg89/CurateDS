@@ -156,7 +156,7 @@ Exit criteria:
 
 Goal: let a hobbyist show what their collection is.
 
-Status (2026-10-03): In progress. The first private showcase preview is implemented with a gallery layout, saved identity/vocabulary, ordered highlights, optional summary/recent sections, and collection switching. It reuses the authenticated collection model and existing overview preferences; production build, unit/component, and desktop/mobile browser checks passed. See [private showcase handoff](refactor/12-v2-showcase-preview-handoff.md) for validation and remaining work. Next: persisted showcase template selection and selected report sections; public sharing and social previews remain later work in this slice.
+Status (2026-10-03): In progress. Private showcase now supports saved Gallery/Journal layouts, identity/vocabulary, ordered highlights, optional summary/recent sections, and selected twelve-month additions and item-type reports. Layout/report settings persist independently of overview choices; data remains owner-scoped and comes from the existing catalog and Insights API. API, PostgreSQL migration, production build, unit/component, and desktop/mobile checks passed. See [private preview](refactor/12-v2-showcase-preview-handoff.md) and [layouts and reports](refactor/13-v2-showcase-layouts-handoff.md) handoffs. Next: settle the shareable-route and social-preview contract, including publishing, media access, and cache invalidation.
 
 Deliverables:
 

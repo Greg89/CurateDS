@@ -62,6 +62,7 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<IValidator<UpdateAttributeDefinitionCommand>, UpdateAttributeDefinitionCommandValidator>();
 
         services.AddScoped<CollectionPresentationService>();
+        services.AddScoped<CurateDS.Application.Collections.ShowcaseSettings.ShowcaseSettingsService>();
         services.AddScoped<UpdateCollectionVocabularyService>();
         services.AddScoped<IValidator<UpdateCollectionPresentationCommand>, UpdateCollectionPresentationValidator>();
         services.AddScoped<CurateDS.Application.Abstractions.Persistence.ICollectionPresentationRepository,

@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CollectionProvider } from "@/components/collection-context";
 import { CollectionShowcase } from "@/components/collection-showcase";
+import { showcaseKey } from "@/lib/showcase";
 import { overviewKey, type Collection } from "@/lib/collections";
 
 const collection: Collection = {
@@ -41,6 +42,12 @@ function overview() {
 function preview(data?: ReturnType<typeof overview>) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+  });
+  client.setQueryData(showcaseKey(collection.id), {
+    collectionId: collection.id,
+    layout: "gallery",
+    showGrowth: false,
+    showTypes: false,
   });
   if (data) client.setQueryData(overviewKey(collection.id), data);
   render(

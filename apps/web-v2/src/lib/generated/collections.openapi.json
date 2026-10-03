@@ -202,6 +202,74 @@
         }
       }
     },
+    "/collections/{collectionId}/showcase-settings": {
+      "get": {
+        "tags": [
+          "CurateDS.Api"
+        ],
+        "parameters": [
+          {
+            "name": "collectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShowcaseSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "CurateDS.Api"
+        ],
+        "parameters": [
+          {
+            "name": "collectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateShowcaseSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShowcaseSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/collections/{collectionId}/summary": {
       "get": {
         "tags": [
@@ -1395,6 +1463,49 @@
               "type": "string",
               "format": "uuid"
             }
+          }
+        }
+      },
+      "ShowcaseSettingsDto": {
+        "required": [
+          "collectionId",
+          "layout",
+          "showGrowth",
+          "showTypes"
+        ],
+        "type": "object",
+        "properties": {
+          "collectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "layout": {
+            "type": "string"
+          },
+          "showGrowth": {
+            "type": "boolean"
+          },
+          "showTypes": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateShowcaseSettingsRequest": {
+        "required": [
+          "layout",
+          "showGrowth",
+          "showTypes"
+        ],
+        "type": "object",
+        "properties": {
+          "layout": {
+            "type": "string"
+          },
+          "showGrowth": {
+            "type": "boolean"
+          },
+          "showTypes": {
+            "type": "boolean"
           }
         }
       },

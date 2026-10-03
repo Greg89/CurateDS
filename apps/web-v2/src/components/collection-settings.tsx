@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { VocabularySettings } from "./vocabulary-settings";
 import { FieldSettings } from "./field-settings";
+import { ShowcaseSettings } from "./showcase-settings";
 import { OverviewSettings } from "./overview-settings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
@@ -183,6 +184,7 @@ export function CollectionSettings() {
       </div>
       <VocabularySettings />
       <OverviewSettings collectionId={collection.id} />
+      <ShowcaseSettings />
       <FieldSettings />
     </section>
   );

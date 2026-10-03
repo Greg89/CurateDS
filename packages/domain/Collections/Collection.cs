@@ -29,6 +29,23 @@ public sealed class Collection : AuditableEntity
     public string ItemLabel { get; private set; } = "item";
     public string ItemsLabel { get; private set; } = "items";
 
+    public string ShowcaseLayout { get; private set; } = "gallery";
+    public bool ShowcaseShowGrowth { get; private set; }
+    public bool ShowcaseShowTypes { get; private set; }
+
+    public static bool IsValidShowcaseLayout(string? layout) => layout is "gallery" or "journal";
+
+    public void UpdateShowcaseSettings(string layout, bool showGrowth, bool showTypes,
+        DateTime updatedUtc, string updatedBy)
+    {
+        if (!IsValidShowcaseLayout(layout))
+            throw new ArgumentException("Choose Gallery or Journal.", nameof(layout));
+        ShowcaseLayout = layout;
+        ShowcaseShowGrowth = showGrowth;
+        ShowcaseShowTypes = showTypes;
+        SetUpdated(updatedUtc, updatedBy);
+    }
+
     public static bool IsValidItemLabel(string? value) =>
         !string.IsNullOrWhiteSpace(value) && value.Trim().Length <= 40 && !value.Any(char.IsControl);
 

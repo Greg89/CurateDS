@@ -123,7 +123,7 @@ test("showcase follows saved visibility, keeps hidden pins in recent finds, and 
   await signIn(context);
   await page.goto(path);
   await page.getByRole("link", { name: "Customize presentation" }).click();
-  await expect(page).toHaveURL(`${base}/settings#overview`);
+  await expect(page).toHaveURL(`${base}/settings#showcase`);
   const editor = page.locator("#overview");
   await editor.getByLabel("Cover and story").uncheck();
   await editor.getByLabel("Summary counts").uncheck();
@@ -267,4 +267,209 @@ test("showcase stays behind sign-in and handles unknown collections without usin
     page.getByText("Collection not found", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("The quiet library")).toHaveCount(0);
+});
+
+test("saved layouts and optional reports survive reload and stay collection scoped", async ({
+  context,
+  page,
+}, testInfo) => {
+  await signIn(context);
+  let insightsReads = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/insights")) insightsReads++;
+  });
+  await page.goto(path);
+  await expect(page.locator(".showcase")).toHaveAttribute(
+    "data-layout",
+    "gallery",
+  );
+  await expect(
+    page.getByRole("region", { name: "Collection reports", exact: true }),
+  ).toHaveCount(0);
+  expect(insightsReads).toBe(0);
+  await page.getByRole("link", { name: "Customize presentation" }).click();
+  const settings = page.getByRole("region", { name: "Showcase settings" });
+  await settings.getByRole("radio", { name: /Journal/ }).check();
+  await settings
+    .getByRole("checkbox", { name: "Additions over twelve months" })
+    .check();
+  await settings
+    .getByRole("checkbox", { name: "Collection by item type" })
+    .check();
+  await page.route(`**/api/collections/${id}/showcase-settings`, (route) =>
+    route.request().method() === "PUT"
+      ? route.fulfill({ status: 502, body: "{}" })
+      : route.continue(),
+  );
+  await settings.getByRole("button", { name: "Save showcase" }).click();
+  await expect(settings.getByRole("alert")).toContainText(
+    "Your choices are still here",
+  );
+  await expect(settings.getByRole("radio", { name: /Journal/ })).toBeChecked();
+  await page.unroute(`**/api/collections/${id}/showcase-settings`);
+  await settings.getByRole("button", { name: "Save showcase" }).click();
+  await expect(settings.getByRole("status")).toHaveText("Showcase saved.");
+  await settings.screenshot({
+    path: testInfo.outputPath("showcase-settings.png"),
+  });
+  await settings
+    .getByRole("link", { name: "Open saved showcase preview" })
+    .click();
+  await expect(page).toHaveURL(path);
+  await page.reload();
+  await expect(page.locator(".showcase")).toHaveAttribute(
+    "data-layout",
+    "journal",
+  );
+  const growth = page.getByRole("region", {
+    name: "Additions over twelve months",
+  });
+  await expect(growth.getByRole("link")).toHaveCount(12);
+  const types = page.getByRole("region", { name: "Collection by item type" });
+  await expect(types.getByRole("link")).toContainText("Book");
+  await growth.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("showcase-reports.png") });
+  const highlights = page.getByRole("region", { name: "Selected with care." });
+  await highlights.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("showcase-journal.png") });
+  await types.getByRole("link").click();
+  await expect(page).toHaveURL(/itemTypeId=/);
+  await page.goto(path);
+  await page.getByLabel("Your collection").selectOption(other);
+  await expect(page.locator(".showcase")).toHaveAttribute(
+    "data-layout",
+    "gallery",
+  );
+  await expect(
+    page.getByRole("region", { name: "Collection reports", exact: true }),
+  ).toHaveCount(0);
+  await page.goto(`${base}/settings#showcase`);
+  await settings.getByRole("radio", { name: /Gallery/ }).check();
+  await settings
+    .getByRole("checkbox", { name: "Additions over twelve months" })
+    .uncheck();
+  await settings
+    .getByRole("checkbox", { name: "Collection by item type" })
+    .uncheck();
+  await settings.getByRole("button", { name: "Save showcase" }).click();
+  await expect(settings.getByRole("status")).toHaveText("Showcase saved.");
+  await settings
+    .getByRole("link", { name: "Open saved showcase preview" })
+    .click();
+  await expect(page.locator(".showcase")).toHaveAttribute(
+    "data-layout",
+    "gallery",
+  );
+  await expect(
+    page.getByRole("region", { name: "Collection reports", exact: true }),
+  ).toHaveCount(0);
+});
+
+test("showcase settings fail closed while report failures leave the gallery usable", async ({
+  context,
+  page,
+}) => {
+  await signIn(context);
+  const settingsPath = `**/api/collections/${id}/showcase-settings`;
+  await page.route(settingsPath, (route) =>
+    route.fulfill({
+      json: {
+        collectionId: other,
+        layout: "journal",
+        showGrowth: true,
+        showTypes: true,
+      },
+    }),
+  );
+  await page.goto(path);
+  await expect(page.locator(".showcase").getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(0);
+  await page.unroute(settingsPath);
+  await page.route(settingsPath, (route) =>
+    route.fulfill({
+      json: {
+        collectionId: id,
+        layout: "journal",
+        showGrowth: true,
+        showTypes: true,
+      },
+    }),
+  );
+  const reportPath = `**/api/collections/${id}/insights`;
+  await page.route(reportPath, (route) =>
+    route.fulfill({ status: 502, body: "{}" }),
+  );
+  await page.reload();
+  const reports = page.getByRole("region", {
+    name: "Collection reports",
+    exact: true,
+  });
+  await expect(reports.getByRole("alert")).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Selected with care." }),
+  ).toBeVisible();
+  await page.unroute(reportPath);
+  await reports.getByRole("button", { name: "Try again" }).click();
+  await expect(
+    reports
+      .getByRole("region", { name: "Additions over twelve months" })
+      .getByRole("link"),
+  ).toHaveCount(12);
+  await page.route(reportPath, async (route) => {
+    const response = await route.fetch();
+    const data = await response.json();
+    await route.fulfill({ json: { ...data, collectionId: other } });
+  });
+  await page.reload();
+  await expect(reports.getByRole("alert")).toBeVisible();
+  await expect(
+    reports.getByRole("region", { name: "Additions over twelve months" }),
+  ).toHaveCount(0);
+  await page.unroute(reportPath);
+  await page.route(reportPath, (route) =>
+    route.fulfill({ status: 401, body: "{}" }),
+  );
+  await page.reload();
+  await expect(
+    reports.getByRole("link", { name: "Sign in again" }),
+  ).toBeVisible();
+});
+
+test("showcase settings enforce session, same-origin writes, and complete input", async ({
+  context,
+  request,
+}) => {
+  const endpoint = `/api/collections/${id}/showcase-settings`;
+  const headers = { Origin: "http://127.0.0.1:3101" };
+  const data = { layout: "journal", showGrowth: true, showTypes: false };
+  expect((await request.get(endpoint)).status()).toBe(401);
+  expect((await request.put(endpoint, { data, headers })).status()).toBe(401);
+  await signIn(context);
+  expect(
+    (
+      await context.request.put(endpoint, {
+        data,
+        headers: { Origin: "https://other.invalid" },
+      })
+    ).status(),
+  ).toBe(403);
+  for (const invalid of [
+    { ...data, layout: "unknown" },
+    { layout: "journal", showGrowth: true },
+    { ...data, showTypes: "false" },
+  ]) {
+    expect(
+      (
+        await context.request.put(endpoint, { data: invalid, headers })
+      ).status(),
+    ).toBe(400);
+  }
+  const response = await context.request.get(endpoint);
+  expect(response.headers()["cache-control"]).toContain("no-store");
+  expect(await response.json()).toEqual({
+    collectionId: id,
+    layout: "gallery",
+    showGrowth: false,
+    showTypes: false,
+  });
 });

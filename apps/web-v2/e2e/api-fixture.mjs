@@ -16,6 +16,7 @@ let collections = structuredClone(initialCollections);
 let items = [];
 let savedViews = [];
 let presentations = {};
+let showcaseSettings = {};
 const tag = {
   id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   name: "Favourites",
@@ -105,6 +106,7 @@ createServer(async (request, response) => {
       : [];
     savedViews = [];
     presentations = {};
+    showcaseSettings = {};
     definitions = [structuredClone(definition)];
     if (scenario === "showcase") {
       Object.assign(collections[0], {
@@ -336,6 +338,21 @@ createServer(async (request, response) => {
   if (segments[2] === "item-types")
     return send(collectionId === type.collectionId ? [type] : []);
   const ownItems = items.filter((item) => item.collectionId === collectionId);
+  if (segments[2] === "showcase-settings") {
+    if (request.method === "PUT") {
+      let body = "";
+      for await (const chunk of request) body += chunk;
+      showcaseSettings[collectionId] = JSON.parse(body);
+    }
+    return send({
+      collectionId,
+      ...(showcaseSettings[collectionId] || {
+        layout: "gallery",
+        showGrowth: false,
+        showTypes: false,
+      }),
+    });
+  }
   if (segments[2] === "presentation") {
     if (request.method === "PUT") {
       let body = "";

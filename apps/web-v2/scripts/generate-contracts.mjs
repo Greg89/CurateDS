@@ -30,6 +30,7 @@ if (source) {
     ["/collections/{collectionId}", ["put"]],
     ["/collections/{collectionId}/vocabulary", ["put"]],
     ["/collections/{collectionId}/presentation", ["get", "put"]],
+    ["/collections/{collectionId}/showcase-settings", ["get", "put"]],
     ["/collections/{collectionId}/summary", ["get"]],
     ["/collections/{collectionId}/insights", ["get"]],
     ["/collections/{collectionId}/activity", ["get"]],

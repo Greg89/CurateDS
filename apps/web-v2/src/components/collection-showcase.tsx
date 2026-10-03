@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { fetchShowcaseSettings, showcaseKey } from "@/lib/showcase";
+import { ShowcaseReports } from "./showcase-reports";
 import { useQuery } from "@tanstack/react-query";
 import { useCollection } from "./collection-context";
 import { CollectionCover } from "./collection-cover";
@@ -69,6 +71,11 @@ export function CollectionShowcase() {
     queryKey: overviewKey(collection.id),
     queryFn: ({ signal }) => fetchOverview(collection.id, signal),
   });
+  const settings = useQuery({
+    queryKey: showcaseKey(collection.id),
+    queryFn: ({ signal }) => fetchShowcaseSettings(collection.id, signal),
+  });
+  const error = query.error || settings.error;
   const data = query.data;
   const pins = data?.presentation.showPinnedItems
     ? data.presentation.pinnedItems
@@ -83,7 +90,11 @@ export function CollectionShowcase() {
     timeZone: "UTC",
   });
   return (
-    <div className="showcase" data-color={collection.color || "forest"}>
+    <div
+      className="showcase"
+      data-color={collection.color || "forest"}
+      data-layout={settings.data?.layout}
+    >
       <div
         className="showcase-preview-note"
         role="note"
@@ -91,32 +102,37 @@ export function CollectionShowcase() {
       >
         <strong>Private preview</strong>
         <span>
-          Only you can open this view. Your saved overview choices shape this
+          Only you can open this view. Your saved settings shape this
           presentation.
         </span>
       </div>
-      {query.isPending ? (
+      {query.isPending || settings.isPending ? (
         <section className="workspace-note" role="status">
           <h1>{collection.name}</h1>
           <p>Preparing your showcase…</p>
         </section>
-      ) : query.isError ? (
+      ) : error ? (
         <section className="workspace-note" role="alert">
           <h1>{collection.name}</h1>
           <h2>Your showcase is out of reach.</h2>
           <p>We couldn't load this collection's presentation.</p>
-          {query.error instanceof CollectionsError &&
-          query.error.status === 401 ? (
+          {error instanceof CollectionsError && error.status === 401 ? (
             <a className="button" href="/auth/login?returnTo=%2Fcollections">
               Sign in again
             </a>
-          ) : query.error instanceof CollectionsError &&
-            [403, 404].includes(query.error.status) ? (
+          ) : error instanceof CollectionsError &&
+            [403, 404].includes(error.status) ? (
             <Link className="button" href="/collections">
               Back to collections
             </Link>
           ) : (
-            <button className="button" onClick={() => void query.refetch()}>
+            <button
+              className="button"
+              onClick={() => {
+                void query.refetch();
+                void settings.refetch();
+              }}
+            >
               Try again
             </button>
           )}
@@ -212,6 +228,10 @@ export function CollectionShowcase() {
                 </aside>
               )
             )}
+            {settings.data &&
+              (settings.data.showGrowth || settings.data.showTypes) && (
+                <ShowcaseReports settings={settings.data} />
+              )}
             <footer className="showcase-footer">
               <p>Collected with care. Kept for the story.</p>
               <Link href={`/collections/${collection.id}/browse`}>

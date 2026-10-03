@@ -73,7 +73,7 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
           {showcase ? (
             <Link
               className="text-button"
-              href={`/collections/${collection.id}/settings#overview`}
+              href={`/collections/${collection.id}/settings#showcase`}
             >
               Customize presentation
             </Link>
