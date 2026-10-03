@@ -2,6 +2,10 @@
 
 Status updated: 2026-10-02
 
+## V2 Browse And Curate (2026-10-02)
+
+Slice 3 is complete. All 300 existing .NET tests passed, plus the new opt-in real-storage API acceptance test. V2 passed 44 unit/component tests and its production build. All 20 desktop/mobile browser cases passed across the complete run and focused browse rerun; the latter fixed asynchronous filter loading and test selectors. Screenshots were reviewed. Optional local media storage was built, started, and verified through real upload/read/primary/edit/delete operations with isolated test data. See [the Slice 3 handoff](07-v2-browse-curate-handoff.md).
+
 ## V2 Collection Creation And Overview (2026-10-02)
 
 Slice 2 is implemented. The full .NET solution passed 300 tests; the disposable PostgreSQL run passed all 19 infrastructure tests with the new additive identity migration. V2 passed 25 unit/component tests and its production build. The 14 existing browser cases passed, followed by both new desktop/mobile creation cases after correcting a test selector. New coverage checks save-error recovery, collection identity persistence, first-item creation, reload, owner isolation, and complete workspace switching. Screenshots were reviewed for desktop/mobile layout and overflow. Existing web build and all 136 tests passed. The local Docker API was rebuilt/restarted, and its health endpoint returned 200. See [the Slice 2 handoff](06-v2-collection-overview-handoff.md) for scope and next steps.

@@ -151,7 +151,7 @@ test("signed-in collection shell, switching, and browser history", async ({
     "The reading room",
   );
   await page
-    .getByLabel("Your collection")
+    .getByRole("combobox", { name: "Your collection", exact: true })
     .selectOption("44444444-4444-4444-8444-444444444444");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Sunday records",
@@ -254,13 +254,14 @@ test("create a personal collection, recover a failed save, and keep item context
   await expect(
     page.getByText("Stories worth keeping.", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Add your first item" }).click();
+  await page.getByRole("link", { name: "Add your first item" }).click();
   await page.getByLabel("Item name").fill("A first edition");
   await page.getByLabel("A few words").fill("Found on a rainy Sunday.");
   await page.getByRole("button", { name: "Save item" }).click();
   await expect(
     page.getByRole("heading", { name: "A first edition" }),
   ).toBeVisible();
+  await page.getByRole("link", { name: /Overview/ }).click();
   await expect(
     page.getByLabel("Collection summary").locator("dd").first(),
   ).toHaveText("1");
@@ -285,6 +286,7 @@ test("create a personal collection, recover a failed save, and keep item context
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Sunday records",
   );
+  await page.getByRole("link", { name: /Overview/ }).click();
   await expect(
     page.getByLabel("Collection summary").locator("dd").first(),
   ).toHaveText("0");
@@ -292,12 +294,166 @@ test("create a personal collection, recover a failed save, and keep item context
     0,
   );
   await page
-    .getByLabel("Your collection")
+    .getByRole("combobox", { name: "Your collection", exact: true })
     .selectOption(firstUrl.split("/").pop()!);
   await expect(
     page.getByRole("heading", { name: "A first edition" }),
   ).toBeVisible();
+  await page.getByRole("link", { name: /Overview/ }).click();
   await expect(
     page.getByLabel("Collection summary").locator("dd").first(),
   ).toHaveText("1");
+});
+
+test("browse filters, pagination, presentation, history, and collection isolation", async ({
+  page,
+  context,
+  request,
+}, testInfo) => {
+  await request.post("http://127.0.0.1:3102/scenario/browse");
+  await signIn(context);
+  const base = "/collections/33333333-3333-4333-8333-333333333333/browse";
+  await page.goto(base + "?sortBy=name&sortDirection=asc");
+  await expect(page.getByText("14 items", { exact: true })).toBeVisible();
+  await expect(page.locator(".browse-items > li")).toHaveCount(12);
+  await page.getByRole("link", { name: "Next →" }).click();
+  await expect(page.locator(".browse-items > li")).toHaveCount(2);
+  await page.getByRole("button", { name: "List", exact: true }).click();
+  await expect(page.locator(".browse-items")).toHaveClass(/list/);
+  await page.getByLabel("Search your collection").fill("book 14");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page.locator(".browse-items > li")).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", { name: "Shelf book 14" }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(page.getByLabel("Search your collection")).toHaveValue("");
+  await expect(page.locator(".browse-items > li")).toHaveCount(2);
+  await page.getByRole("link", { name: "Reset", exact: true }).click();
+  await page.getByText("Filters and sorting", { exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Location", exact: true })
+    .selectOption("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+  await page.getByLabel("Favourites", { exact: true }).check();
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page.getByText("7 items", { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByText("Filters and sorting", { exact: true }).click();
+  await expect(
+    page.getByRole("combobox", { name: "Location", exact: true }),
+  ).toHaveValue("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+  await page.screenshot({
+    path: testInfo.outputPath("browse.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page
+    .getByRole("combobox", { name: "Your collection", exact: true })
+    .selectOption("44444444-4444-4444-8444-444444444444");
+  await expect(page).toHaveURL(/444444444444[/]browse$/);
+  await expect(
+    page.getByRole("heading", { name: "No items in this view." }),
+  ).toBeVisible();
+  await expect(page.locator(".browse-items")).toHaveCount(0);
+});
+
+test("create and edit required fields, recover a draft, manage media, and delete an item", async ({
+  page,
+  context,
+}, testInfo) => {
+  await signIn(context);
+  await page.goto(
+    "/collections/33333333-3333-4333-8333-333333333333/items/new",
+  );
+  await page.getByLabel("Item name").fill("The garden journal");
+  await page
+    .getByRole("combobox", { name: "Item type", exact: true })
+    .selectOption("cccccccc-cccc-4ccc-8ccc-cccccccccccc");
+  await page.getByRole("button", { name: "Save item" }).click();
+  await expect(page.getByLabel("Edition (required)")).toBeFocused();
+  await page.getByLabel("Edition (required)").fill("First printing");
+  await page
+    .getByRole("combobox", { name: "Location", exact: true })
+    .selectOption("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+  await page.getByLabel("Favourites", { exact: true }).check();
+  await page.route("**/api/collections/*/items", (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({ status: 503, body: "{}" })
+      : route.continue(),
+  );
+  await page.getByRole("button", { name: "Save item" }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText(
+    "couldn't confirm",
+  );
+  await expect(page.getByLabel("Edition (required)")).toHaveValue(
+    "First printing",
+  );
+  await page.unroute("**/api/collections/*/items");
+  await page.getByRole("button", { name: "Save item" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "The garden journal",
+  );
+  const detailUrl = page.url();
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=",
+    "base64",
+  );
+  for (const name of ["front.png", "back.png"]) {
+    await page
+      .getByLabel("Choose an image")
+      .setInputFiles({ name, mimeType: "image/png", buffer: png });
+    await page.getByRole("button", { name: "Upload image" }).click();
+    await expect(page.getByRole("status")).toHaveText("Image added.");
+    await expect(page.getByLabel("Choose an image")).toBeFocused();
+  }
+  await page.getByRole("button", { name: "Make primary" }).click();
+  await expect(
+    page.locator(".media-grid li").filter({ hasText: "back.png" }),
+  ).toContainText("Primary image");
+  await page.getByRole("link", { name: "Edit item" }).click();
+  await expect(page.getByLabel("Edition (required)")).toHaveValue(
+    "First printing",
+  );
+  await page.getByLabel("Quantity", { exact: true }).fill("3");
+  await page.getByRole("button", { name: "Save item" }).click();
+  await expect(page.locator(".media-grid li")).toHaveCount(2);
+  await expect(page.locator(".item-facts")).toContainText("3");
+  await page.screenshot({
+    path: testInfo.outputPath("item-detail.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page
+    .getByRole("button", { name: "Remove front.png", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Remove permanently" }).click();
+  await expect(page.locator(".media-grid li")).toHaveCount(1);
+  await page.goto(
+    detailUrl.replace(
+      "33333333-3333-4333-8333-333333333333",
+      "44444444-4444-4444-8444-444444444444",
+    ),
+  );
+  await expect(
+    page.getByRole("heading", { name: "This item is no longer here." }),
+  ).toBeVisible();
+  await page.goto(detailUrl);
+  await page.getByRole("button", { name: "Delete item", exact: true }).click();
+  await page.getByRole("button", { name: "Keep item" }).click();
+  await expect(
+    page.getByRole("button", { name: "Delete item", exact: true }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "Delete item", exact: true }).click();
+  await page.getByRole("button", { name: "Delete permanently" }).click();
+  await expect(
+    page.getByRole("heading", { name: "No items in this view." }),
+  ).toBeVisible();
 });

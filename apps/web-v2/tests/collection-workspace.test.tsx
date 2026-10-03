@@ -11,6 +11,7 @@ import { collectionQueryKey } from "@/lib/collections";
 
 const navigation = vi.hoisted(() => ({ collectionId: "", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
+  usePathname: () => `/collections/${navigation.collectionId}`,
   useParams: () => ({ collectionId: navigation.collectionId }),
   useRouter: () => ({ push: navigation.push }),
 }));

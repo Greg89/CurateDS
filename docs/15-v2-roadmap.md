@@ -71,7 +71,7 @@ Exit criteria:
 
 Goal: make the first collection feel real immediately after creation.
 
-Status (2026-10-02): Implemented and validated in `apps/web-v2` with persistent optional identity fields in the .NET API. Creation, live overview data, collection switching, and basic first-item entry are available. Covers use HTTPS image links; full item/custom-field editing and media upload remain later work. See [Slice 2 handoff](refactor/06-v2-collection-overview-handoff.md). Slice 3 has not started.
+Status (2026-10-02): Implemented and validated in `apps/web-v2` with persistent optional identity fields in the .NET API. Creation, live overview data, collection switching, and basic first-item entry are available. Covers use HTTPS image links; full item/custom-field editing and media upload remain later work. See [Slice 2 handoff](refactor/06-v2-collection-overview-handoff.md). Slice 3 completion is recorded below.
 
 Deliverables:
 
@@ -93,6 +93,8 @@ Exit criteria:
 ## Slice 3: Browse And Curate
 
 Goal: make repeated collection management efficient and visually grounded.
+
+Status (2026-10-02): Complete in `apps/web-v2`. Browse/search/filter/sort/pagination, full item editing with custom fields, detail views, and image management are implemented. Desktop/mobile checks and an isolated real-storage API acceptance test passed. Local development storage is configured and running. See [Slice 3 handoff](refactor/07-v2-browse-curate-handoff.md). Next scope: Slice 4.
 
 Deliverables:
 

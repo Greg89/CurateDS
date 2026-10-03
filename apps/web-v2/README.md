@@ -22,15 +22,15 @@ Open http://localhost:3001. Without Auth0 configuration the public page displays
 
 Use an Auth0 **Regular Web Application**, not the current Vite SPA application. Set these server-only values in `apps/web-v2/.env.local`:
 
-| Variable | Purpose |
-| --- | --- |
-| `APP_BASE_URL` | `http://localhost:3001` locally; exact HTTPS origin when deployed |
-| `AUTH0_DOMAIN` | Your Auth0 tenant domain |
-| `AUTH0_CLIENT_ID` | Regular Web Application client ID |
-| `AUTH0_CLIENT_SECRET` | Its client secret |
-| `AUTH0_SECRET` | A random 32-byte hexadecimal cookie-encryption secret |
-| `AUTH0_AUDIENCE` | The same API identifier configured as the .NET API audience |
-| `API_BASE_URL` | .NET API origin, e.g. `http://localhost:8080`; server-side only |
+| Variable              | Purpose                                                           |
+| --------------------- | ----------------------------------------------------------------- |
+| `APP_BASE_URL`        | `http://localhost:3001` locally; exact HTTPS origin when deployed |
+| `AUTH0_DOMAIN`        | Your Auth0 tenant domain                                          |
+| `AUTH0_CLIENT_ID`     | Regular Web Application client ID                                 |
+| `AUTH0_CLIENT_SECRET` | Its client secret                                                 |
+| `AUTH0_SECRET`        | A random 32-byte hexadecimal cookie-encryption secret             |
+| `AUTH0_AUDIENCE`      | The same API identifier configured as the .NET API audience       |
+| `API_BASE_URL`        | .NET API origin, e.g. `http://localhost:8080`; server-side only   |
 
 Generate the cookie secret locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Do not commit it.
 
@@ -61,18 +61,22 @@ To trigger renewal immediately, the checker uses the local cookie secret and SDK
 - `/`: public welcome page and sign-in.
 - `/collections`: account-owned collection list, including loading, retry, and empty states.
 - `/collections/new`: collection creation with progressive identity options and recoverable save errors.
-- `/collections/[collectionId]`: collection identity, live summary cards, six most recent items, and a basic add-item form. The URL selects context; the provider does not persist a competing active collection.
+- `/collections/[collectionId]`: collection identity, live summary cards, six most recent items, and links into the full item editor. The URL selects context; the provider does not persist a competing active collection.
+- `/collections/[collectionId]/browse`: URL-driven search, filters, sorting, pagination, and grid/list views.
+- `/collections/[collectionId]/items/new`, `/items/[itemId]`, and `/items/[itemId]/edit`: full creation, detail, editing, and image management within the collection.
 - `/api/collections`: authenticated collection list and creation boundary.
 - `/api/collections/[collectionId]/summary`: authenticated overview counts.
-- `/api/collections/[collectionId]/items`: six recent items (GET) and basic item creation (POST).
+- `/api/collections/[collectionId]/items`: recent items or validated browse queries (GET), and full item creation (POST). Item detail/update/delete and media operations use explicitly allowlisted nested routes; option routes provide types, definitions, tags, and locations.
 
 The web route forwards the bearer token only to the configured API, refuses upstream redirects, validates JSON with Zod, and returns private/no-store responses. Writes require an Origin matching `APP_BASE_URL`, a server session, and validated input; user-supplied ownership fields are discarded. Raw API errors and tokens never appear in its response. The .NET API remains authoritative for collection ownership and domain rules. TanStack Query handles browser server state; it is scoped to the protected app's provider, and sign-out uses a full document navigation.
 
-Apply the additive `AddCollectionIdentity` migration by starting the updated API before using the new form. Existing collections retain their names/data and use the default identity until customized in a later slice. Covers currently use external HTTPS image links with an illustrated fallback; file uploads are not part of this slice. The basic item form accepts name, description, and quantity. Collections with required custom fields still need the existing web's full item editor; API validation remains authoritative.
+Apply the additive `AddCollectionIdentity` migration by starting the updated API before using the new form. Existing collections retain their names/data and use the default identity until customized in a later slice. Collection covers use external HTTPS links. The item editor handles global/type-specific required fields, tags, locations, quantity, and descriptions. Images are uploaded from the detail page: JPG/PNG/WebP/GIF, 20 MiB maximum. The session boundary bounds streamed request bytes, including when Content-Length is missing, and forwards only one validated file. Upload, primary selection, removal, and item deletion invalidate collection-scoped queries. API validation remains authoritative.
+
+For local uploads, start the optional [development storage override](../../tools/local-storage/README.md). It keeps files in Docker on this computer. Remote deployments still require their own Storage settings; no remote bucket or privacy policy was changed.
 
 ## API contract generation
 
-The checked-in contract snapshot contains collection listing/creation, summary counts, and item listing/creation with their referenced schemas. It was extracted from the running .NET OpenAPI document, not authored as a parallel schema. These endpoints explicitly advertise their response types.
+The checked-in contract snapshot contains collection/summary, item CRUD, option-listing, and media operations with their referenced schemas. It was extracted from the running .NET OpenAPI document, not authored as a parallel schema. These endpoints explicitly advertise their response types.
 
 Regenerate from a running API in Development:
 
@@ -101,7 +105,7 @@ Browser tests start isolated servers on loopback ports 3101 and 3102 and exercis
 
 The Playwright server command preloads `e2e/auth-transport.mjs` to route only the reserved `https://test.invalid` issuer to the local fixture. The production SDK and collection route execute normally; the fixture supplies discovery and token responses. This preload is not used by normal development, start, or Docker commands. These checks do not prove the live tenant's refresh grants or logout URL configuration.
 
-The browser suite also covers first-run creation, preservation of a draft after a failed save, first-item creation, reload persistence, and collection-specific counts/recent items after switching. The existing web build/tests remain part of root `npm run verify`; the V2 build and unit tests are also included. CI additionally runs the focused browser suite.
+The browser suite also covers URL filter restoration, sorting/pagination, grid/list switching, required custom fields, item editing, image upload/primary/removal, item deletion, collection isolation, and first-run creation, preservation of a draft after a failed save, first-item creation, reload persistence, and collection-specific counts/recent items after switching. The existing web build/tests remain part of root `npm run verify`; the V2 build and unit tests are also included. CI additionally runs the focused browser suite.
 
 ## Deployment preparation
 

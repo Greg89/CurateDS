@@ -1,0 +1,41 @@
+# Opt-in development storage. Run together with compose.yaml; never deploy this override.
+services:
+  catalog-storage:
+    build:
+      context: tools/local-storage
+    environment:
+      MINIO_ROOT_USER: curateds-local
+      MINIO_ROOT_PASSWORD: curateds-local-development-only
+      MINIO_BROWSER: "off"
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - curateds-local-media:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "--spider",
+          "http://127.0.0.1:9000/minio/health/live",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  catalog-api:
+    environment:
+      Storage__Endpoint: http://catalog-storage:9000
+      Storage__AccessKey: curateds-local
+      Storage__SecretKey: curateds-local-development-only
+      Storage__BucketName: curateds-local-media
+      Storage__PublicBaseUrl: http://localhost:9000
+      Storage__EnablePublicReadPolicy: "true"
+    depends_on:
+      catalog-storage:
+        condition: service_healthy
+
+volumes:
+  curateds-local-media:

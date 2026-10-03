@@ -1,22 +1,16 @@
 "use client";
-import { useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { useCollection } from "./collection-context";
 import { CollectionCover } from "./collection-cover";
-import { SaveError } from "./save-error";
 import {
   CollectionsError,
-  createItemSchema,
   fetchOverview,
-  itemReceiptSchema,
   overviewKey,
-  saveCollectionData,
 } from "@/lib/collections";
 
 export function CollectionOverview() {
   const collection = useCollection();
-  const [adding, setAdding] = useState(false);
-  const addButton = useRef<HTMLButtonElement>(null);
   const query = useQuery({
     queryKey: overviewKey(collection.id),
     queryFn: ({ signal }) => fetchOverview(collection.id, signal),
@@ -37,25 +31,13 @@ export function CollectionOverview() {
           {collection.description ||
             "Collected with care. Yours to make your own."}
         </p>
-        <button
-          ref={addButton}
+        <Link
           className="button"
-          onClick={() => setAdding(true)}
-          aria-expanded={adding}
-          aria-controls="add-item"
+          href={`/collections/${collection.id}/items/new`}
         >
           Add an item
-        </button>
+        </Link>
       </header>
-      {adding && (
-        <FirstItemForm
-          collectionId={collection.id}
-          close={() => {
-            setAdding(false);
-            addButton.current?.focus();
-          }}
-        />
-      )}
       <section className="identity-hero">
         <CollectionCover
           key={collection.coverImageUrl}
@@ -112,12 +94,13 @@ export function CollectionOverview() {
             <section className="workspace-note empty-overview">
               <span className="eyebrow">The beginning of something good</span>
               <h2>What will you keep first?</h2>
-              <p>
-                Add one item. A name and a few words are all you need to begin.
-              </p>
-              <button className="button" onClick={() => setAdding(true)}>
+              <p>Start with one item and give it a story.</p>
+              <Link
+                className="button"
+                href={`/collections/${collection.id}/items/new`}
+              >
                 Add your first item
-              </button>
+              </Link>
             </section>
           ) : (
             <section className="recent-section">
@@ -130,7 +113,13 @@ export function CollectionOverview() {
                       {item.name.slice(0, 1)}
                     </span>
                     <div>
-                      <h3>{item.name}</h3>
+                      <h3>
+                        <Link
+                          href={`/collections/${collection.id}/items/${item.id}`}
+                        >
+                          {item.name}
+                        </Link>
+                      </h3>
                       <p>
                         {item.description || "A new part of your collection."}
                       </p>
@@ -150,99 +139,5 @@ export function CollectionOverview() {
         </>
       )}
     </div>
-  );
-}
-
-function FirstItemForm({
-  collectionId,
-  close,
-}: {
-  collectionId: string;
-  close: () => void;
-}) {
-  const client = useQueryClient();
-  const pending = useRef(false);
-  const [validation, setValidation] = useState("");
-  const mutation = useMutation({
-    mutationFn: async (data: unknown) => {
-      const item = itemReceiptSchema.parse(
-        await saveCollectionData(
-          `/api/collections/${collectionId}/items`,
-          data,
-        ),
-      );
-      if (item.collectionId !== collectionId) throw new CollectionsError(502);
-      return item;
-    },
-    onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: overviewKey(collectionId) });
-      close();
-    },
-  });
-  return (
-    <form
-      id="add-item"
-      className="collection-form item-form"
-      onSubmit={async (event) => {
-        event.preventDefault();
-        if (pending.current) return;
-        const data = new FormData(event.currentTarget);
-        const parsed = createItemSchema.safeParse({
-          name: data.get("name"),
-          description: data.get("description"),
-          quantity: Number(data.get("quantity")),
-        });
-        if (!parsed.success) {
-          setValidation(parsed.error.issues[0].message);
-          return;
-        }
-        setValidation("");
-        pending.current = true;
-        try {
-          await mutation.mutateAsync(parsed.data);
-        } catch {
-          /* Keep the user's draft. */
-        } finally {
-          pending.current = false;
-        }
-      }}
-    >
-      <h2>A new find</h2>
-      <label>
-        Item name
-        <input name="name" autoFocus required minLength={3} maxLength={120} />
-      </label>
-      <label>
-        A few words <span>(optional)</span>
-        <textarea name="description" rows={3} maxLength={2000} />
-      </label>
-      <label>
-        Quantity
-        <input
-          name="quantity"
-          type="number"
-          min={1}
-          max={2147483647}
-          step={1}
-          defaultValue={1}
-          required
-        />
-      </label>
-      {validation && <p role="alert">{validation}</p>}
-      {mutation.isError && <SaveError error={mutation.error} />}
-      <div className="form-actions">
-        <button className="button" disabled={mutation.isPending}>
-          {mutation.isPending ? "Saving…" : "Save item"}
-        </button>
-        <button
-          type="button"
-          className="text-button"
-          onClick={close}
-          disabled={mutation.isPending}
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
   );
 }

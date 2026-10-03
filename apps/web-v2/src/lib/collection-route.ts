@@ -5,12 +5,15 @@ import { handleCollections, reply } from "./collections-handler";
 import {
   collectionSchema,
   createCollectionSchema,
-  createItemSchema,
-  itemReceiptSchema,
   recentItemsSchema,
   summarySchema,
 } from "./collections";
-import { browseParams, itemDetailSchema, itemInputSchema, itemListSchema } from "./items";
+import {
+  browseParams,
+  itemDetailSchema,
+  itemInputSchema,
+  itemListSchema,
+} from "./items";
 
 export async function collectionRoute(
   request?: Request,
@@ -23,10 +26,16 @@ export async function collectionRoute(
   const auth = getAuthClient();
   const post = request?.method === "POST";
   let itemQuery = "?page=1&pageSize=6&sortBy=createdUtc&sortDirection=desc";
-  const browsing = resource === "items" && !post && Boolean(request && new URL(request.url).search);
+  const browsing =
+    resource === "items" &&
+    !post &&
+    Boolean(request && new URL(request.url).search);
   if (browsing) {
-    try { itemQuery = `?${browseParams(new URL(request!.url).searchParams)}`; }
-    catch { return reply({ code: "invalid_request" }, 400); }
+    try {
+      itemQuery = `?${browseParams(new URL(request!.url).searchParams)}`;
+    } catch {
+      return reply({ code: "invalid_request" }, 400);
+    }
   }
   return handleCollections(
     {
@@ -46,7 +55,9 @@ export async function collectionRoute(
           : resource === "items"
             ? post
               ? itemDetailSchema
-              : browsing ? itemListSchema : recentItemsSchema
+              : browsing
+                ? itemListSchema
+                : recentItemsSchema
             : post
               ? collectionSchema
               : undefined,

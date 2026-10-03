@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { collectionQueryKey, fetchCollections } from "@/lib/collections";
@@ -14,6 +14,7 @@ import {
 export function CollectionWorkspace({ children }: { children: ReactNode }) {
   const { collectionId } = useParams<{ collectionId: string }>();
   const router = useRouter();
+  const browsing = usePathname().split("/").length > 3;
   const query = useQuery({
     queryKey: collectionQueryKey,
     queryFn: fetchCollections,
@@ -44,7 +45,9 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
             id="collection-switcher"
             value={collection.id}
             onChange={(event) =>
-              router.push(`/collections/${event.target.value}`)
+              router.push(
+                `/collections/${event.target.value}${browsing ? "/browse" : ""}`,
+              )
             }
           >
             {query.data.map((entry) => (
@@ -58,13 +61,20 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
           </Link>
           <nav aria-label="Collection">
             <Link
-              className="nav-link active"
-              aria-current="page"
+              className={`nav-link ${!browsing ? "active" : ""}`}
+              aria-current={!browsing ? "page" : undefined}
               href={`/collections/${collection.id}`}
             >
               Overview <span aria-hidden="true">↗</span>
             </Link>
-            {["Browse", "Insights", "Showcase", "Settings"].map((label) => (
+            <Link
+              className={`nav-link ${browsing ? "active" : ""}`}
+              aria-current={browsing ? "page" : undefined}
+              href={`/collections/${collection.id}/browse`}
+            >
+              Browse <span aria-hidden="true">↗</span>
+            </Link>
+            {["Insights", "Showcase", "Settings"].map((label) => (
               <span className="nav-link forthcoming" key={label}>
                 {label}
                 <small>Soon</small>

@@ -14,6 +14,59 @@ const initialCollections = [
 ];
 let collections = structuredClone(initialCollections);
 let items = [];
+const tag = {
+  id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  name: "Favourites",
+  key: "favourites",
+  createdUtc: "2026-10-02T00:00:00Z",
+};
+const location = {
+  id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  name: "Study",
+  description: null,
+  createdUtc: tag.createdUtc,
+};
+const type = {
+  id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  collectionId: initialCollections[0].id,
+  name: "Book",
+  sortOrder: 0,
+  createdUtc: tag.createdUtc,
+};
+const definition = {
+  id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+  collectionId: initialCollections[0].id,
+  name: "Edition",
+  key: "edition",
+  dataType: "Text",
+  isRequired: true,
+  isFilterable: true,
+  itemTypeId: type.id,
+  sortOrder: 0,
+  createdUtc: tag.createdUtc,
+};
+function makeItem(input, collectionId) {
+  return {
+    id: randomUUID(),
+    collectionId,
+    name: input.name,
+    description: input.description ?? null,
+    quantity: input.quantity ?? 1,
+    locationId: input.locationId ?? null,
+    locationName: input.locationId === location.id ? location.name : null,
+    itemTypeId: input.itemTypeId ?? null,
+    tags: input.tagIds?.includes(tag.id) ? [tag] : [],
+    createdUtc: new Date().toISOString(),
+    updatedUtc: null,
+    mediaAssets: [],
+    attributeValues: (input.attributeValues || []).map((value) => ({
+      ...value,
+      attributeName: definition.name,
+      attributeKey: definition.key,
+      dataType: definition.dataType,
+    })),
+  };
+}
 let scenario = "ok";
 let refreshCount = 0;
 let revocationCount = 0;
@@ -28,7 +81,20 @@ createServer(async (request, response) => {
     collectionRequests = 0;
     collections =
       scenario === "empty" ? [] : structuredClone(initialCollections);
-    items = [];
+    items =
+      scenario === "browse"
+        ? Array.from({ length: 14 }, (_, index) =>
+            makeItem(
+              {
+                name: `Shelf book ${String(index + 1).padStart(2, "0")}`,
+                quantity: index + 1,
+                tagIds: index % 2 ? [tag.id] : [],
+                locationId: index % 2 ? location.id : null,
+              },
+              initialCollections[0].id,
+            ),
+          )
+        : [];
     return response.end("{}");
   }
   if (request.url === "/auth-stats") {
@@ -93,84 +159,172 @@ createServer(async (request, response) => {
     }
   }
   const url = new URL(request.url, "http://127.0.0.1:3102");
-  if (!url.pathname.startsWith("/collections")) {
-    response.statusCode = 404;
-    return response.end("{}");
+  if (url.pathname === "/fixture-image.png") {
+    response.setHeader("Content-Type", "image/png");
+    return response.end(
+      Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    );
   }
   collectionRequests++;
   const expectedAccess =
     refreshCount > 0
       ? `Bearer fixture-access-${refreshCount}`
       : "Bearer fixture-access-token";
-  if (request.headers.authorization !== expectedAccess) {
-    response.statusCode = 401;
-    return response.end("{}");
-  }
-  if (scenario === "error") {
-    response.statusCode = 503;
-    return response.end('{"private":"diagnostics"}');
-  }
-  if (request.method === "POST") {
-    let body = "";
-    for await (const chunk of request) body += chunk;
-    const input = JSON.parse(body);
-    if (url.pathname === "/collections") {
+  const send = (body, status = 200) => {
+    response.statusCode = status;
+    return response.end(status === 204 ? undefined : JSON.stringify(body));
+  };
+  if (request.headers.authorization !== expectedAccess) return send({}, 401);
+  if (scenario === "error") return send({ private: "diagnostics" }, 503);
+  if (url.pathname === "/tags") return send([tag]);
+  if (url.pathname === "/locations") return send([location]);
+  const segments = url.pathname.split("/").filter(Boolean);
+  const collectionId = segments[1];
+  if (url.pathname === "/collections") {
+    if (request.method === "POST") {
+      let body = "";
+      for await (const chunk of request) body += chunk;
       const created = {
-        ...input,
+        ...JSON.parse(body),
         id: randomUUID(),
         createdUtc: new Date().toISOString(),
       };
       collections.unshift(created);
-      response.statusCode = 201;
-      return response.end(JSON.stringify(created));
+      return send(created, 201);
     }
-    const collectionId = url.pathname.split("/")[2];
-    if (!collections.some((c) => c.id === collectionId)) {
-      response.statusCode = 404;
-      return response.end("{}");
-    }
-    const item = {
-      ...input,
-      id: randomUUID(),
-      collectionId,
-      createdUtc: new Date().toISOString(),
-      primaryImageUrl: null,
-    };
-    items.unshift(item);
-    response.statusCode = 201;
-    return response.end(JSON.stringify(item));
+    return send(collections);
   }
-  if (url.pathname === "/collections")
-    return response.end(JSON.stringify(collections));
-  const collectionId = url.pathname.split("/")[2];
-  if (!collections.some((c) => c.id === collectionId)) {
-    response.statusCode = 404;
-    return response.end("{}");
-  }
+  if (!collections.some((c) => c.id === collectionId)) return send({}, 404);
+  if (segments[2] === "attribute-definitions")
+    return send(collectionId === type.collectionId ? [definition] : []);
+  if (segments[2] === "item-types")
+    return send(collectionId === type.collectionId ? [type] : []);
   const ownItems = items.filter((item) => item.collectionId === collectionId);
-  if (url.pathname.endsWith("/summary"))
-    return response.end(
-      JSON.stringify({
-        collectionId,
-        totalItems: ownItems.length,
-        totalAttributeDefinitions: 0,
-        tagsUsed: 0,
-        locationsUsed: 0,
-        itemsWithNoLocation: ownItems.length,
-        itemsWithNoTags: ownItems.length,
-        totalMediaAssets: 0,
-      }),
-    );
-  if (url.pathname.endsWith("/items"))
-    return response.end(
-      JSON.stringify({
-        items: ownItems.slice(0, 6),
-        totalCount: ownItems.length,
-        page: 1,
-        pageSize: 6,
-        totalPages: Math.ceil(ownItems.length / 6),
-      }),
-    );
-  response.statusCode = 404;
-  response.end("{}");
+  if (segments[2] === "summary")
+    return send({
+      collectionId,
+      totalItems: ownItems.length,
+      totalAttributeDefinitions: 0,
+      tagsUsed: 0,
+      locationsUsed: 0,
+      itemsWithNoLocation: ownItems.length,
+      itemsWithNoTags: ownItems.length,
+      totalMediaAssets: ownItems.reduce(
+        (sum, item) => sum + item.mediaAssets.length,
+        0,
+      ),
+    });
+  if (segments[2] !== "items") return send({}, 404);
+  const item = ownItems.find((item) => item.id === segments[3]);
+  if (segments.length >= 4 && !item) return send({}, 404);
+  if (segments[4] === "media") {
+    if (request.method === "POST") {
+      const chunks = [];
+      for await (const chunk of request) chunks.push(chunk);
+      const form = await new Response(Buffer.concat(chunks), {
+        headers: { "Content-Type": request.headers["content-type"] },
+      }).formData();
+      const file = form.get("file");
+      const media = {
+        id: randomUUID(),
+        url: "http://127.0.0.1:3102/fixture-image.png",
+        fileName: file.name,
+        contentType: file.type,
+        sizeBytes: file.size,
+        isPrimary: !item.mediaAssets.length,
+        uploadedUtc: new Date().toISOString(),
+      };
+      item.mediaAssets.push(media);
+      return send(media, 201);
+    }
+    const asset = item.mediaAssets.find((asset) => asset.id === segments[5]);
+    if (!asset) return send({}, 404);
+    if (request.method === "PUT")
+      item.mediaAssets.forEach(
+        (media) => (media.isPrimary = media.id === asset.id),
+      );
+    if (request.method === "DELETE")
+      item.mediaAssets = item.mediaAssets.filter(
+        (media) => media.id !== asset.id,
+      );
+    return send(null, 204);
+  }
+  if (request.method === "DELETE" && item) {
+    items = items.filter((entry) => entry.id !== item.id);
+    return send(null, 204);
+  }
+  if (request.method === "PUT" || request.method === "POST") {
+    let body = "";
+    for await (const chunk of request) body += chunk;
+    const input = JSON.parse(body);
+    if (
+      input.itemTypeId === type.id &&
+      !input.attributeValues?.some(
+        (value) =>
+          value.attributeDefinitionId === definition.id && value.value.trim(),
+      )
+    )
+      return send({}, 400);
+    const saved = makeItem(input, collectionId);
+    if (item) {
+      Object.assign(item, {
+        ...saved,
+        id: item.id,
+        createdUtc: item.createdUtc,
+        updatedUtc: new Date().toISOString(),
+        mediaAssets: item.mediaAssets,
+      });
+      return send({ ...item, mediaAssets: [] });
+    }
+    items.unshift(saved);
+    return send(saved, 201);
+  }
+  if (item) return send(item);
+  const params = url.searchParams;
+  const tags = params.getAll("tagIds");
+  const filtered = ownItems.filter(
+    (item) =>
+      (!params.get("searchText") ||
+        (item.name + " " + (item.description || ""))
+          .toLowerCase()
+          .includes(params.get("searchText").toLowerCase())) &&
+      (!params.get("locationId") ||
+        item.locationId === params.get("locationId")) &&
+      (!params.get("itemTypeId") ||
+        item.itemTypeId === params.get("itemTypeId")) &&
+      (params.get("hasNoLocation") !== "true" || !item.locationId) &&
+      (params.get("hasNoTags") !== "true" || !item.tags.length) &&
+      (!tags.length ||
+        (params.get("tagMatchMode") === "any"
+          ? tags.some((id) => item.tags.some((tag) => tag.id === id))
+          : tags.every((id) => item.tags.some((tag) => tag.id === id)))),
+  );
+  const sort = params.get("sortBy") || "createdUtc";
+  filtered.sort(
+    (a, b) =>
+      (typeof a[sort] === "number"
+        ? a[sort] - b[sort]
+        : String(a[sort]).localeCompare(String(b[sort]))) *
+      (params.get("sortDirection") === "asc" ? 1 : -1),
+  );
+  const page = Number(params.get("page") || 1),
+    pageSize = Number(params.get("pageSize") || 6);
+  return send({
+    items: filtered
+      .slice((page - 1) * pageSize, page * pageSize)
+      .map((item) => ({
+        ...item,
+        tags: item.tags.map((tag) => tag.name),
+        attributeValueCount: item.attributeValues.length,
+        primaryImageUrl:
+          item.mediaAssets.find((asset) => asset.isPrimary)?.url || null,
+      })),
+    totalCount: filtered.length,
+    page,
+    pageSize,
+    totalPages: Math.ceil(filtered.length / pageSize),
+  });
 }).listen(3102, "127.0.0.1");

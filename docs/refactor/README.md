@@ -8,11 +8,11 @@ This folder tracks the incremental refactor originally reviewed in June 2026. Th
 
 1. Relational rollback coverage is complete for item create/update/delete using SQLite and PostgreSQL 17 with real services/repositories. PostgreSQL mode applies repository migrations to fresh databases; see the [test runner](../../tests/Infrastructure.IntegrationTests/README.md).
 2. Storage-test portability is complete: Kestrel binds an ephemeral loopback port directly, captures requests asynchronously, and awaits shutdown. Wire-level assertions and concurrent-server isolation are covered.
-3. V2 Slices 1 and 2 are complete in `apps/web-v2`. Live Auth0 acceptance is recorded in [the foundation handoff](05-v2-foundation-handoff.md); collection creation, identity, overview data, and first-item entry are covered in [the Slice 2 handoff](06-v2-collection-overview-handoff.md). Continue with Slice 3: Browse And Curate. Remaining interaction audits and feature decomposition are recorded follow-ups.
+3. V2 Slices 1–3 are complete in `apps/web-v2`. Live Auth0 acceptance is recorded in [the foundation handoff](05-v2-foundation-handoff.md); collection creation, identity, overview data, and first-item entry are covered in [the Slice 2 handoff](06-v2-collection-overview-handoff.md). Browse, full item editing, and media management are covered in [the Slice 3 handoff](07-v2-browse-curate-handoff.md). Continue with Slice 4: Insights. Remaining interaction audits and feature decomposition are recorded follow-ups.
 
 ## After the first refactor pass
 
-The first refactor pass and V2 Slices 1–2 are complete. Continue with [V2 Slice 3: Browse And Curate](../15-v2-roadmap.md#slice-3-browse-and-curate); transaction and storage-test validation are complete, and remaining follow-ups are recorded in the refactor roadmap. Avoid letting optional legacy UI decomposition indefinitely delay V2.
+The first refactor pass and V2 Slices 1–3 are complete. Continue with [V2 Slice 4: Insights](../15-v2-roadmap.md#slice-4-insights); transaction and storage-test validation are complete, and remaining follow-ups are recorded in the refactor roadmap. Avoid letting optional legacy UI decomposition indefinitely delay V2.
 
 Slice 0 is already complete, with decisions accepted on 2026-09-20: start a temporary `apps/web-v2` Next.js App Router application, preserve the current web as a behavioral reference, and keep the .NET API authoritative. Carry the refactor's tested behavior into V2. Track broader trust/scale work under V2 Slice 7 without repeating transaction implementation already completed here.
 
