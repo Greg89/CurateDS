@@ -1,4 +1,5 @@
 "use client";
+import { insightsKey, activityKey } from "@/lib/insights";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -62,6 +63,8 @@ function Detail({
       await writeItem(`/api${base}${suffix}`, method, body);
       setConfirm(null);
       await Promise.all([
+        client.invalidateQueries({ queryKey: insightsKey(collectionId) }),
+        client.invalidateQueries({ queryKey: activityKey(collectionId) }),
         client.invalidateQueries({ queryKey: itemsKey(collectionId) }),
         client.invalidateQueries({ queryKey: overviewKey(collectionId) }),
       ]);

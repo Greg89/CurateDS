@@ -28,6 +28,10 @@ if (source) {
   for (const [pattern, methods] of [
     ["/collections", ["get", "post"]],
     ["/collections/{collectionId}/summary", ["get"]],
+    ["/collections/{collectionId}/insights", ["get"]],
+    ["/collections/{collectionId}/activity", ["get"]],
+    ["/collections/{collectionId}/saved-views", ["get", "post"]],
+    ["/collections/{collectionId}/saved-views/{viewId}", ["delete"]],
     ["/collections/{collectionId}/items", ["get", "post"]],
     ["/collections/{collectionId}/items/{itemId}", ["get", "put", "delete"]],
     ["/collections/{collectionId}/attribute-definitions", ["get"]],
@@ -35,8 +39,14 @@ if (source) {
     ["/tags", ["get"]],
     ["/locations", ["get"]],
     ["/collections/{collectionId}/items/{itemId}/media", ["post"]],
-    ["/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}", ["delete"]],
-    ["/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}/primary", ["put"]],
+    [
+      "/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}",
+      ["delete"],
+    ],
+    [
+      "/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}/primary",
+      ["put"],
+    ],
   ]) {
     const key = Object.keys(full.paths).find(
       (entry) => entry.replace(/\/$/, "") === pattern,

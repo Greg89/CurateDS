@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { SavedViews } from "./saved-views";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useCollection } from "./collection-context";
@@ -19,6 +20,16 @@ export function ItemBrowse() {
   const router = useRouter();
   const search = useSearchParams();
   const raw = search.toString();
+  const extraKeys = [
+    "createdAfter",
+    "createdBefore",
+    "createdBeforeExclusive",
+    "exactAttributeKey",
+    "exactAttributeValue",
+    "minQuantity",
+    "maxQuantity",
+    "attributeFilters",
+  ];
   let params: URLSearchParams;
   let invalid = false;
   try {
@@ -71,6 +82,48 @@ export function ItemBrowse() {
           Add an item
         </Link>
       </header>
+      {extraKeys.some((key) => search.has(key)) && (
+        <section
+          className="inherited-filters"
+          aria-label="Filters from your view"
+        >
+          <h2>A closer look</h2>
+          {search.has("exactAttributeKey") && (
+            <p>
+              {options.data?.definitions.find(
+                (d) => d.key === search.get("exactAttributeKey"),
+              )?.name || search.get("exactAttributeKey")}{" "}
+              equals {search.get("exactAttributeValue")}
+            </p>
+          )}
+          {search.has("createdAfter") && (
+            <p>
+              Added on or after {search.get("createdAfter")?.slice(0, 10)} (UTC)
+            </p>
+          )}
+          {search.has("createdBeforeExclusive") && (
+            <p>
+              Added before {search.get("createdBeforeExclusive")?.slice(0, 10)}{" "}
+              (UTC)
+            </p>
+          )}
+          {search.has("createdBefore") && (
+            <p>Added on or before {search.get("createdBefore")} (UTC)</p>
+          )}
+          {(search.has("minQuantity") || search.has("maxQuantity")) && (
+            <p>
+              Quantity: {search.get("minQuantity") || "1"} to{" "}
+              {search.get("maxQuantity") || "any"}
+            </p>
+          )}
+          {search.getAll("attributeFilters").map((value) => (
+            <p key={value}>Custom field contains: {value}</p>
+          ))}
+          <Link className="text-button" href={path}>
+            Clear all filters
+          </Link>
+        </section>
+      )}
       <form
         key={raw}
         className="browse-controls"
@@ -85,6 +138,13 @@ export function ItemBrowse() {
           router.push(`${path}?${next}`, { scroll: false });
         }}
       >
+        {extraKeys.flatMap((key) =>
+          search
+            .getAll(key)
+            .map((value, index) => (
+              <input key={key + index} type="hidden" name={key} value={value} />
+            )),
+        )}
         <label className="search-field">
           Search your collection
           <input
@@ -193,6 +253,15 @@ export function ItemBrowse() {
             <label>
               <input
                 type="checkbox"
+                name="hasNoItemType"
+                value="true"
+                defaultChecked={search.get("hasNoItemType") === "true"}
+              />
+              Without an item type
+            </label>
+            <label>
+              <input
+                type="checkbox"
                 name="hasNoLocation"
                 value="true"
                 defaultChecked={search.get("hasNoLocation") === "true"}
@@ -220,7 +289,12 @@ export function ItemBrowse() {
           )}
         </details>
         <div className="form-actions">
-          <button className="button">Apply filters</button>
+          <button
+            className="button"
+            disabled={options.isPending || options.isError}
+          >
+            Apply filters
+          </button>
           <Link href={path} className="text-button">
             Reset
           </Link>
@@ -322,6 +396,13 @@ export function ItemBrowse() {
         Number(params.get("page")) > Math.max(1, query.data.totalPages) && (
           <Link href={href({ page: "1" })}>Return to the first page</Link>
         )}
+      {!invalid && (
+        <SavedViews
+          key={collection.id}
+          collectionId={collection.id}
+          search={raw}
+        />
+      )}
     </section>
   );
 }

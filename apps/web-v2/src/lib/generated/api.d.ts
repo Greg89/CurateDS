@@ -94,6 +94,183 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/collections/{collectionId}/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    attributeDefinitionId?: string;
+                };
+                header?: never;
+                path: {
+                    collectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CollectionInsightsDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{collectionId}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    page: number | string;
+                    pageSize: number | string;
+                };
+                header?: never;
+                path: {
+                    collectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PagedCollectionActivityResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{collectionId}/saved-views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    collectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SavedViewResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    collectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateSavedViewRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SavedViewResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{collectionId}/saved-views/{viewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    collectionId: string;
+                    viewId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/collections/{collectionId}/items": {
         parameters: {
             query?: never;
@@ -104,6 +281,10 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    HasNoItemType?: boolean;
+                    CreatedBeforeExclusive?: string;
+                    ExactAttributeKey?: string;
+                    ExactAttributeValue?: string;
                     SearchText?: string;
                     LocationId?: string;
                     TagIds?: string[];
@@ -558,6 +739,117 @@ export interface components {
             itemsWithNoTags: number | string;
             /** Format: int32 */
             totalMediaAssets: number | string;
+        };
+        CollectionInsightsDto: {
+            /** Format: uuid */
+            collectionId: string;
+            summary: components["schemas"]["CollectionSummaryDto"];
+            reports: components["schemas"]["CollectionReportsDto"];
+            itemsByType: components["schemas"]["ItemsByTypeDto"][];
+            addedByMonth: components["schemas"]["ItemsAddedMonthDto"][];
+            attribute: null | components["schemas"]["AttributeBreakdownDto"];
+        };
+        CollectionSummaryDto: {
+            /** Format: uuid */
+            collectionId: string;
+            /** Format: int32 */
+            totalItems: number | string;
+            /** Format: int32 */
+            totalAttributeDefinitions: number | string;
+            /** Format: int32 */
+            tagsUsed: number | string;
+            /** Format: int32 */
+            locationsUsed: number | string;
+            /** Format: int32 */
+            itemsWithNoLocation: number | string;
+            /** Format: int32 */
+            itemsWithNoTags: number | string;
+            /** Format: int32 */
+            totalMediaAssets: number | string;
+        };
+        CollectionReportsDto: {
+            itemsByLocation: components["schemas"]["ItemsByLocationDto"][];
+            itemsByTag: components["schemas"]["ItemsByTagDto"][];
+        };
+        ItemsByLocationDto: {
+            /** Format: uuid */
+            locationId: null | string;
+            locationName: string;
+            /** Format: int32 */
+            count: number | string;
+        };
+        ItemsByTagDto: {
+            /** Format: uuid */
+            tagId: string;
+            tagName: string;
+            /** Format: int32 */
+            count: number | string;
+        };
+        ItemsByTypeDto: {
+            /** Format: uuid */
+            itemTypeId: null | string;
+            name: string;
+            /** Format: int32 */
+            count: number | string;
+        };
+        ItemsAddedMonthDto: {
+            /** Format: date-time */
+            fromUtc: string;
+            /** Format: date-time */
+            toUtc: string;
+            /** Format: int32 */
+            count: number | string;
+        };
+        AttributeBreakdownDto: {
+            /** Format: uuid */
+            definitionId: string;
+            key: string;
+            name: string;
+            /** Format: int32 */
+            totalWithValue: number | string;
+            values: components["schemas"]["AttributeBucketDto"][];
+        };
+        AttributeBucketDto: {
+            value: string;
+            /** Format: int32 */
+            count: number | string;
+        };
+        PagedCollectionActivityResponse: {
+            events: components["schemas"]["CollectionActivityEventResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages: number | string;
+        };
+        CollectionActivityEventResponse: {
+            /** Format: uuid */
+            eventId: string;
+            /** Format: uuid */
+            itemId: string;
+            itemName: string;
+            eventType: string;
+            /** Format: date-time */
+            occurredUtc: string;
+            occurredBy: string;
+            notes: null | string;
+        };
+        SavedViewResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            collectionId: string;
+            name: string;
+            filtersJson: string;
+            /** Format: date-time */
+            createdUtc: string;
+        };
+        CreateSavedViewRequest: {
+            name: string;
+            filtersJson: string;
         };
         PagedItemsResponse: {
             items: components["schemas"]["ItemSummaryResponse"][];

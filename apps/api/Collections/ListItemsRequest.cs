@@ -2,6 +2,11 @@ namespace CurateDS.Api.Collections;
 
 public sealed class ListItemsRequest
 {
+    public bool? HasNoItemType { get; init; }
+    public DateTime? CreatedBeforeExclusive { get; init; }
+    public string? ExactAttributeKey { get; init; }
+    public string? ExactAttributeValue { get; init; }
+
     public string? SearchText { get; init; }
 
     public Guid? LocationId { get; init; }

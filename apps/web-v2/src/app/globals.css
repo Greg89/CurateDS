@@ -1177,3 +1177,227 @@ summary:focus-visible {
 .media-grid .item-image img {
   object-fit: contain;
 }
+/* Collection insights: counts remain readable without relying on chart color. */
+.insight-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-block: 32px;
+}
+.insight-cards a {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 6px;
+}
+.insight-cards strong {
+  font:
+    46px Georgia,
+    serif;
+  color: var(--identity);
+}
+.insight-cards span {
+  font-size: 14px;
+}
+.insight-cards small {
+  color: var(--muted);
+}
+.insight-panel {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 28px;
+  border-radius: 6px;
+  margin-block: 24px;
+  min-width: 0;
+}
+.insight-panel h2 {
+  font-size: 28px;
+}
+.insight-panel p {
+  font-size: 14px;
+}
+.insight-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.insight-columns > .insight-panel {
+  margin: 0;
+}
+.insight-panel .insight-panel {
+  padding: 20px 0 0;
+  border: 0;
+  margin-bottom: 0;
+}
+.insight-breakdown {
+  padding: 0;
+  list-style: none;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.insight-breakdown a {
+  display: grid;
+  position: relative;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 16px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.insight-breakdown span {
+  overflow-wrap: anywhere;
+}
+.insight-breakdown strong {
+  font-variant-numeric: tabular-nums;
+}
+.insight-breakdown i {
+  height: 4px;
+  background: var(--identity);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+.insight-select,
+.save-view-form label {
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+}
+.insight-select select,
+.save-view-form input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: inherit;
+}
+.growth-chart {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+  margin: 30px 0 0;
+}
+.growth-chart a {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+  font-size: 12px;
+}
+.growth-track {
+  height: 130px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.growth-track i {
+  display: block;
+  width: 100%;
+  background: var(--identity);
+  min-height: 2px;
+}
+.activity-list {
+  list-style: none;
+  padding: 0;
+}
+.activity-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 20px;
+  border-top: 1px solid var(--line);
+  padding: 18px 0;
+}
+.activity-list li > div {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.activity-list a {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.activity-list span,
+.activity-list time {
+  color: var(--muted);
+  font-size: 13px;
+}
+.activity-list time {
+  flex-shrink: 0;
+}
+.activity-list a:hover,
+.saved-view-list a:hover {
+  text-decoration: underline;
+}
+.save-view-form {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.save-view-form label {
+  flex: 1 1 200px;
+}
+.save-view-form .button {
+  flex-shrink: 0;
+}
+.saved-view-list {
+  list-style: none;
+  padding: 0;
+}
+.saved-view-list li > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  border-top: 1px solid var(--line);
+  padding-block: 12px;
+  overflow-wrap: anywhere;
+}
+.inherited-filters {
+  background: var(--identity-soft);
+  padding: 24px;
+  border-radius: 6px;
+  margin-top: 28px;
+}
+.inherited-filters h2 {
+  font-size: 26px;
+}
+.inherited-filters p {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1000px) {
+  .insight-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .insight-columns {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 650px) {
+  .insight-panel {
+    padding: 20px;
+  }
+  .insight-cards a {
+    padding: 18px;
+  }
+  .growth-chart {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    row-gap: 22px;
+  }
+  .growth-track {
+    height: 90px;
+  }
+  .activity-list li {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

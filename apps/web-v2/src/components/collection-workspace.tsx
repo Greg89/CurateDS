@@ -14,7 +14,9 @@ import {
 export function CollectionWorkspace({ children }: { children: ReactNode }) {
   const { collectionId } = useParams<{ collectionId: string }>();
   const router = useRouter();
-  const browsing = usePathname().split("/").length > 3;
+  const section = usePathname().split("/")[3];
+  const insights = section === "insights";
+  const browsing = section === "browse" || section === "items";
   const query = useQuery({
     queryKey: collectionQueryKey,
     queryFn: fetchCollections,
@@ -46,7 +48,7 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
             value={collection.id}
             onChange={(event) =>
               router.push(
-                `/collections/${event.target.value}${browsing ? "/browse" : ""}`,
+                `/collections/${event.target.value}${insights ? "/insights" : browsing ? "/browse" : ""}`,
               )
             }
           >
@@ -61,8 +63,8 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
           </Link>
           <nav aria-label="Collection">
             <Link
-              className={`nav-link ${!browsing ? "active" : ""}`}
-              aria-current={!browsing ? "page" : undefined}
+              className={`nav-link ${!browsing && !insights ? "active" : ""}`}
+              aria-current={!browsing && !insights ? "page" : undefined}
               href={`/collections/${collection.id}`}
             >
               Overview <span aria-hidden="true">↗</span>
@@ -74,7 +76,14 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
             >
               Browse <span aria-hidden="true">↗</span>
             </Link>
-            {["Insights", "Showcase", "Settings"].map((label) => (
+            <Link
+              className={`nav-link ${insights ? "active" : ""}`}
+              aria-current={insights ? "page" : undefined}
+              href={`/collections/${collection.id}/insights`}
+            >
+              Insights <span aria-hidden="true">↗</span>
+            </Link>
+            {["Showcase", "Settings"].map((label) => (
               <span className="nav-link forthcoming" key={label}>
                 {label}
                 <small>Soon</small>

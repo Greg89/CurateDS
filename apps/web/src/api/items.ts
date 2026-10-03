@@ -151,7 +151,9 @@ export function tryParseItemFilters(value: unknown): ItemFilters | null {
 
 export function tryParseSerializedItemFilters(serializedFilters: string): ItemFilters | null {
   try {
-    return tryParseItemFilters(JSON.parse(serializedFilters));
+    // A newer client may save additional filters. Never silently discard those and broaden the view.
+    const result = ItemFiltersSchema.strict().safeParse(JSON.parse(serializedFilters));
+    return result.success ? normalizeItemFilters(result.data) : null;
   } catch {
     return null;
   }

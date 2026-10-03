@@ -74,6 +74,8 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<DeleteSavedViewService>();
         services.AddScoped<ExportCollectionService>();
         services.AddScoped<GetCollectionReportsService>();
+        services.AddScoped<CurateDS.Application.Collections.GetCollectionInsights.GetCollectionInsightsService>();
+        services.AddScoped<CurateDS.Application.Abstractions.Persistence.ICollectionInsightsRepository, CurateDS.Infrastructure.Persistence.Repositories.CollectionInsightsRepository>();
         services.AddScoped<GetCollectionSummaryService>();
         services.AddScoped<GetItemDetailService>();
         services.AddScoped<ListCollectionActivityService>();

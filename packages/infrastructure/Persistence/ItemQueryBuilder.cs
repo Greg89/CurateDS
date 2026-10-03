@@ -1,3 +1,4 @@
+using System.Globalization;
 using CurateDS.Application.Collections.ListItems;
 using CurateDS.Domain.Collections;
 
@@ -13,6 +14,7 @@ internal static class ItemQueryBuilder
         query = ApplyLocationFilter(query, request);
         query = ApplyTagFilter(query, request, dbContext);
         query = ApplyAttributeFilters(query, request, dbContext);
+        query = ApplyExactAttributeFilter(query, request, dbContext);
         query = ApplySearchFilter(query, request, dbContext);
         query = ApplyQuantityRange(query, request);
         query = ApplyCreatedDateRange(query, request);
@@ -72,6 +74,26 @@ internal static class ItemQueryBuilder
             });
     }
 
+    private static IQueryable<Item> ApplyExactAttributeFilter(IQueryable<Item> query, ListItemsQuery request, CatalogDbContext db)
+    {
+        if (request.ExactAttributeKey is null && request.ExactAttributeValue is null) return query;
+        if (string.IsNullOrWhiteSpace(request.ExactAttributeKey) || string.IsNullOrWhiteSpace(request.ExactAttributeValue))
+            return query.Where(_ => false);
+        var key = request.ExactAttributeKey.Trim();
+        var value = request.ExactAttributeValue.Trim();
+        int? number = int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) ? n : null;
+        decimal? dec = decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var d) ? d : null;
+        bool? boolean = bool.TryParse(value, out var b) ? b : null;
+        DateTime? date = DateTime.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt) ? dt : null;
+        return query.Where(item => db.ItemAttributeValues.Any(attribute =>
+            attribute.ItemId == item.Id && db.AttributeDefinitions.Any(definition =>
+                definition.Id == attribute.AttributeDefinitionId && definition.CollectionId == request.CollectionId && definition.Key == key) &&
+            ((attribute.ValueText != null && attribute.ValueText == value) ||
+             (number.HasValue && attribute.ValueNumber == number) ||
+             (dec.HasValue && attribute.ValueDecimal == dec) ||
+             (boolean.HasValue && attribute.ValueBoolean == boolean) ||
+             (date.HasValue && attribute.ValueDate == date))));
+    }
     private static IQueryable<Item> ApplySearchFilter(
         IQueryable<Item> query,
         ListItemsQuery request,
@@ -117,6 +139,9 @@ internal static class ItemQueryBuilder
         if (request.CreatedAfter.HasValue)
             query = query.Where(i => i.CreatedUtc >= request.CreatedAfter.Value);
 
+        if (request.CreatedBeforeExclusive.HasValue)
+            query = query.Where(i => i.CreatedUtc < request.CreatedBeforeExclusive.Value);
+
         if (request.CreatedBefore.HasValue)
             query = query.Where(i => i.CreatedUtc <= request.CreatedBefore.Value);
 
@@ -139,6 +164,7 @@ internal static class ItemQueryBuilder
 
     private static IQueryable<Item> ApplyItemTypeFilter(IQueryable<Item> query, ListItemsQuery request)
     {
+        if (request.HasNoItemType) query = query.Where(i => i.ItemTypeId == null);
         if (request.ItemTypeId.HasValue)
             return query.Where(i => i.ItemTypeId == request.ItemTypeId.Value);
 

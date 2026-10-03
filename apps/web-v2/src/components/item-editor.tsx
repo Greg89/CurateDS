@@ -1,4 +1,5 @@
 "use client";
+import { insightsKey, activityKey } from "@/lib/insights";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -139,6 +140,8 @@ function EditorForm({
           )
             throw new CollectionsError(502);
           await Promise.all([
+            client.invalidateQueries({ queryKey: insightsKey(collectionId) }),
+            client.invalidateQueries({ queryKey: activityKey(collectionId) }),
             client.invalidateQueries({ queryKey: itemsKey(collectionId) }),
             client.invalidateQueries({ queryKey: overviewKey(collectionId) }),
             client.invalidateQueries({

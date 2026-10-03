@@ -62,7 +62,10 @@ public static class ItemEndpoints
                         ItemTypeId: request.ItemTypeId,
                         TagMatchMode: string.Equals(request.TagMatchMode, "any", StringComparison.OrdinalIgnoreCase)
                             ? TagMatchMode.Any
-                            : TagMatchMode.All),
+                            : TagMatchMode.All,
+                        HasNoItemType: request.HasNoItemType ?? false,
+                        CreatedBeforeExclusive: request.CreatedBeforeExclusive,
+                        ExactAttributeKey: request.ExactAttributeKey, ExactAttributeValue: request.ExactAttributeValue),
                     cancellationToken);
 
                 return Results.Ok(new PagedItemsResponse(

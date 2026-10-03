@@ -457,3 +457,120 @@ test("create and edit required fields, recover a draft, manage media, and delete
     page.getByRole("heading", { name: "No items in this view." }),
   ).toBeVisible();
 });
+test("insights drill through exact counts, preserve and save filters, and switch context", async ({
+  page,
+  context,
+  request,
+}, testInfo) => {
+  await request.post("http://127.0.0.1:3102/scenario/insights");
+  await signIn(context);
+  const base = "/collections/33333333-3333-4333-8333-333333333333";
+  await page.goto(base + "/insights");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(
+    "The reading room",
+  );
+  await expect(
+    page.locator(".insight-cards").getByRole("link", { name: /Items kept/ }),
+  ).toContainText("14");
+  await page.getByRole("link", { name: "Older activity →" }).click();
+  await expect(page.locator(".activity-list > li")).toHaveCount(6);
+  await page
+    .getByRole("combobox", { name: "Explore a custom field" })
+    .selectOption("dddddddd-dddd-4ddd-8ddd-dddddddddddd");
+  await expect(
+    page.getByRole("link", { name: "First 7", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("insights.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole("link", { name: "First 7", exact: true }).click();
+  await expect(page.getByText("7 items", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Filters from your view")).toContainText(
+    "Edition equals First",
+  );
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page).toHaveURL(/exactAttributeValue=First/);
+  await expect(page.getByText("7 items", { exact: true })).toBeVisible();
+  await page.getByLabel("View name").fill("First editions");
+  await page.route("**/saved-views", (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({ status: 503, body: "{}" })
+      : route.continue(),
+  );
+  await page.getByRole("button", { name: "Save current view" }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText(
+    "couldn't confirm",
+  );
+  await expect(page.getByLabel("View name")).toHaveValue("First editions");
+  await page.unroute("**/saved-views");
+  await page.getByRole("button", { name: "Save current view" }).click();
+  await expect(
+    page.getByRole("link", { name: "First editions ↗" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Reset", exact: true }).click();
+  await expect(page.getByText("14 items", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "First editions ↗" }).click();
+  await expect(page.getByText("7 items", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Insights", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: "First editions ↗" }),
+  ).toBeVisible();
+  await page
+    .locator(".insight-cards")
+    .getByRole("link", { name: /Added this month/ })
+    .click();
+  await expect(page.getByText("14 items", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Filters from your view")).toContainText(
+    "Added before",
+  );
+  await page.getByRole("link", { name: "Insights", exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Your collection", exact: true })
+    .selectOption("44444444-4444-4444-8444-444444444444");
+  await expect(page).toHaveURL(/444444444444[/]insights$/);
+  await expect(
+    page.getByRole("heading", {
+      name: "Every collection starts with one find.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "First editions ↗" }),
+  ).toHaveCount(0);
+  await page.goto(base + "/browse");
+  await page
+    .getByRole("button", { name: "Remove view First editions" })
+    .click();
+  await page
+    .getByRole("button", { name: "Remove saved view", exact: true })
+    .click();
+  await expect(
+    page.getByRole("link", { name: "First editions ↗" }),
+  ).toHaveCount(0);
+});
+
+test("insight failures recover while the collection shell remains available", async ({
+  page,
+  context,
+}) => {
+  await signIn(context);
+  await page.route("**/api/collections/*/insights", (route) =>
+    route.fulfill({ status: 503, body: "{}" }),
+  );
+  await page.goto("/collections/33333333-3333-4333-8333-333333333333/insights");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText(
+    "couldn't open",
+  );
+  await page.unroute("**/api/collections/*/insights");
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Every collection starts with one find.",
+    }),
+  ).toBeVisible();
+});

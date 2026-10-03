@@ -94,7 +94,7 @@ Exit criteria:
 
 Goal: make repeated collection management efficient and visually grounded.
 
-Status (2026-10-02): Complete in `apps/web-v2`. Browse/search/filter/sort/pagination, full item editing with custom fields, detail views, and image management are implemented. Desktop/mobile checks and an isolated real-storage API acceptance test passed. Local development storage is configured and running. See [Slice 3 handoff](refactor/07-v2-browse-curate-handoff.md). Next scope: Slice 4.
+Status (2026-10-02): Complete in `apps/web-v2`. Browse/search/filter/sort/pagination, full item editing with custom fields, detail views, and image management are implemented. Desktop/mobile checks and an isolated real-storage API acceptance test passed. Local development storage is configured and running. See [Slice 3 handoff](refactor/07-v2-browse-curate-handoff.md). Slice 4 completion is recorded below.
 
 Deliverables:
 
@@ -115,6 +115,8 @@ Exit criteria:
 ## Slice 4: Insights
 
 Goal: make reports satisfying to explore rather than merely administrative.
+
+Status (2026-10-03): Complete in `apps/web-v2`. Collection cards, twelve-month growth, paged activity, location/tag/type/custom-field breakdowns, exact browse drill-through, and saved views are implemented. Category remains collection-level identity in the current model; item types provide the within-collection grouping. API, SQLite/PostgreSQL, and desktop/mobile checks passed. See [Slice 4 handoff](refactor/08-v2-insights-handoff.md). Next scope: Slice 5.
 
 Deliverables:
 

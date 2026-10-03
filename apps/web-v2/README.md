@@ -1,6 +1,6 @@
 # CurateDS V2 web foundation
 
-This temporary Next.js App Router workspace implements V2 Slices 1 and 2. The existing Vite app remains in `apps/web`. Users can create a collection with optional category, description, HTTPS cover-image URL, and colour, then view real counts/recent items and add a first item. Full item browsing/editing, insight data, showcase, and identity editing remain later workflows.
+This temporary Next.js App Router workspace implements V2 Slices 1–4. The existing Vite app remains in `apps/web`. Users can create collections, browse and edit items with custom fields and images, explore collection insights, and save filtered views. Collection customization and showcase remain later workflows.
 
 ## Run locally
 
@@ -64,6 +64,8 @@ To trigger renewal immediately, the checker uses the local cookie secret and SDK
 - `/collections/[collectionId]`: collection identity, live summary cards, six most recent items, and links into the full item editor. The URL selects context; the provider does not persist a competing active collection.
 - `/collections/[collectionId]/browse`: URL-driven search, filters, sorting, pagination, and grid/list views.
 - `/collections/[collectionId]/items/new`, `/items/[itemId]`, and `/items/[itemId]/edit`: full creation, detail, editing, and image management within the collection.
+- `/collections/[collectionId]/insights`: collection cards, twelve-month growth, location/tag/type/custom-field breakdowns, paged activity, and saved views.
+- `/api/collections/[collectionId]/insights`, `/activity`, and `/saved-views`: validated session boundaries; saved-view creation/removal require same-origin writes.
 - `/api/collections`: authenticated collection list and creation boundary.
 - `/api/collections/[collectionId]/summary`: authenticated overview counts.
 - `/api/collections/[collectionId]/items`: recent items or validated browse queries (GET), and full item creation (POST). Item detail/update/delete and media operations use explicitly allowlisted nested routes; option routes provide types, definitions, tags, and locations.
@@ -74,9 +76,15 @@ Apply the additive `AddCollectionIdentity` migration by starting the updated API
 
 For local uploads, start the optional [development storage override](../../tools/local-storage/README.md). It keeps files in Docker on this computer. Remote deployments still require their own Storage settings; no remote bucket or privacy policy was changed.
 
+## Insights and saved views
+
+Insights aggregate currently kept items; the twelve-month chart uses UTC creation dates and excludes deleted items. Collection category stays in the header, while item types provide the within-collection grouping. Custom-field breakdowns show up to twenty most common values and use exact typed-value filters when opening Browse. Month links use an inclusive start and exclusive end. Activity includes deleted-item history; those items may no longer open.
+
+Browse preserves these report filters when ordinary filters are applied. Named saved views retain filters and sorting and restore page one, leaving grid/list presentation at its default. Supported legacy saved filters also restore in V2. Unsupported filter JSON is reported explicitly; the legacy client hides V2-only saved views so it cannot silently broaden a result.
+
 ## API contract generation
 
-The checked-in contract snapshot contains collection/summary, item CRUD, option-listing, and media operations with their referenced schemas. It was extracted from the running .NET OpenAPI document, not authored as a parallel schema. These endpoints explicitly advertise their response types.
+The checked-in contract snapshot contains collection/summary, Insights/activity/saved-view, item CRUD, option-listing, and media operations with their referenced schemas. It was extracted from the running .NET OpenAPI document, not authored as a parallel schema. These endpoints explicitly advertise their response types.
 
 Regenerate from a running API in Development:
 
@@ -105,7 +113,7 @@ Browser tests start isolated servers on loopback ports 3101 and 3102 and exercis
 
 The Playwright server command preloads `e2e/auth-transport.mjs` to route only the reserved `https://test.invalid` issuer to the local fixture. The production SDK and collection route execute normally; the fixture supplies discovery and token responses. This preload is not used by normal development, start, or Docker commands. These checks do not prove the live tenant's refresh grants or logout URL configuration.
 
-The browser suite also covers URL filter restoration, sorting/pagination, grid/list switching, required custom fields, item editing, image upload/primary/removal, item deletion, collection isolation, and first-run creation, preservation of a draft after a failed save, first-item creation, reload persistence, and collection-specific counts/recent items after switching. The existing web build/tests remain part of root `npm run verify`; the V2 build and unit tests are also included. CI additionally runs the focused browser suite.
+The browser suite also covers Insights drill-through, activity pagination, saved-view creation/restoration/removal and save-error recovery, URL filter restoration, sorting/pagination, grid/list switching, required custom fields, item editing, image upload/primary/removal, item deletion, collection isolation, and first-run creation, preservation of a draft after a failed save, first-item creation, reload persistence, and collection-specific counts/recent items after switching. The existing web build/tests remain part of root `npm run verify`; the V2 build and unit tests are also included. CI additionally runs the focused browser suite.
 
 ## Deployment preparation
 

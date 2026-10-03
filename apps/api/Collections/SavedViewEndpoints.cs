@@ -34,7 +34,7 @@ public static class SavedViewEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<SavedViewResponse[]>();
 
         group.MapPost("/{collectionId:guid}/saved-views", async (
             Guid collectionId,
@@ -62,7 +62,7 @@ public static class SavedViewEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<SavedViewResponse>(201);
 
         group.MapDelete("/{collectionId:guid}/saved-views/{viewId:guid}", async (
             Guid collectionId,

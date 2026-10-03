@@ -1,6 +1,10 @@
 # Validation Notes
 
-Status updated: 2026-10-02
+Status updated: 2026-10-03
+
+## V2 Insights (2026-10-03)
+
+Slice 4 is complete. The full .NET solution passed 308 tests (one opt-in media test skipped); all 26 infrastructure cases also passed against isolated PostgreSQL 17. V2 passed 56 unit/component tests, its production build, and all 24 desktop/mobile browser cases. Screenshots were reviewed. The legacy web build and 137 tests passed; one reports-page timing failure in the initial concurrent run passed in the full rerun. New checks cover exact typed-value drill-through, UTC date boundaries, owner isolation, bounded aggregation, deleted-item activity, and saved-view compatibility. No migration was needed. See [the Slice 4 handoff](08-v2-insights-handoff.md).
 
 ## V2 Browse And Curate (2026-10-02)
 

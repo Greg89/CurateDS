@@ -14,6 +14,7 @@ const initialCollections = [
 ];
 let collections = structuredClone(initialCollections);
 let items = [];
+let savedViews = [];
 const tag = {
   id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   name: "Favourites",
@@ -82,7 +83,7 @@ createServer(async (request, response) => {
     collections =
       scenario === "empty" ? [] : structuredClone(initialCollections);
     items =
-      scenario === "browse"
+      scenario === "browse" || scenario === "insights"
         ? Array.from({ length: 14 }, (_, index) =>
             makeItem(
               {
@@ -95,6 +96,20 @@ createServer(async (request, response) => {
             ),
           )
         : [];
+    savedViews = [];
+    if (scenario === "insights")
+      items.forEach((item, index) => {
+        item.itemTypeId = type.id;
+        item.attributeValues = [
+          {
+            attributeDefinitionId: definition.id,
+            attributeName: definition.name,
+            attributeKey: definition.key,
+            dataType: "Text",
+            value: index < 7 ? "First" : "First revised",
+          },
+        ];
+      });
     return response.end("{}");
   }
   if (request.url === "/auth-stats") {
@@ -203,6 +218,122 @@ createServer(async (request, response) => {
   if (segments[2] === "item-types")
     return send(collectionId === type.collectionId ? [type] : []);
   const ownItems = items.filter((item) => item.collectionId === collectionId);
+  if (segments[2] === "saved-views") {
+    if (request.method === "POST") {
+      let body = "";
+      for await (const chunk of request) body += chunk;
+      const saved = {
+        ...JSON.parse(body),
+        id: randomUUID(),
+        collectionId,
+        createdUtc: new Date().toISOString(),
+      };
+      savedViews.push(saved);
+      return send(saved, 201);
+    }
+    if (request.method === "DELETE") {
+      savedViews = savedViews.filter(
+        (view) => view.id !== segments[3] || view.collectionId !== collectionId,
+      );
+      return send(null, 204);
+    }
+    return send(
+      savedViews.filter((view) => view.collectionId === collectionId),
+    );
+  }
+  if (segments[2] === "insights") {
+    const now = new Date();
+    const months = Array.from({ length: 12 }, (_, index) => {
+      const fromUtc = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11 + index, 1),
+      ).toISOString();
+      const toUtc = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 10 + index, 1),
+      ).toISOString();
+      return {
+        fromUtc,
+        toUtc,
+        count: ownItems.filter(
+          (item) => item.createdUtc >= fromUtc && item.createdUtc < toUtc,
+        ).length,
+      };
+    });
+    const tagged = ownItems.filter((item) => item.tags.length).length,
+      located = ownItems.filter((item) => item.locationId).length;
+    return send({
+      collectionId,
+      summary: {
+        collectionId,
+        totalItems: ownItems.length,
+        totalAttributeDefinitions: 1,
+        tagsUsed: tagged ? 1 : 0,
+        locationsUsed: located ? 1 : 0,
+        itemsWithNoLocation: ownItems.length - located,
+        itemsWithNoTags: ownItems.length - tagged,
+        totalMediaAssets: 0,
+      },
+      reports: {
+        itemsByLocation: ownItems.length
+          ? [
+              {
+                locationId: null,
+                locationName: "No Location",
+                count: ownItems.length - located,
+              },
+              {
+                locationId: location.id,
+                locationName: location.name,
+                count: located,
+              },
+            ]
+          : [],
+        itemsByTag: tagged
+          ? [{ tagId: tag.id, tagName: tag.name, count: tagged }]
+          : [],
+      },
+      itemsByType: ownItems.length
+        ? [{ itemTypeId: type.id, name: type.name, count: ownItems.length }]
+        : [],
+      addedByMonth: months,
+      attribute: url.searchParams.has("attributeDefinitionId")
+        ? {
+            definitionId: definition.id,
+            key: definition.key,
+            name: definition.name,
+            totalWithValue: ownItems.length,
+            values: ["First", "First revised"].map((value) => ({
+              value,
+              count: ownItems.filter((item) =>
+                item.attributeValues.some(
+                  (attribute) => attribute.value === value,
+                ),
+              ).length,
+            })),
+          }
+        : null,
+    });
+  }
+  if (segments[2] === "activity") {
+    const page = Number(url.searchParams.get("page") || 1),
+      pageSize = 8;
+    return send({
+      events: ownItems
+        .slice((page - 1) * pageSize, page * pageSize)
+        .map((item) => ({
+          eventId: item.id,
+          itemId: item.id,
+          itemName: item.name,
+          eventType: "Created",
+          occurredUtc: item.createdUtc,
+          occurredBy: "test-owner",
+          notes: null,
+        })),
+      page,
+      pageSize,
+      totalCount: ownItems.length,
+      totalPages: Math.ceil(ownItems.length / pageSize),
+    });
+  }
   if (segments[2] === "summary")
     return send({
       collectionId,
@@ -285,23 +416,38 @@ createServer(async (request, response) => {
   if (item) return send(item);
   const params = url.searchParams;
   const tags = params.getAll("tagIds");
-  const filtered = ownItems.filter(
-    (item) =>
-      (!params.get("searchText") ||
-        (item.name + " " + (item.description || ""))
-          .toLowerCase()
-          .includes(params.get("searchText").toLowerCase())) &&
-      (!params.get("locationId") ||
-        item.locationId === params.get("locationId")) &&
-      (!params.get("itemTypeId") ||
-        item.itemTypeId === params.get("itemTypeId")) &&
-      (params.get("hasNoLocation") !== "true" || !item.locationId) &&
-      (params.get("hasNoTags") !== "true" || !item.tags.length) &&
-      (!tags.length ||
-        (params.get("tagMatchMode") === "any"
-          ? tags.some((id) => item.tags.some((tag) => tag.id === id))
-          : tags.every((id) => item.tags.some((tag) => tag.id === id)))),
-  );
+  const filtered = ownItems
+    .filter(
+      (item) =>
+        (!params.get("createdAfter") ||
+          item.createdUtc >= params.get("createdAfter")) &&
+        (!params.get("createdBeforeExclusive") ||
+          item.createdUtc < params.get("createdBeforeExclusive")) &&
+        (params.get("hasNoItemType") !== "true" || !item.itemTypeId) &&
+        (!params.get("exactAttributeKey") ||
+          item.attributeValues.some(
+            (value) =>
+              value.attributeKey === params.get("exactAttributeKey") &&
+              value.value === params.get("exactAttributeValue"),
+          )),
+    )
+    .filter(
+      (item) =>
+        (!params.get("searchText") ||
+          (item.name + " " + (item.description || ""))
+            .toLowerCase()
+            .includes(params.get("searchText").toLowerCase())) &&
+        (!params.get("locationId") ||
+          item.locationId === params.get("locationId")) &&
+        (!params.get("itemTypeId") ||
+          item.itemTypeId === params.get("itemTypeId")) &&
+        (params.get("hasNoLocation") !== "true" || !item.locationId) &&
+        (params.get("hasNoTags") !== "true" || !item.tags.length) &&
+        (!tags.length ||
+          (params.get("tagMatchMode") === "any"
+            ? tags.some((id) => item.tags.some((tag) => tag.id === id))
+            : tags.every((id) => item.tags.some((tag) => tag.id === id)))),
+    );
   const sort = params.get("sortBy") || "createdUtc";
   filtered.sort(
     (a, b) =>

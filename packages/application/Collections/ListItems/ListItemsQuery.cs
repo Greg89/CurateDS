@@ -18,7 +18,9 @@ public sealed record ListItemsQuery(
     bool HasNoLocation = false,
     bool HasNoTags = false,
     Guid? ItemTypeId = null,
-    TagMatchMode TagMatchMode = TagMatchMode.All);
+    TagMatchMode TagMatchMode = TagMatchMode.All,
+    bool HasNoItemType = false, DateTime? CreatedBeforeExclusive = null,
+    string? ExactAttributeKey = null, string? ExactAttributeValue = null);
 
 public sealed record ListItemsAttributeFilter(string AttributeKey, string Value);
 
