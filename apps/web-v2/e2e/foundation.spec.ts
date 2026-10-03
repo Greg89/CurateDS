@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { generateSessionCookie } from "@auth0/nextjs-auth0/testing";
+import { Auth0Client } from "@auth0/nextjs-auth0/server";
 import { testSecret } from "../playwright.config";
+import { expireAccessToken, readSession } from "../scripts/live-auth-smoke";
 
 test.beforeEach(async ({ request }) => {
   await request.post("http://127.0.0.1:3102/scenario/ok");
@@ -59,7 +61,19 @@ test("expired tokens refresh and persist rotating credentials across requests", 
   context,
   request,
 }) => {
-  await signIn(context, { expired: true, refreshToken: "fixture-refresh-0" });
+  await signIn(context, { refreshToken: "fixture-refresh-0" });
+  const origin = "http://127.0.0.1:3101";
+  const auth = new Auth0Client({
+    appBaseUrl: origin,
+    domain: "test.invalid",
+    clientId: "test-client",
+    clientSecret: "test-client-secret",
+    secret: testSecret,
+  });
+  await expireAccessToken(context, auth, origin, testSecret);
+  expect((await readSession(context, auth, origin))!.tokenSet.expiresAt).toBeLessThan(
+    Date.now() / 1000,
+  );
   for (let index = 0; index < 3; index++) {
     const response = await context.request.get("/api/collections");
     expect(response.status()).toBe(200);

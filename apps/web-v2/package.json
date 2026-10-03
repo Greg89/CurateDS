@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "next dev --port 3001",
     "setup:local": "node scripts/setup-local-env.mjs",
+    "test:auth:live": "node scripts/live-auth-smoke.ts",
     "build": "next build",
     "start": "node scripts/start-standalone.mjs",
     "typecheck": "tsc --noEmit",

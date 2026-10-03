@@ -36,11 +36,25 @@ Generate the cookie secret locally with `node -e "console.log(require('node:cryp
 
 Register `http://localhost:3001/auth/callback` as an allowed callback URL and `http://localhost:3001` as an allowed logout URL. Register the corresponding deployed URLs before testing a hosted app. The SDK requests `openid profile email offline_access`; enable the refresh-token grant and API offline access if persistent sessions should renew API tokens.
 
+If live acceptance reports no refresh token, check both Auth0 Dashboard settings and save: **Applications → APIs → the API matching `AUTH0_AUDIENCE` → Settings → Allow Offline Access**, and **Applications → Applications → the application matching `AUTH0_CLIENT_ID` → Settings → Advanced Settings → Grant Types → Refresh Token**. Then rerun the checker and sign in afresh. See [Auth0's Next.js token-refresh guidance](https://support.auth0.com/center/s/article/Token-Refresh).
+
 Next.js owns the encrypted HTTP-only session cookie. The SDK proxy handles login, callback, logout, and rolling sessions. Protected layouts check the session independently; the collection API route also checks it independently. API tokens are obtained in the route handler, where refreshed session cookies can be saved. The SDK's browser access-token endpoint is disabled.
 
 There is no development sign-in bypass. Browser tests use the SDK's documented `generateSessionCookie` helper with an isolated test secret and a local fixture API. Those tests validate the app's session boundary; they do not replace a live Auth0 login/callback/logout smoke test.
 
 Auth0 setup reference: [Next.js SDK documentation](https://github.com/auth0/nextjs-auth0).
+
+### Interactive live acceptance
+
+With the configured app running on `http://localhost:3001`, run:
+
+```powershell
+npm run test:auth:live --workspace @curateds/web-v2
+```
+
+The checker opens a separate browser context (installed Edge on Windows). Sign in normally, then sign in once more when prompted after the logout check. It verifies the actual tenant and API: login/callback, two consecutive token renewals with persisted session cookies, logout return, protected-page/API denial, and sign-in after logout. It signs out the final test session and closes the window when finished. Each sign-in has a five-minute timeout.
+
+To trigger renewal immediately, the checker uses the local cookie secret and SDK helpers to change only the access-token expiry timestamp in its own authenticated test session. It preserves the real identity and credentials; it does not mint an identity or alter tenant settings. Cookies and credentials stay in memory; no traces, screenshots, or browser-state files are saved. Run `npm run test:auth:live --workspace @curateds/web-v2 -- --check` to check local configuration and app availability without opening the browser. This command is local-only and is not part of CI.
 
 ## Routes and data boundary
 
