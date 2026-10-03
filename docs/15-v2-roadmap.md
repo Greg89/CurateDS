@@ -48,7 +48,7 @@ Exit criteria:
 
 Goal: establish the new web application shell without rebuilding feature workflows yet.
 
-Status (2026-10-02): Complete in `apps/web-v2`, including live Auth0 acceptance. Automated session-boundary, API-contract, component, and desktop/mobile browser checks passed. The user's interactive live-check results confirm login/callback, authenticated collection access, two token refreshes with persisted session cookies, logout/session removal/protected-route denial, and sign-in/API access after logout. See [Slice 1 handoff](refactor/05-v2-foundation-handoff.md) and [workspace setup](../apps/web-v2/README.md). Slice 2 is next and has not started.
+Status (2026-10-02): Complete in `apps/web-v2`, including live Auth0 acceptance. Automated session-boundary, API-contract, component, and desktop/mobile browser checks passed. The user's interactive live-check results confirm login/callback, authenticated collection access, two token refreshes with persisted session cookies, logout/session removal/protected-route denial, and sign-in/API access after logout. See [Slice 1 handoff](refactor/05-v2-foundation-handoff.md) and [workspace setup](../apps/web-v2/README.md). Subsequent progress is tracked below.
 
 Deliverables:
 
@@ -70,6 +70,8 @@ Exit criteria:
 ## Slice 2: First Collection And Overview
 
 Goal: make the first collection feel real immediately after creation.
+
+Status (2026-10-02): Implemented and validated in `apps/web-v2` with persistent optional identity fields in the .NET API. Creation, live overview data, collection switching, and basic first-item entry are available. Covers use HTTPS image links; full item/custom-field editing and media upload remain later work. See [Slice 2 handoff](refactor/06-v2-collection-overview-handoff.md). Slice 3 has not started.
 
 Deliverables:
 

@@ -1,6 +1,6 @@
 # CurateDS V2 web foundation
 
-This temporary Next.js App Router workspace implements V2 Slice 1. The existing Vite app remains in `apps/web`. Collection creation, item browsing/editing, insight data, and showcase workflows are later slices; their destinations are deliberately not active yet.
+This temporary Next.js App Router workspace implements V2 Slices 1 and 2. The existing Vite app remains in `apps/web`. Users can create a collection with optional category, description, HTTPS cover-image URL, and colour, then view real counts/recent items and add a first item. Full item browsing/editing, insight data, showcase, and identity editing remain later workflows.
 
 ## Run locally
 
@@ -60,14 +60,19 @@ To trigger renewal immediately, the checker uses the local cookie secret and SDK
 
 - `/`: public welcome page and sign-in.
 - `/collections`: account-owned collection list, including loading, retry, and empty states.
-- `/collections/[collectionId]`: collection shell and foundation overview. The URL selects context; the provider does not persist a competing active collection.
-- `/api/collections`: authenticated, read-only web boundary for the .NET collection list.
+- `/collections/new`: collection creation with progressive identity options and recoverable save errors.
+- `/collections/[collectionId]`: collection identity, live summary cards, six most recent items, and a basic add-item form. The URL selects context; the provider does not persist a competing active collection.
+- `/api/collections`: authenticated collection list and creation boundary.
+- `/api/collections/[collectionId]/summary`: authenticated overview counts.
+- `/api/collections/[collectionId]/items`: six recent items (GET) and basic item creation (POST).
 
-The web route forwards the bearer token only to the configured API, refuses upstream redirects, validates JSON with Zod, and returns private/no-store responses. Raw API errors and tokens never appear in its response. The .NET API remains authoritative for collection ownership and domain rules. TanStack Query handles browser server state; it is scoped to the protected app's provider, and sign-out uses a full document navigation.
+The web route forwards the bearer token only to the configured API, refuses upstream redirects, validates JSON with Zod, and returns private/no-store responses. Writes require an Origin matching `APP_BASE_URL`, a server session, and validated input; user-supplied ownership fields are discarded. Raw API errors and tokens never appear in its response. The .NET API remains authoritative for collection ownership and domain rules. TanStack Query handles browser server state; it is scoped to the protected app's provider, and sign-out uses a full document navigation.
+
+Apply the additive `AddCollectionIdentity` migration by starting the updated API before using the new form. Existing collections retain their names/data and use the default identity until customized in a later slice. Covers currently use external HTTPS image links with an illustrated fallback; file uploads are not part of this slice. The basic item form accepts name, description, and quantity. Collections with required custom fields still need the existing web's full item editor; API validation remains authoritative.
 
 ## API contract generation
 
-The checked-in contract snapshot contains only the collection-list operation and its referenced schemas. It was extracted from the running .NET OpenAPI document, not authored as a parallel schema. `CollectionCrudEndpoints` explicitly advertises its existing response type, and an API integration test verifies it.
+The checked-in contract snapshot contains collection listing/creation, summary counts, and item listing/creation with their referenced schemas. It was extracted from the running .NET OpenAPI document, not authored as a parallel schema. These endpoints explicitly advertise their response types.
 
 Regenerate from a running API in Development:
 
@@ -96,7 +101,7 @@ Browser tests start isolated servers on loopback ports 3101 and 3102 and exercis
 
 The Playwright server command preloads `e2e/auth-transport.mjs` to route only the reserved `https://test.invalid` issuer to the local fixture. The production SDK and collection route execute normally; the fixture supplies discovery and token responses. This preload is not used by normal development, start, or Docker commands. These checks do not prove the live tenant's refresh grants or logout URL configuration.
 
-The existing web build/tests remain part of root `npm run verify`; the V2 build and unit tests are also included. CI additionally runs the focused browser suite.
+The browser suite also covers first-run creation, preservation of a draft after a failed save, first-item creation, reload persistence, and collection-specific counts/recent items after switching. The existing web build/tests remain part of root `npm run verify`; the V2 build and unit tests are also included. CI additionally runs the focused browser suite.
 
 ## Deployment preparation
 

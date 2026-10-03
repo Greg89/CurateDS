@@ -1,8 +1,10 @@
 namespace CurateDS.Api.Collections;
 
-public sealed record CreateCollectionRequest(string Name);
+public sealed record CreateCollectionRequest(string Name,
+    string? Category = null, string? Description = null, string? CoverImageUrl = null, string? Color = null);
 
-public sealed record CollectionResponse(Guid Id, string Name, DateTime CreatedUtc);
+public sealed record CollectionResponse(Guid Id, string Name, DateTime CreatedUtc,
+    string? Category = null, string? Description = null, string? CoverImageUrl = null, string? Color = null);
 
 public sealed record CollectionSummaryResponse(
     Guid CollectionId,

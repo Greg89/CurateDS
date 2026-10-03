@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { collectionQueryKey, fetchCollections } from "@/lib/collections";
-import { CollectionProvider, useCollection } from "./collection-context";
+import { CollectionProvider } from "./collection-context";
 import {
   CollectionFailure,
   CollectionLoading,
@@ -53,6 +53,9 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
               </option>
             ))}
           </select>
+          <Link className="back-link" href="/collections/new">
+            ＋ New collection
+          </Link>
           <nav aria-label="Collection">
             <Link
               className="nav-link active"
@@ -82,48 +85,4 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
   );
 }
 
-export function CollectionOverview() {
-  const collection = useCollection();
-  const created = new Date(collection.createdUtc).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-  return (
-    <>
-      <header className="collection-heading">
-        <span className="eyebrow">Your collection / Overview</span>
-        <h1>{collection.name}</h1>
-        <p>Collected with care. Yours to make your own.</p>
-      </header>
-      <section className="overview-hero">
-        <div>
-          <span className="eyebrow">A collection with a story</span>
-          <h2>
-            Every find
-            <br />
-            belongs somewhere.
-          </h2>
-          <p>
-            This is the home for {collection.name}. A place to keep its stories,
-            rediscover old favorites, and enjoy what you've collected.
-          </p>
-          <span className="date-tag">Started {created}</span>
-        </div>
-        <div className="still-life" aria-hidden="true">
-          <div className="object object-book" />
-          <div className="object object-disc" />
-          <div className="object object-card" />
-        </div>
-      </section>
-      <section className="workspace-note">
-        <span className="eyebrow">A new home, taking shape</span>
-        <h2>More ways to enjoy your collection.</h2>
-        <p>
-          Browsing, insights, and collection customization are on their way.
-          Your existing collection stays right where you left it.
-        </p>
-      </section>
-    </>
-  );
-}
+export { CollectionOverview } from "./collection-overview";

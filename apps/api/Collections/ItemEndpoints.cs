@@ -76,7 +76,7 @@ public static class ItemEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<PagedItemsResponse>();
     }
 
     private static void MapCreateItem(RouteGroupBuilder group)
@@ -132,7 +132,7 @@ public static class ItemEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<ItemDetailResponse>(StatusCodes.Status201Created);
     }
 
     private static void MapGetItemDetail(RouteGroupBuilder group)

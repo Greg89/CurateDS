@@ -36,17 +36,19 @@ public static class CollectionCrudEndpoints
             {
                 var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
-                    new CreateCollectionCommand(ownerId, request.Name),
+                    new CreateCollectionCommand(ownerId, request.Name,
+                        request.Category, request.Description, request.CoverImageUrl, request.Color),
                     cancellationToken);
 
                 return Results.Created($"/collections/{result.Id}", CollectionResponseMappers.ToCollectionResponse(
-                    new CollectionDto(result.Id, result.Name, result.CreatedUtc)));
+                    new CollectionDto(result.Id, result.Name, result.CreatedUtc,
+                        result.Category, result.Description, result.CoverImageUrl, result.Color)));
             }
             catch (ValidationException exception)
             {
                 return ApiResponses.Validation(exception);
             }
-        });
+        }).Produces<CollectionResponse>(StatusCodes.Status201Created);
 
         group.MapDelete("/{collectionId:guid}", async (
             Guid collectionId,

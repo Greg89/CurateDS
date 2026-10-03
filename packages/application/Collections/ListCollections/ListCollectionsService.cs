@@ -18,7 +18,8 @@ public sealed class ListCollectionsService
         var collections = await _collectionRepository.ListByOwnerAsync(query.OwnerId, cancellationToken);
 
         return collections
-            .Select(collection => new CollectionDto(collection.Id, collection.Name, collection.CreatedUtc))
+            .Select(collection => new CollectionDto(collection.Id, collection.Name, collection.CreatedUtc,
+                collection.Category, collection.Description, collection.CoverImageUrl, collection.Color))
             .ToArray();
     }
 }

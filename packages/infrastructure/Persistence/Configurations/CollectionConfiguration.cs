@@ -29,6 +29,11 @@ internal sealed class CollectionConfiguration : IEntityTypeConfiguration<Collect
 
         builder.Property(collection => collection.UpdatedUtc);
 
+        builder.Property(collection => collection.Category).HasMaxLength(100);
+        builder.Property(collection => collection.Description).HasMaxLength(1000);
+        builder.Property(collection => collection.CoverImageUrl).HasMaxLength(2048);
+        builder.Property(collection => collection.Color).HasMaxLength(20);
+
         builder.Property(collection => collection.UpdatedBy)
             .HasMaxLength(200);
 

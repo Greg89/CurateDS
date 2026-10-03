@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { collectionQueryKey, fetchCollections } from "@/lib/collections";
 import { CollectionFailure, CollectionLoading } from "./collection-states";
+import { CollectionCover } from "./collection-cover";
 
 export function CollectionsList() {
   const query = useQuery({
@@ -23,6 +24,11 @@ export function CollectionsList() {
         <span className="eyebrow">Your personal archive</span>
         <h1>Things worth keeping.</h1>
         <p>Every collection has a story. Pick one to step inside.</p>
+        {query.data.length > 0 && (
+          <Link className="button" href="/collections/new">
+            New collection
+          </Link>
+        )}
       </header>
       {query.data.length === 0 ? (
         <div className="state-panel">
@@ -31,30 +37,31 @@ export function CollectionsList() {
           </span>
           <h2>A little space for what you love.</h2>
           <p>
-            You don't have any collections yet. Collections you create in
-            CurateDS will appear here.
+            You don't have any collections yet. Start with something you love.
           </p>
+          <Link className="button" href="/collections/new">
+            Create your first collection
+          </Link>
         </div>
       ) : (
         <div className="collection-grid">
-          {query.data.map((collection, index) => (
+          {query.data.map((collection) => (
             <Link
               className="collection-card"
               href={`/collections/${collection.id}`}
               key={collection.id}
+              data-color={collection.color || "forest"}
             >
-              <div
-                className={`collection-art tone-${index % 3}`}
-                aria-hidden="true"
-              >
-                <span>{collection.name.slice(0, 1).toUpperCase()}</span>
-                <i />
-                <i />
-                <i />
-              </div>
+              <CollectionCover
+                key={collection.coverImageUrl}
+                url={collection.coverImageUrl}
+                name={collection.name}
+              />
               <div className="card-caption">
                 <div>
-                  <span className="eyebrow">Personal collection</span>
+                  <span className="eyebrow">
+                    {collection.category || "Personal collection"}
+                  </span>
                   <h2>{collection.name}</h2>
                 </div>
                 <span className="arrow" aria-hidden="true">

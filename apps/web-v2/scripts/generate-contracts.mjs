@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import openapiTS, { astToString } from "openapi-typescript";
 
-// Keep only the operation this slice consumes, resolving its real API component references.
+// Keep only the operations consumed by the collection overview and creation flows.
 // Omit the URL argument to regenerate from the checked-in snapshot without a running API.
 const snapshot = new URL(
   "../src/lib/generated/collections.openapi.json",
@@ -22,9 +22,25 @@ if (source) {
   document = {
     openapi: full.openapi,
     info: full.info,
-    paths: { [path]: { get: full.paths[path].get } },
+    paths: {},
     components: { schemas: {} },
   };
+  for (const [pattern, methods] of [
+    ["/collections", ["get", "post"]],
+    ["/collections/{collectionId}/summary", ["get"]],
+    ["/collections/{collectionId}/items", ["get", "post"]],
+  ]) {
+    const key = Object.keys(full.paths).find(
+      (entry) => entry.replace(/\/$/, "") === pattern,
+    );
+    if (!key) throw new Error(`Missing API path: ${pattern}`);
+    document.paths[key] = {};
+    for (const method of methods) {
+      if (!full.paths[key][method])
+        throw new Error(`Missing ${method} ${pattern}`);
+      document.paths[key][method] = full.paths[key][method];
+    }
+  }
   const visited = new Set();
   function collect(value) {
     if (!value || typeof value !== "object") return;

@@ -17,7 +17,8 @@ async function signIn(
       user: { sub: "auth0|fixture", name: "Alex Collector" },
       tokenSet: {
         accessToken: "fixture-access-token",
-        expiresAt: Math.floor(Date.now() / 1000) + (options.expired ? -60 : 3600),
+        expiresAt:
+          Math.floor(Date.now() / 1000) + (options.expired ? -60 : 3600),
         refreshToken: options.refreshToken,
         audience: "https://curateds.test",
         scope: "openid profile email offline_access",
@@ -71,9 +72,9 @@ test("expired tokens refresh and persist rotating credentials across requests", 
     secret: testSecret,
   });
   await expireAccessToken(context, auth, origin, testSecret);
-  expect((await readSession(context, auth, origin))!.tokenSet.expiresAt).toBeLessThan(
-    Date.now() / 1000,
-  );
+  expect(
+    (await readSession(context, auth, origin))!.tokenSet.expiresAt,
+  ).toBeLessThan(Date.now() / 1000);
   for (let index = 0; index < 3; index++) {
     const response = await context.request.get("/api/collections");
     expect(response.status()).toBe(200);
@@ -206,4 +207,97 @@ test("empty and missing collections have clear recovery states", async ({
   await expect(
     page.getByRole("heading", { name: "Let's find your collection." }),
   ).toBeVisible();
+});
+
+test("create a personal collection, recover a failed save, and keep item context when switching", async ({
+  page,
+  context,
+  request,
+}, testInfo) => {
+  await request.post("http://127.0.0.1:3102/scenario/empty");
+  await signIn(context);
+  await page.goto("/collections");
+  await page
+    .getByRole("link", { name: "Create your first collection" })
+    .click();
+  await page.getByLabel("Collection name").fill("Weekend shelves");
+  await page.getByLabel("Hobby or category").fill("Books");
+  await page.getByLabel("Description").fill("Stories worth keeping.");
+  await page.getByText("Add a cover and colour").click();
+  await page.getByLabel("Collection colour").selectOption("clay");
+  await page.screenshot({
+    path: testInfo.outputPath("collection-create.png"),
+    fullPage: true,
+  });
+  await page.route("**/api/collections", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({ status: 503, body: "{}" });
+    } else await route.continue();
+  });
+  await page
+    .getByRole("button", { name: "Create collection", exact: true })
+    .click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText(
+    "couldn't confirm",
+  );
+  await expect(page.getByLabel("Collection name")).toHaveValue(
+    "Weekend shelves",
+  );
+  await page.unroute("**/api/collections");
+  await page
+    .getByRole("button", { name: "Create collection", exact: true })
+    .click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Weekend shelves",
+  );
+  const firstUrl = page.url();
+  await expect(
+    page.getByText("Stories worth keeping.", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Add your first item" }).click();
+  await page.getByLabel("Item name").fill("A first edition");
+  await page.getByLabel("A few words").fill("Found on a rainy Sunday.");
+  await page.getByRole("button", { name: "Save item" }).click();
+  await expect(
+    page.getByRole("heading", { name: "A first edition" }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Collection summary").locator("dd").first(),
+  ).toHaveText("1");
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "A first edition" }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("collection-overview.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole("link", { name: /New collection/ }).click();
+  await page.getByLabel("Collection name").fill("Sunday records");
+  await page
+    .getByRole("button", { name: "Create collection", exact: true })
+    .click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Sunday records",
+  );
+  await expect(
+    page.getByLabel("Collection summary").locator("dd").first(),
+  ).toHaveText("0");
+  await expect(page.getByText("A first edition", { exact: true })).toHaveCount(
+    0,
+  );
+  await page
+    .getByLabel("Your collection")
+    .selectOption(firstUrl.split("/").pop()!);
+  await expect(
+    page.getByRole("heading", { name: "A first edition" }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Collection summary").locator("dd").first(),
+  ).toHaveText("1");
 });

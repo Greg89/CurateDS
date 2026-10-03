@@ -5,7 +5,8 @@ namespace CurateDS.Api.Collections;
 internal static class CollectionResponseMappers
 {
     public static CollectionResponse ToCollectionResponse(CollectionDto collection) =>
-        new(collection.Id, collection.Name, collection.CreatedUtc);
+        new(collection.Id, collection.Name, collection.CreatedUtc,
+            collection.Category, collection.Description, collection.CoverImageUrl, collection.Color);
 
     public static AttributeDefinitionResponse ToAttributeDefinitionResponse(AttributeDefinitionDto attributeDefinition) =>
         new(

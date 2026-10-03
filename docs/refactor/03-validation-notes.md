@@ -2,6 +2,10 @@
 
 Status updated: 2026-10-02
 
+## V2 Collection Creation And Overview (2026-10-02)
+
+Slice 2 is implemented. The full .NET solution passed 300 tests; the disposable PostgreSQL run passed all 19 infrastructure tests with the new additive identity migration. V2 passed 25 unit/component tests and its production build. The 14 existing browser cases passed, followed by both new desktop/mobile creation cases after correcting a test selector. New coverage checks save-error recovery, collection identity persistence, first-item creation, reload, owner isolation, and complete workspace switching. Screenshots were reviewed for desktop/mobile layout and overflow. Existing web build and all 136 tests passed. The local Docker API was rebuilt/restarted, and its health endpoint returned 200. See [the Slice 2 handoff](06-v2-collection-overview-handoff.md) for scope and next steps.
+
 ## V2 Foundation (2026-10-02)
 
 The first V2 foundation is complete after completion of the refactor pass. See [the Slice 1 handoff](05-v2-foundation-handoff.md) for setup and verification: 17 V2 unit/component tests, 14 desktop/mobile browser checks, 136 existing web tests, and 100 API integration tests passed. Both web builds, the V2 Docker build/runtime smoke, and npm audit passed. The browser suite verifies refresh-token rotation/persistence, refresh failure, and logout access removal against a local identity-provider fixture. After updating Auth0 configuration, the user ran the interactive live checker and provided passing terminal results for login/callback, authenticated collection access, two token refreshes with persisted session cookies, logout/session removal/protected-route denial, and sign-in/API access after logout. The isolated test session was signed out on completion. Slice 1 live acceptance is complete; Slice 2 is next.

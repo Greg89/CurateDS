@@ -41,7 +41,7 @@ public static class CollectionReportEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<CollectionSummaryResponse>();
 
         group.MapGet("/{collectionId:guid}/reports", async (
             Guid collectionId,

@@ -647,3 +647,246 @@ em {
       color 0.15s;
   }
 }
+
+/* Collection identity and first-run workspace. */
+[data-color] {
+  --identity: #254c40;
+  --identity-soft: #dfe8dc;
+}
+[data-color="clay"] {
+  --identity: #874629;
+  --identity-soft: #eedbcd;
+}
+[data-color="slate"] {
+  --identity: #35546b;
+  --identity-soft: #dbe5eb;
+}
+.page-heading .button,
+.collection-heading .button {
+  margin-top: 20px;
+}
+.create-page {
+  max-width: 900px;
+  margin-inline: auto;
+}
+.collection-form {
+  display: grid;
+  gap: 22px;
+  max-width: 680px;
+  margin-block: 32px;
+}
+.collection-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.collection-form label span,
+.field-hint {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 14px;
+}
+.collection-form input,
+.collection-form textarea,
+.collection-form select {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fffcf6;
+  color: var(--ink);
+  font: inherit;
+}
+.collection-form textarea {
+  resize: vertical;
+}
+.collection-form details {
+  border-block: 1px solid var(--line);
+  padding-block: 18px;
+}
+.collection-form summary {
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.collection-form details label {
+  margin-top: 18px;
+}
+.collection-form .button {
+  justify-self: start;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.form-actions {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+.text-button {
+  border: 0;
+  padding: 10px;
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.item-form {
+  padding: 24px;
+  border: 1px solid var(--line);
+  background: #eeeade;
+}
+.save-error {
+  border-left: 3px solid #ad482b;
+  padding: 0 16px;
+}
+.collection-cover {
+  height: 260px;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--identity-soft, #dfe8dc);
+  color: var(--identity, #254c40);
+}
+.collection-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}
+.collection-cover > span {
+  font:
+    150px Georgia,
+    serif;
+  position: relative;
+  z-index: 1;
+}
+.collection-cover i {
+  width: 180px;
+  height: 240px;
+  border: 1px solid currentColor;
+  opacity: 0.2;
+  position: absolute;
+  transform: rotate(-25deg);
+  border-radius: 100px 100px 5px 5px;
+}
+.collection-cover i:last-child {
+  transform: rotate(35deg);
+}
+.identity-hero {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.85fr) 1fr;
+  background: var(--identity-soft);
+  margin-top: 32px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.identity-hero > div:last-child {
+  padding: 30px;
+  align-self: center;
+}
+.identity-hero h2 {
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.15;
+  margin: 18px 0;
+}
+.identity-hero p {
+  line-height: 1.6;
+}
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-block: 28px;
+}
+.summary-cards > div {
+  border: 1px solid var(--line);
+  padding: 20px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+}
+.summary-cards dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+.summary-cards dd {
+  font:
+    36px Georgia,
+    serif;
+  margin: 0;
+  color: var(--identity);
+}
+.recent-section {
+  margin-top: 40px;
+}
+.recent-items {
+  list-style: none;
+  margin: 24px 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.recent-items li {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  padding-block: 20px;
+  min-width: 0;
+}
+.recent-items h3 {
+  font-size: 22px;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.recent-items p {
+  margin: 0 0 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.recent-items time {
+  font-size: 12px;
+  color: var(--muted);
+}
+.item-monogram {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 65px;
+  flex: 0 0 50px;
+  background: var(--identity-soft);
+  color: var(--identity);
+  font:
+    30px Georgia,
+    serif;
+}
+.collection-heading h1,
+.card-caption h2 {
+  overflow-wrap: anywhere;
+}
+.collection-heading p {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+  .summary-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+  .identity-hero {
+    grid-template-columns: 1fr;
+  }
+  .identity-hero .collection-cover {
+    height: 200px;
+  }
+  .recent-items {
+    grid-template-columns: 1fr;
+  }
+}

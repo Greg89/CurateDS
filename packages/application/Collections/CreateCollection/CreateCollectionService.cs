@@ -30,12 +30,14 @@ public sealed class CreateCollectionService
     {
         await _validator.ValidateAndThrowAsync(command, cancellationToken);
 
-        var collection = Collection.Create(command.OwnerId, command.Name, DateTime.UtcNow, _currentUser.GetCurrentUser());
+        var collection = Collection.Create(command.OwnerId, command.Name, DateTime.UtcNow, _currentUser.GetCurrentUser(),
+            command.Category, command.Description, command.CoverImageUrl, command.Color);
 
         await _unitOfWork.ExecuteInTransactionAsync(
             innerCancellationToken => _collectionRepository.AddAsync(collection, innerCancellationToken),
             cancellationToken);
 
-        return new CreateCollectionResult(collection.Id, collection.Name, collection.CreatedUtc);
+        return new CreateCollectionResult(collection.Id, collection.Name, collection.CreatedUtc,
+            collection.Category, collection.Description, collection.CoverImageUrl, collection.Color);
     }
 }
