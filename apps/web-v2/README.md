@@ -1,6 +1,6 @@
 # CurateDS V2 web foundation
 
-This temporary Next.js App Router workspace implements V2 Slices 1–5. The existing Vite app remains in `apps/web`. Users can create collections, browse and edit items with custom fields and images, explore insights, and save filtered views. Settings supports collection identity, ordered pins, optional overview sections, collection vocabulary, and custom-field definitions. Showcase is the next roadmap slice.
+This temporary Next.js App Router workspace implements V2 Slices 1–5. The existing Vite app remains in `apps/web`. Users can create collections, browse and edit items with custom fields and images, explore insights, and save filtered views. Settings supports collection identity, ordered pins, optional overview sections, collection vocabulary, and custom-field definitions. Slice 6 has begun with a private showcase preview; public sharing remains later work.
 
 ## Run locally
 
@@ -64,6 +64,7 @@ To trigger renewal immediately, the checker uses the local cookie secret and SDK
 - `/collections/[collectionId]`: collection identity, live summary cards, six most recent items, and links into the full item editor. The URL selects context; the provider does not persist a competing active collection.
 - `/collections/[collectionId]/browse`: URL-driven search, filters, sorting, pagination, and grid/list views.
 - `/collections/[collectionId]/items/new`, `/items/[itemId]`, and `/items/[itemId]/edit`: full creation, detail, editing, and image management within the collection.
+- `/collections/[collectionId]/showcase`: authenticated private gallery preview using saved identity, vocabulary, pins, and overview visibility choices.
 - `/collections/[collectionId]/insights`: collection cards, twelve-month growth, location/tag/type/custom-field breakdowns, paged activity, and saved views.
 - `/api/collections/[collectionId]/insights`, `/activity`, and `/saved-views`: validated session boundaries; saved-view creation/removal require same-origin writes.
 - `/collections/[collectionId]/settings`: edit collection identity, cover URL, and colour with preview, discard, and recoverable saves; select/reorder up to six pinned items and choose which overview sections appear; customize singular/plural labels and field definitions.
@@ -85,7 +86,7 @@ For local uploads, start the optional [development storage override](../../tools
 
 In Settings, **Shape your overview** toggles the cover/story, summary counts, pinned items, and recent items. Choose up to six pins with the searchable, paged item finder; move them earlier/later to set their display order. Save overview separately from identity changes. Hiding the pinned section keeps the selection, and deleted items disappear automatically.
 
-Start the updated API to apply the additive `AddCollectionPresentation` migration. Existing collections default to all sections enabled and no pins. Pinned item references are checked against active collection items on both reads and writes. The overview keeps its add/browse/settings links even with every optional section hidden. These are private workspace choices; showcase is a later slice.
+Start the updated API to apply the additive `AddCollectionPresentation` migration. Existing collections default to all sections enabled and no pins. Pinned item references are checked against active collection items on both reads and writes. The overview keeps its add/browse/settings links even with every optional section hidden. The private showcase preview uses these same choices. Opening it never publishes the collection.
 
 ## Collection words and custom fields
 
@@ -100,6 +101,12 @@ Removing a field requires confirmation because it permanently deletes its saved 
 Insights aggregate currently kept items; the twelve-month chart uses UTC creation dates and excludes deleted items. Collection category stays in the header, while item types provide the within-collection grouping. Custom-field breakdowns show up to twenty most common values and use exact typed-value filters when opening Browse. Month links use an inclusive start and exclusive end. Activity includes deleted-item history; those items may no longer open.
 
 Browse preserves these report filters when ordinary filters are applied. Named saved views retain filters and sorting and restore page one, leaving grid/list presentation at its default. Supported legacy saved filters also restore in V2. Unsupported filter JSON is reported explicitly; the legacy client hides V2-only saved views so it cannot silently broaden a result.
+
+## Private showcase preview
+
+Open **Showcase** from collection navigation to view the first gallery presentation. A compact toolbar keeps collection switching, return, and customization available. Identity/cover, ordered pinned highlights, summary counts, and recent additions come from the existing authenticated API data. Visible highlights are omitted from recent additions to avoid duplicate cards. Missing images have a fallback, and empty collections remain navigable.
+
+The route inherits the workspace's server session check, requires collection ownership through existing API calls, and uses generic `noindex, nofollow` metadata. The page is private; this task does not add a share link, publish action, public API, or public image contract. It currently offers one gallery layout and follows overview section preferences. Template selection, selected report sections, and publication/social metadata are remaining Slice 6 tasks. See the [showcase handoff](../../docs/refactor/12-v2-showcase-preview-handoff.md).
 
 ## API contract generation
 

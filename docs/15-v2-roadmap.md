@@ -156,6 +156,8 @@ Exit criteria:
 
 Goal: let a hobbyist show what their collection is.
 
+Status (2026-10-03): In progress. The first private showcase preview is implemented with a gallery layout, saved identity/vocabulary, ordered highlights, optional summary/recent sections, and collection switching. It reuses the authenticated collection model and existing overview preferences; production build, unit/component, and desktop/mobile browser checks passed. See [private showcase handoff](refactor/12-v2-showcase-preview-handoff.md) for validation and remaining work. Next: persisted showcase template selection and selected report sections; public sharing and social previews remain later work in this slice.
+
 Deliverables:
 
 - showcase route

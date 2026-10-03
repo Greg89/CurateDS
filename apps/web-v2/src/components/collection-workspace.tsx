@@ -17,6 +17,7 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
   const section = usePathname().split("/")[3];
   const settings = section === "settings";
   const insights = section === "insights";
+  const showcase = section === "showcase";
   const browsing = section === "browse" || section === "items";
   const query = useQuery({
     queryKey: collectionQueryKey,
@@ -36,10 +37,20 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
   if (!collection) return <CollectionMissing />;
   return (
     <CollectionProvider collection={collection}>
-      <div className="workspace">
-        <aside className="collection-sidebar">
-          <Link className="back-link" href="/collections">
-            ← All collections
+      <div className={showcase ? "workspace showcase-workspace" : "workspace"}>
+        <aside
+          className={
+            showcase
+              ? "collection-sidebar showcase-toolbar"
+              : "collection-sidebar"
+          }
+          aria-label={showcase ? "Showcase controls" : undefined}
+        >
+          <Link
+            className="back-link"
+            href={showcase ? `/collections/${collection.id}` : "/collections"}
+          >
+            {showcase ? "← Back to collection" : "← All collections"}
           </Link>
           <label className="eyebrow" htmlFor="collection-switcher">
             Your collection
@@ -49,7 +60,7 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
             value={collection.id}
             onChange={(event) =>
               router.push(
-                `/collections/${event.target.value}${settings ? "/settings" : insights ? "/insights" : browsing ? "/browse" : ""}`,
+                `/collections/${event.target.value}${showcase ? "/showcase" : settings ? "/settings" : insights ? "/insights" : browsing ? "/browse" : ""}`,
               )
             }
           >
@@ -59,52 +70,63 @@ export function CollectionWorkspace({ children }: { children: ReactNode }) {
               </option>
             ))}
           </select>
-          <Link className="back-link" href="/collections/new">
-            ＋ New collection
-          </Link>
-          <nav aria-label="Collection">
+          {showcase ? (
             <Link
-              className={`nav-link ${!browsing && !insights && !settings ? "active" : ""}`}
-              aria-current={
-                !browsing && !insights && !settings ? "page" : undefined
-              }
-              href={`/collections/${collection.id}`}
+              className="text-button"
+              href={`/collections/${collection.id}/settings#overview`}
             >
-              Overview <span aria-hidden="true">↗</span>
+              Customize presentation
             </Link>
-            <Link
-              className={`nav-link ${browsing ? "active" : ""}`}
-              aria-current={browsing ? "page" : undefined}
-              href={`/collections/${collection.id}/browse`}
-            >
-              Browse <span aria-hidden="true">↗</span>
-            </Link>
-            <Link
-              className={`nav-link ${insights ? "active" : ""}`}
-              aria-current={insights ? "page" : undefined}
-              href={`/collections/${collection.id}/insights`}
-            >
-              Insights <span aria-hidden="true">↗</span>
-            </Link>
-            <Link
-              className={`nav-link ${settings ? "active" : ""}`}
-              aria-current={settings ? "page" : undefined}
-              href={`/collections/${collection.id}/settings`}
-            >
-              Settings <span aria-hidden="true">↗</span>
-            </Link>
-            {["Showcase"].map((label) => (
-              <span className="nav-link forthcoming" key={label}>
-                {label}
-                <small>Soon</small>
-              </span>
-            ))}
-          </nav>
-          <p className="sidebar-note">
-            Collected by you.
-            <br />
-            Made to be enjoyed.
-          </p>
+          ) : (
+            <>
+              <Link className="back-link" href="/collections/new">
+                ＋ New collection
+              </Link>
+              <nav aria-label="Collection">
+                <Link
+                  className={`nav-link ${!browsing && !insights && !settings ? "active" : ""}`}
+                  aria-current={
+                    !browsing && !insights && !settings ? "page" : undefined
+                  }
+                  href={`/collections/${collection.id}`}
+                >
+                  Overview <span aria-hidden="true">↗</span>
+                </Link>
+                <Link
+                  className={`nav-link ${browsing ? "active" : ""}`}
+                  aria-current={browsing ? "page" : undefined}
+                  href={`/collections/${collection.id}/browse`}
+                >
+                  Browse <span aria-hidden="true">↗</span>
+                </Link>
+                <Link
+                  className={`nav-link ${insights ? "active" : ""}`}
+                  aria-current={insights ? "page" : undefined}
+                  href={`/collections/${collection.id}/insights`}
+                >
+                  Insights <span aria-hidden="true">↗</span>
+                </Link>
+                <Link
+                  className={`nav-link ${settings ? "active" : ""}`}
+                  aria-current={settings ? "page" : undefined}
+                  href={`/collections/${collection.id}/settings`}
+                >
+                  Settings <span aria-hidden="true">↗</span>
+                </Link>
+                <Link
+                  className="nav-link"
+                  href={`/collections/${collection.id}/showcase`}
+                >
+                  Showcase <span aria-hidden="true">↗</span>
+                </Link>
+              </nav>
+              <p className="sidebar-note">
+                Collected by you.
+                <br />
+                Made to be enjoyed.
+              </p>
+            </>
+          )}
         </aside>
         <div className="collection-content" key={collection.id}>
           {children}

@@ -90,23 +90,67 @@ createServer(async (request, response) => {
     collectionRequests = 0;
     collections =
       scenario === "empty" ? [] : structuredClone(initialCollections);
-    items =
-      scenario === "browse" || scenario === "insights"
-        ? Array.from({ length: 14 }, (_, index) =>
-            makeItem(
-              {
-                name: `Shelf book ${String(index + 1).padStart(2, "0")}`,
-                quantity: index + 1,
-                tagIds: index % 2 ? [tag.id] : [],
-                locationId: index % 2 ? location.id : null,
-              },
-              initialCollections[0].id,
-            ),
-          )
-        : [];
+    items = ["browse", "insights", "showcase"].includes(scenario)
+      ? Array.from({ length: 14 }, (_, index) =>
+          makeItem(
+            {
+              name: `Shelf book ${String(index + 1).padStart(2, "0")}`,
+              quantity: index + 1,
+              tagIds: index % 2 ? [tag.id] : [],
+              locationId: index % 2 ? location.id : null,
+            },
+            initialCollections[0].id,
+          ),
+        )
+      : [];
     savedViews = [];
     presentations = {};
     definitions = [structuredClone(definition)];
+    if (scenario === "showcase") {
+      Object.assign(collections[0], {
+        name: "The quiet library",
+        category: "Stories & first editions",
+        color: "clay",
+        description:
+          "A few good stories, a little margin for notes. Books gathered slowly, and returned to often.",
+        coverImageUrl: "https://images.test/library.svg",
+        itemLabel: "book",
+        itemsLabel: "books",
+      });
+      const titles = [
+        "Notes from the garden",
+        "The art of noticing",
+        "An atlas of small places",
+        "Letters from the coast",
+        "A season of quiet",
+        "The long way home",
+      ];
+      items = items.slice(0, titles.length);
+      items.forEach((item, index) => {
+        item.name = titles[index];
+        item.description = "A well-loved edition with a story of its own.";
+        item.createdUtc = new Date(Date.UTC(2026, 9, index + 1)).toISOString();
+        if (index % 2 === 0)
+          item.mediaAssets = [
+            {
+              id: randomUUID(),
+              url: `https://images.test/book-${index}.svg`,
+              contentType: "image/svg+xml",
+              fileName: "fixture.svg",
+              sizeBytes: 100,
+              isPrimary: true,
+              uploadedUtc: item.createdUtc,
+            },
+          ];
+      });
+      presentations[collections[0].id] = {
+        showCover: true,
+        showSummary: true,
+        showPinnedItems: true,
+        showRecentItems: true,
+        pinnedItemIds: [items[2].id, items[0].id, items[4].id],
+      };
+    }
     if (scenario === "insights")
       items.forEach((item, index) => {
         item.itemTypeId = type.id;

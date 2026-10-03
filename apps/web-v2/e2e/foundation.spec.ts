@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { generateSessionCookie } from "@auth0/nextjs-auth0/testing";
+import { signIn } from "./session";
 import { Auth0Client } from "@auth0/nextjs-auth0/server";
 import { testSecret } from "../playwright.config";
 import { expireAccessToken, readSession } from "../scripts/live-auth-smoke";
@@ -7,35 +7,6 @@ import { expireAccessToken, readSession } from "../scripts/live-auth-smoke";
 test.beforeEach(async ({ request }) => {
   await request.post("http://127.0.0.1:3102/scenario/ok");
 });
-
-async function signIn(
-  context: import("@playwright/test").BrowserContext,
-  options: { expired?: boolean; refreshToken?: string } = {},
-) {
-  const value = await generateSessionCookie(
-    {
-      user: { sub: "auth0|fixture", name: "Alex Collector" },
-      tokenSet: {
-        accessToken: "fixture-access-token",
-        expiresAt:
-          Math.floor(Date.now() / 1000) + (options.expired ? -60 : 3600),
-        refreshToken: options.refreshToken,
-        audience: "https://curateds.test",
-        scope: "openid profile email offline_access",
-      },
-    },
-    { secret: testSecret },
-  );
-  await context.addCookies([
-    {
-      name: "__session",
-      value,
-      url: "http://127.0.0.1:3101",
-      httpOnly: true,
-      sameSite: "Lax",
-    },
-  ]);
-}
 
 test("public landing and unauthenticated API boundary", async ({
   page,

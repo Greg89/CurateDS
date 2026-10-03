@@ -9,9 +9,14 @@ import {
 import { CollectionsList } from "@/components/collections-list";
 import { collectionQueryKey } from "@/lib/collections";
 
-const navigation = vi.hoisted(() => ({ collectionId: "", push: vi.fn() }));
+const navigation = vi.hoisted(() => ({
+  collectionId: "",
+  section: "",
+  push: vi.fn(),
+}));
 vi.mock("next/navigation", () => ({
-  usePathname: () => `/collections/${navigation.collectionId}`,
+  usePathname: () =>
+    `/collections/${navigation.collectionId}${navigation.section}`,
   useParams: () => ({ collectionId: navigation.collectionId }),
   useRouter: () => ({ push: navigation.push }),
 }));
@@ -36,9 +41,37 @@ function clientWith(data?: unknown) {
 beforeEach(() => {
   navigation.collectionId = books.id;
   navigation.push.mockClear();
+  navigation.section = "";
 });
 
 describe("collection workspace", () => {
+  it("keeps showcase context while switching collections", async () => {
+    navigation.section = "/showcase";
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={clientWith([books, records])}>
+        <CollectionWorkspace>
+          <p>Preview</p>
+        </CollectionWorkspace>
+      </QueryClientProvider>,
+    );
+    expect(
+      screen.getByRole("complementary", { name: "Showcase controls" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Collection" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "← Back to collection" }),
+    ).toHaveAttribute("href", `/collections/${books.id}`);
+    await user.selectOptions(
+      screen.getByLabelText("Your collection"),
+      records.id,
+    );
+    expect(navigation.push).toHaveBeenCalledWith(
+      `/collections/${records.id}/showcase`,
+    );
+  });
   it("derives nested context from the URL, including navigation back and forward", () => {
     const client = clientWith([books, records]);
     const view = () => (
