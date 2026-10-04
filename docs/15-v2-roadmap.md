@@ -156,7 +156,7 @@ Exit criteria:
 
 Goal: let a hobbyist show what their collection is.
 
-Status (2026-10-03): In progress. Private showcase now supports saved Gallery/Journal layouts, identity/vocabulary, ordered highlights, optional summary/recent sections, and selected twelve-month additions and item-type reports. Layout/report settings persist independently of overview choices; data remains owner-scoped and comes from the existing catalog and Insights API. API, PostgreSQL migration, production build, unit/component, and desktop/mobile checks passed. See [private preview](refactor/12-v2-showcase-preview-handoff.md) and [layouts and reports](refactor/13-v2-showcase-layouts-handoff.md) handoffs. Next: settle the shareable-route and social-preview contract, including publishing, media access, and cache invalidation.
+Status (2026-10-03): In progress. Private showcase now supports saved Gallery/Journal layouts, identity/vocabulary, ordered highlights, optional summary/recent sections, and selected twelve-month additions and item-type reports. Layout/report settings persist independently of overview choices; data remains owner-scoped and comes from the existing catalog and Insights API. API, PostgreSQL migration, production build, unit/component, and desktop/mobile checks passed. See [private preview](refactor/12-v2-showcase-preview-handoff.md) and [layouts and reports](refactor/13-v2-showcase-layouts-handoff.md) handoffs. The [sharing and social-preview contract](16-v2-showcase-sharing-contract.md) now defines reviewed public editions, stable slugs, explicit publish/unpublish, a public data allowlist, checked media, and revocation/cache behavior; see the [design handoff](refactor/14-v2-showcase-sharing-design-handoff.md). Update (2026-10-04): authenticated catalog-media reads in both clients and the explicit local storage-policy transition are complete; see the [private-media handoff](refactor/15-v2-private-media-handoff.md). Ownership, real-storage privacy, upload/display/delete, and desktop/mobile acceptance passed. Remote policy enforcement remains a deployment step. Publishing is not implemented. Next: publication domain and API, followed by owner review, visitor routes, and social-preview acceptance.
 
 Deliverables:
 
@@ -177,6 +177,8 @@ Exit criteria:
 ## Slice 7: Trust And Scale
 
 Goal: strengthen the platform after the core experience works.
+
+Dependency note (2026-10-03): the minimum private media-read path and explicit bucket-policy transition are brought forward into Slice 6 as prerequisites for revocable sharing. Broader media cleanup and scale work remain here. See the [sharing contract](16-v2-showcase-sharing-contract.md).
 
 Deliverables:
 

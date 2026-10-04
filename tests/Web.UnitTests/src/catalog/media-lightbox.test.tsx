@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { MediaLightbox } from "@app/catalog/components/MediaLightbox";
 
+// This suite tests lightbox navigation. The authenticated image transport has its own boundary tests.
+vi.mock("@app/catalog/components/AuthenticatedImage", () => ({ AuthenticatedImage: ({ src, alt, className }: { src: string; alt: string; className?: string }) => <img src={src} alt={alt} className={className} /> }));
 const asset1 = {
   id: "asset-1",
   url: "https://example.com/img1.jpg",

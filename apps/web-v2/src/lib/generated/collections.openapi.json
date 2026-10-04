@@ -1137,6 +1137,47 @@
         }
       }
     },
+    "/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}/content": {
+      "get": {
+        "tags": [
+          "CurateDS.Api"
+        ],
+        "parameters": [
+          {
+            "name": "collectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mediaAssetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}": {
       "delete": {
         "tags": [

@@ -31,8 +31,8 @@ services:
       Storage__AccessKey: curateds-local
       Storage__SecretKey: curateds-local-development-only
       Storage__BucketName: curateds-local-media
-      Storage__PublicBaseUrl: http://localhost:9000
-      Storage__EnablePublicReadPolicy: "true"
+      Storage__EnablePublicReadPolicy: "false"
+      Storage__EnforcePrivateReadPolicy: "true"
     depends_on:
       catalog-storage:
         condition: service_healthy

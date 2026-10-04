@@ -39,6 +39,21 @@ app.UseSerilogRequestLogging(options =>
 });
 app.UseCurateDsExceptionHandler();
 app.UseCors(CorsConfiguration.PolicyName);
+// Set headers before authorization so anonymous and unavailable media responses are also uncached.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/collections") &&
+        context.Request.Path.Value!.Contains("/media/", StringComparison.Ordinal))
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers.CacheControl = "private, no-store";
+            context.Response.Headers.XContentTypeOptions = "nosniff";
+            return Task.CompletedTask;
+        });
+    }
+    await next(context);
+});
 app.UseAuthentication();
 app.UseAuthorization();
 

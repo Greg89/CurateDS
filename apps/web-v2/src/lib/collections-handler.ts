@@ -14,7 +14,7 @@ export type Dependencies = {
 export function reply(body: unknown, status = 200) {
   return Response.json(body, {
     status,
-    headers: { "Cache-Control": "private, no-store" },
+    headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" },
   });
 }
 
@@ -27,6 +27,7 @@ export async function handleCollections(
     request?: Request;
     inputSchema?: z.ZodType;
     upload?: boolean;
+    mediaRead?: boolean;
   } = {},
 ) {
   const method = options.request?.method ?? "GET";
@@ -114,6 +115,19 @@ export async function handleCollections(
       );
     if (!response.ok) return reply({ code: "collections_unavailable" }, 502);
     if (response.status === 204) return new Response(null, { status: 204, headers: { "Cache-Control": "private, no-store" } });
+    if (options.mediaRead) {
+      const contentType = response.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+      if (response.status !== 200 || !contentType || !imageTypes.includes(contentType)) {
+        await response.body?.cancel();
+        return reply({ code: "invalid_media_response" }, 502);
+      }
+      const bytes = await readBody(response, maxImageBytes);
+      if (!bytes.length) return reply({ code: "invalid_media_response" }, 502);
+      return new Response(bytes, { headers: {
+        "Content-Type": contentType, "Content-Length": String(bytes.length),
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
+      } });
+    }
     const parsed = (options.schema ?? collectionsSchema).safeParse(
       await response.json(),
     );

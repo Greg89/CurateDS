@@ -31,39 +31,37 @@ public sealed class MinioMediaStorageServiceTests
             AccessKey = "test-access-key",
             SecretKey = "test-secret-key",
             BucketName = "test-bucket",
-            PublicBaseUrl = "https://cdn.test.example",
             EnablePublicReadPolicy = true
         });
         return new MinioMediaStorageService(options, new FakeHostEnvironment { EnvironmentName = environment });
     }
 
-    // ---------- GetPublicUrl ----------
-
     [Fact]
-    public void GetPublicUrl_ShouldComposeBaseUrlBucketAndKey()
+    public async Task ReadAsync_ShouldReadPrivateObjectAndBoundItsLength()
     {
-        var sut = CreateService(endpoint: "http://unused");
-
-        var url = sut.GetPublicUrl("Development/collections/abc/items/def/file.jpg");
-
-        url.Should().Be("https://cdn.test.example/test-bucket/Development/collections/abc/items/def/file.jpg");
+        await using var server = await FakeS3Server.StartAsync(async (ctx, _) =>
+        {
+            ctx.Response.StatusCode = 200;
+            ctx.Response.ContentLength = 4;
+            await ctx.Response.Body.WriteAsync(new byte[] { 1, 2, 3, 4 });
+        });
+        var sut = CreateService(server.BaseUrl);
+        (await sut.ReadAsync("private.png", 4, default)).Should().Equal(1, 2, 3, 4);
+        Func<Task> tooLarge = () => sut.ReadAsync("private.png", 3, default);
+        await tooLarge.Should().ThrowAsync<InvalidDataException>();
     }
 
     [Fact]
-    public void GetPublicUrl_ShouldStripTrailingSlashFromBaseUrl()
+    public async Task ReadAsync_ShouldReturnNullOnlyForMissingObject()
     {
-        var options = Options.Create(new MediaStorageOptions
+        await using var server = await FakeS3Server.StartAsync(async (ctx, _) =>
         {
-            Endpoint = "http://unused",
-            AccessKey = "k",
-            SecretKey = "s",
-            BucketName = "bucket",
-            PublicBaseUrl = "https://cdn.example.com/"
+            ctx.Response.StatusCode = 404;
+            var xml = Encoding.UTF8.GetBytes("<Error><Code>NoSuchKey</Code><Message>Missing</Message></Error>");
+            ctx.Response.ContentType = "application/xml";
+            await ctx.Response.Body.WriteAsync(xml);
         });
-        var sut = new MinioMediaStorageService(options, new FakeHostEnvironment());
-
-        sut.GetPublicUrl("path/to/file.png")
-            .Should().Be("https://cdn.example.com/bucket/path/to/file.png");
+        (await CreateService(server.BaseUrl).ReadAsync("missing.png", 4, default)).Should().BeNull();
     }
 
     // ---------- UploadAsync ----------

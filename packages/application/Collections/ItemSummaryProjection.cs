@@ -2,9 +2,7 @@ namespace CurateDS.Application.Collections;
 
 /// <summary>
 /// Raw item-summary projection returned by <see cref="Abstractions.Persistence.IItemRepository.QueryAsync"/>.
-/// Repositories deal in storage keys; the application layer maps the key to a public URL before
-/// returning <see cref="ItemSummaryDto"/> to callers. Keeping these as distinct types prevents a
-/// raw storage key from ever leaking into a field named <c>PrimaryImageUrl</c>.
+/// Contains only the primary asset ID; object keys never enter the response projection.
 /// </summary>
 public sealed record ItemSummaryProjection(
     Guid Id,
@@ -18,4 +16,4 @@ public sealed record ItemSummaryProjection(
     int AttributeValueCount,
     DateTime CreatedUtc,
     DateTime? UpdatedUtc,
-    string? PrimaryImageStorageKey);
+    Guid? PrimaryImageAssetId);

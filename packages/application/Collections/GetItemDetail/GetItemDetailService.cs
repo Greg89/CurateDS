@@ -11,22 +11,19 @@ public sealed class GetItemDetailService
     private readonly ILocationRepository _locationRepository;
     private readonly IItemRepository _itemRepository;
     private readonly ITagRepository _tagRepository;
-    private readonly IMediaStorageService _mediaStorageService;
 
     public GetItemDetailService(
         ICollectionRepository collectionRepository,
         IAttributeDefinitionRepository attributeDefinitionRepository,
         ILocationRepository locationRepository,
         IItemRepository itemRepository,
-        ITagRepository tagRepository,
-        IMediaStorageService mediaStorageService)
+        ITagRepository tagRepository)
     {
         _collectionRepository = collectionRepository;
         _attributeDefinitionRepository = attributeDefinitionRepository;
         _locationRepository = locationRepository;
         _itemRepository = itemRepository;
         _tagRepository = tagRepository;
-        _mediaStorageService = mediaStorageService;
     }
 
     public async Task<ItemDetailDto> ExecuteAsync(
@@ -104,7 +101,7 @@ public sealed class GetItemDetailService
                 .ThenBy(a => a.UploadedUtc)
                 .Select(a => new MediaAssetDto(
                     a.Id,
-                    _mediaStorageService.GetPublicUrl(a.StorageKey),
+                    MediaContentPath.For(a.CollectionId, a.ItemId, a.Id),
                     a.ContentType,
                     a.FileName,
                     a.SizeBytes,

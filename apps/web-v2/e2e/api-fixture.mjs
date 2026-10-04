@@ -531,18 +531,31 @@ createServer(async (request, response) => {
       const file = form.get("file");
       const media = {
         id: randomUUID(),
-        url: "http://127.0.0.1:3102/fixture-image.png",
+        url: "",
         fileName: file.name,
         contentType: file.type,
         sizeBytes: file.size,
         isPrimary: !item.mediaAssets.length,
         uploadedUtc: new Date().toISOString(),
       };
+      media.url = `/collections/${collectionId}/items/${item.id}/media/${media.id}/content`;
       item.mediaAssets.push(media);
       return send(media, 201);
     }
     const asset = item.mediaAssets.find((asset) => asset.id === segments[5]);
     if (!asset) return send({}, 404);
+    if (request.method === "GET" && segments[6] === "content") {
+      response.writeHead(200, {
+        "Content-Type": "image/png",
+        "Cache-Control": "private, no-store",
+      });
+      return response.end(
+        Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=",
+          "base64",
+        ),
+      );
+    }
     if (request.method === "PUT")
       item.mediaAssets.forEach(
         (media) => (media.isPrimary = media.id === asset.id),

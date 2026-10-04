@@ -88,8 +88,27 @@ public sealed class MinioMediaStorageService : IMediaStorageService
         }
     }
 
-    public string GetPublicUrl(string storageKey)
-        => $"{_options.PublicBaseUrl.TrimEnd('/')}/{_options.BucketName}/{storageKey}";
+    public async Task<byte[]?> ReadAsync(string storageKey, long maximumBytes, CancellationToken cancellationToken)
+    {
+        if (maximumBytes is <= 0 or > 20 * 1024 * 1024) throw new ArgumentOutOfRangeException(nameof(maximumBytes));
+        using var client = CreateClient();
+        try
+        {
+            using var response = await client.GetObjectAsync(_options.BucketName, storageKey, cancellationToken);
+            if (response.ContentLength > maximumBytes) throw new InvalidDataException("Media exceeds its size limit.");
+            using var output = new MemoryStream();
+            var buffer = new byte[81920];
+            int read;
+            while ((read = await response.ResponseStream.ReadAsync(buffer, cancellationToken)) > 0)
+            {
+                if (output.Length + read > maximumBytes) throw new InvalidDataException("Media exceeds its size limit.");
+                await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            }
+            return output.ToArray();
+        }
+        catch (AmazonS3Exception error) when (error.ErrorCode == "NoSuchKey") { return null; }
+        catch (AmazonS3Exception error) { throw new IOException("Media storage is unavailable.", error); }
+    }
 
     private AmazonS3Client CreateClient()
     {

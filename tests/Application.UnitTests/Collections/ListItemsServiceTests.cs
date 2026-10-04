@@ -16,24 +16,22 @@ public sealed class ListItemsServiceTests
     private static ListItemsQuery BuildQuery() =>
         new(OwnerId, CollectionId, null, null, [], [], null, null, 1, 20);
 
-    private static ItemSummaryProjection BuildProjection(string? primaryImageStorageKey) =>
-        new(Guid.NewGuid(), CollectionId, "Item", null, 1, null, null, [], 0, DateTime.UtcNow, null, primaryImageStorageKey);
+    private static ItemSummaryProjection BuildProjection(Guid? primaryImageAssetId) =>
+        new(Guid.NewGuid(), CollectionId, "Item", null, 1, null, null, [], 0, DateTime.UtcNow, null, primaryImageAssetId);
 
     [Fact]
-    public async Task ExecuteAsync_ShouldRemapStorageKeyToPublicUrl()
+    public async Task ExecuteAsync_ShouldReturnScopedMediaPath()
     {
-        const string storageKey = "prod/collections/abc/items/def/image.jpg";
-        const string expectedUrl = "https://cdn.example.com/bucket/prod/collections/abc/items/def/image.jpg";
+        var projection = BuildProjection(Guid.NewGuid());
 
         var collection = Collection.Create(OwnerId, "My Collection", DateTime.UtcNow, "system");
         var service = new ListItemsService(
             new FakeCollectionRepository(collection),
-            new FakeItemRepository(BuildProjection(storageKey)),
-            new FakeMediaStorageService());
+            new FakeItemRepository(projection));
 
         var result = await service.ExecuteAsync(BuildQuery() with { CollectionId = collection.Id }, CancellationToken.None);
 
-        result.Items.Single().PrimaryImageUrl.Should().Be(expectedUrl);
+        result.Items.Single().PrimaryImageUrl.Should().Be(MediaContentPath.For(projection.CollectionId, projection.Id, projection.PrimaryImageAssetId!.Value));
     }
 
     [Fact]
@@ -42,8 +40,7 @@ public sealed class ListItemsServiceTests
         var collection = Collection.Create(OwnerId, "My Collection", DateTime.UtcNow, "system");
         var service = new ListItemsService(
             new FakeCollectionRepository(collection),
-            new FakeItemRepository(BuildProjection(null)),
-            new FakeMediaStorageService());
+            new FakeItemRepository(BuildProjection(null)));
 
         var result = await service.ExecuteAsync(BuildQuery() with { CollectionId = collection.Id }, CancellationToken.None);
 
@@ -55,8 +52,7 @@ public sealed class ListItemsServiceTests
     {
         var service = new ListItemsService(
             new FakeCollectionRepository(),
-            new FakeItemRepository(),
-            new FakeMediaStorageService());
+            new FakeItemRepository());
 
         var act = () => service.ExecuteAsync(BuildQuery(), CancellationToken.None);
 
@@ -106,7 +102,7 @@ public sealed class ListItemsServiceTests
 
     private sealed class FakeMediaStorageService : IMediaStorageService
     {
-        public string GetPublicUrl(string storageKey) => $"https://cdn.example.com/bucket/{storageKey}";
+        public Task<byte[]?> ReadAsync(string key, long maximumBytes, CancellationToken ct) => throw new NotSupportedException();
 
         public Task<string> UploadAsync(Guid collectionId, Guid itemId, Stream content, string contentType, string fileExtension, CancellationToken cancellationToken)
             => throw new NotImplementedException();

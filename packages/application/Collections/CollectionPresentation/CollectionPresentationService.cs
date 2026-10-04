@@ -9,7 +9,7 @@ namespace CurateDS.Application.Collections.CollectionPresentation;
 
 public sealed class CollectionPresentationService(ICollectionRepository collections,
     ICollectionPresentationRepository presentation, ICatalogUnitOfWork unitOfWork,
-    ICurrentUserService currentUser, IMediaStorageService media,
+    ICurrentUserService currentUser,
     IValidator<UpdateCollectionPresentationCommand> validator)
 {
     public async Task<CollectionPresentationDto> GetAsync(string ownerId, Guid collectionId, CancellationToken ct)
@@ -45,7 +45,7 @@ public sealed class CollectionPresentationService(ICollectionRepository collecti
         {
             var item = lookup[id];
             return new PinnedItemDto(item.Id, item.CollectionId, item.Name, item.Description, item.CreatedUtc,
-                item.PrimaryImageStorageKey is null ? null : media.GetPublicUrl(item.PrimaryImageStorageKey));
+                item.PrimaryImageAssetId is null ? null : MediaContentPath.For(item.CollectionId, item.Id, item.PrimaryImageAssetId.Value));
         }).ToArray();
         return new(collection.Id, collection.ShowCover, collection.ShowSummary,
             collection.ShowPinnedItems, collection.ShowRecentItems, pins);

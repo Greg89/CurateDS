@@ -1,3 +1,4 @@
+import { AuthenticatedImage } from "./AuthenticatedImage";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { MediaAsset } from "../../api";
@@ -69,7 +70,7 @@ export function MediaLightbox({
             </button>
           )}
 
-          <img alt={asset.fileName} className="media-lightbox-img" src={asset.url} />
+          <AuthenticatedImage alt={asset.fileName} className="media-lightbox-img" src={asset.url} />
 
           {hasNext && (
             <button

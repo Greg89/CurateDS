@@ -3,7 +3,7 @@ export const imageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"]
 export class BodyTooLarge extends Error {}
 
 // Bound the stream even when Content-Length is missing or untrusted.
-export async function readBody(request: Request, maxBytes: number) {
+export async function readBody(request: Pick<Request, "body" | "headers">, maxBytes: number) {
   if (Number(request.headers.get("content-length")) > maxBytes) throw new BodyTooLarge();
   const reader = request.body?.getReader();
   if (!reader) return new Uint8Array();

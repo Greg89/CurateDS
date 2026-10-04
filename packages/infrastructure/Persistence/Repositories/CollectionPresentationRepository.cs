@@ -12,7 +12,7 @@ public sealed class CollectionPresentationRepository(CatalogDbContext db) : ICol
         return await db.Items.AsNoTracking().Where(item => item.CollectionId == collectionId && ids.Contains(item.Id))
             .Select(item => new PinnedItemProjection(item.Id, item.CollectionId, item.Name, item.Description, item.CreatedUtc,
                 item.MediaAssets.OrderByDescending(media => media.IsPrimary).ThenBy(media => media.UploadedUtc)
-                    .Select(media => media.StorageKey).FirstOrDefault()))
+                    .Select(media => (Guid?)media.Id).FirstOrDefault()))
             .ToListAsync(cancellationToken);
     }
 }

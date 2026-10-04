@@ -98,3 +98,7 @@ Recommended sequence:
 6. Retire the old Vite web surface after the critical workflows are covered.
 
 The backend should only be rewritten where the new web workflows demonstrate a real contract or domain limitation.
+
+## Showcase publication boundary
+
+The [showcase sharing contract](16-v2-showcase-sharing-contract.md) defines public editions as explicit, reviewed snapshots owned by the .NET API. The authenticated showcase remains a live private preview. Public rendering uses a separate allowlisted response, layout, and media boundary; it never exposes owner endpoints through anonymous access. Publishing, visitor routes, and social cards are still to be implemented in Slice 6.

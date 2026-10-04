@@ -381,6 +381,19 @@ test("create and edit required fields, recover a draft, manage media, and delete
     await expect(page.getByRole("status")).toHaveText("Image added.");
     await expect(page.getByLabel("Choose an image")).toBeFocused();
   }
+  const privateImage = page.locator(".media-grid img").first();
+  await privateImage.scrollIntoViewIfNeeded();
+  await expect(privateImage).toHaveJSProperty("naturalWidth", 1);
+  const contentPath = (await privateImage.getAttribute("src"))!;
+  expect(contentPath).toMatch(/^\/api\/collections\/.*\/content$/);
+  const mediaResponse = await context.request.get(contentPath);
+  expect(mediaResponse.status()).toBe(200);
+  expect(mediaResponse.headers()["cache-control"]).toContain("no-store");
+  expect(mediaResponse.headers()["x-content-type-options"]).toBe("nosniff");
+  const anonymous = await page.request.get(contentPath, {
+    headers: { Cookie: "" },
+  });
+  expect(anonymous.status()).toBe(401);
   await page.getByRole("button", { name: "Make primary" }).click();
   await expect(
     page.locator(".media-grid li").filter({ hasText: "back.png" }),
@@ -407,6 +420,7 @@ test("create and edit required fields, recover a draft, manage media, and delete
     .click();
   await page.getByRole("button", { name: "Remove permanently" }).click();
   await expect(page.locator(".media-grid li")).toHaveCount(1);
+  expect((await context.request.get(contentPath)).status()).toBe(404);
   await page.goto(
     detailUrl.replace(
       "33333333-3333-4333-8333-333333333333",

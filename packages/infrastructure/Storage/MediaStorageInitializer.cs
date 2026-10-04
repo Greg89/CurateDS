@@ -32,6 +32,7 @@ public sealed class MediaStorageInitializer : IHostedService
             string.IsNullOrWhiteSpace(_options.AccessKey) ||
             string.IsNullOrWhiteSpace(_options.SecretKey))
         {
+            if (_options.EnforcePrivateReadPolicy) throw new InvalidOperationException("Private media storage must be configured.");
             _logger.LogDebug("Media storage options are not configured — skipping bucket initialisation.");
             return;
         }
@@ -61,6 +62,7 @@ public sealed class MediaStorageInitializer : IHostedService
             }
             catch (AmazonS3Exception ex) when (ex.ErrorCode is "BucketAlreadyExists")
             {
+                if (_options.EnforcePrivateReadPolicy) throw;
                 _logger.LogWarning(ex,
                     "Media storage bucket '{Bucket}' already exists and is owned by another account. Check your storage configuration.",
                     _options.BucketName);
@@ -81,7 +83,12 @@ public sealed class MediaStorageInitializer : IHostedService
                 }
                 """;
 
-            if (_options.EnablePublicReadPolicy)
+            if (_options.EnforcePrivateReadPolicy)
+            {
+                await client.DeleteBucketPolicyAsync(new DeleteBucketPolicyRequest { BucketName = _options.BucketName }, cancellationToken);
+                _logger.LogInformation("Media bucket '{Bucket}' anonymous policy removed.", _options.BucketName);
+            }
+            else if (_options.EnablePublicReadPolicy)
             {
                 await client.PutBucketPolicyAsync(new PutBucketPolicyRequest
                 {
@@ -94,6 +101,11 @@ public sealed class MediaStorageInitializer : IHostedService
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            throw;
+        }
+        catch (Exception) when (_options.EnforcePrivateReadPolicy)
+        {
+            // Do not start a deployment claiming private media when enforcement failed.
             throw;
         }
         catch (Exception ex)

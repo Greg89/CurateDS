@@ -110,7 +110,7 @@ public sealed class UploadItemMediaService
 
         return new MediaAssetDto(
             asset.Id,
-            _mediaStorageService.GetPublicUrl(storageKey),
+            MediaContentPath.For(asset.CollectionId, asset.ItemId, asset.Id),
             asset.ContentType,
             asset.FileName,
             asset.SizeBytes,

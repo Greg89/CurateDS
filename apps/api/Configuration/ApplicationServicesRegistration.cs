@@ -109,6 +109,7 @@ internal static class ApplicationServicesRegistration
 
         // Media services
         services.AddScoped<UploadItemMediaService>();
+        services.AddScoped<CurateDS.Application.Collections.ReadItemMedia.ReadItemMediaService>();
         services.AddScoped<DeleteItemMediaService>();
         services.AddScoped<SetPrimaryItemMediaService>();
 

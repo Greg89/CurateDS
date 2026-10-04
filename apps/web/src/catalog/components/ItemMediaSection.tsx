@@ -1,3 +1,4 @@
+import { AuthenticatedImage } from "./AuthenticatedImage";
 import { useRef, useState } from "react";
 import { MediaAsset } from "../../api";
 import {
@@ -43,7 +44,7 @@ export function ItemMediaSection({
                   type="button"
                   onClick={() => setLightboxIndex(index)}
                 >
-                  <img alt={asset.fileName} src={asset.url} />
+                  <AuthenticatedImage alt={asset.fileName} src={asset.url} />
                   {asset.isPrimary ? <span className="media-primary-badge">Primary</span> : null}
                 </button>
               ))}

@@ -47,6 +47,7 @@ if (source) {
     ["/tags", ["get"]],
     ["/locations", ["get"]],
     ["/collections/{collectionId}/items/{itemId}/media", ["post"]],
+    ["/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}/content", ["get"]],
     [
       "/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}",
       ["delete"],

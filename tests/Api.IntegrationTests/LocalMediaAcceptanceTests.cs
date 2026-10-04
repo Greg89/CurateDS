@@ -39,14 +39,24 @@ public sealed class LocalMediaAcceptanceTests
         using var configured = factory.WithWebHostBuilder(builder => builder.ConfigureAppConfiguration((_, config) =>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Storage:Endpoint"] = endpoint, ["Storage:PublicBaseUrl"] = endpoint,
+                ["Storage:Endpoint"] = endpoint,
                 ["Storage:AccessKey"] = "curateds-local", ["Storage:SecretKey"] = "curateds-local-development-only",
-                ["Storage:BucketName"] = bucket, ["Storage:EnablePublicReadPolicy"] = "true"
+                ["Storage:BucketName"] = bucket, ["Storage:EnablePublicReadPolicy"] = "false",
+                ["Storage:EnforcePrivateReadPolicy"] = "true"
             })));
-        using var client = configured.CreateClient();
+
         using var publicClient = new HttpClient();
         try
         {
+            await storage.PutBucketAsync(bucket);
+            await storage.PutBucketPolicyAsync(new PutBucketPolicyRequest { BucketName = bucket, Policy = $$"""
+                {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::{{bucket}}/*"}]}
+                """ });
+            await storage.PutObjectAsync(new PutObjectRequest { BucketName = bucket, Key = "old-public.png", InputStream = new MemoryStream([1, 2, 3, 4]), ContentType = "image/png", UseChunkEncoding = false, DisableDefaultChecksumValidation = true });
+            var oldUrl = $"{endpoint}/{bucket}/old-public.png";
+            (await publicClient.GetAsync(oldUrl)).StatusCode.Should().Be(HttpStatusCode.OK);
+            using var client = configured.CreateClient(); // Explicit private-policy rollout removes the existing grant.
+            (await publicClient.GetAsync(oldUrl)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
             var collection = await Read(await client.PostAsJsonAsync("/collections", new { name = "Local media acceptance" }));
             var collectionId = collection["id"]!.GetValue<string>();
             var item = await Read(await client.PostAsJsonAsync($"/collections/{collectionId}/items", new { name = "Local image test", quantity = 1 }));
@@ -61,7 +71,15 @@ public sealed class LocalMediaAcceptanceTests
                 form.Add(file, "file", fileName);
                 var media = await Read(await client.PostAsync($"{path}/media", form));
                 assets.Add(media);
-                (await publicClient.GetByteArrayAsync(media["url"]!.GetValue<string>())).Should().Equal(png);
+                                var contentPath = media["url"]!.GetValue<string>();
+                contentPath.Should().StartWith(path + "/media/").And.EndWith("/content");
+                (await client.GetByteArrayAsync(contentPath)).Should().Equal(png);
+                using var anonymous = new HttpRequestMessage(HttpMethod.Get, contentPath);
+                anonymous.Headers.Add("X-Test-Anonymous", "true");
+                (await client.SendAsync(anonymous)).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+                var objectsNow = await storage.ListObjectsV2Async(new ListObjectsV2Request { BucketName = bucket });
+                foreach (var stored in objectsNow.S3Objects)
+                    (await publicClient.GetAsync($"{endpoint}/{bucket}/{stored.Key}")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
             }
             (await client.PutAsync($"{path}/media/{assets[1]["id"]!.GetValue<string>()}/primary", null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
             (await client.PutAsJsonAsync(path, new { name = "Local image test revised", quantity = 2 })).EnsureSuccessStatusCode();
@@ -74,8 +92,9 @@ public sealed class LocalMediaAcceptanceTests
             foreach (var media in assets)
             {
                 (await client.DeleteAsync($"{path}/media/{media["id"]!.GetValue<string>()}")).StatusCode.Should().Be(HttpStatusCode.NoContent);
-                (await publicClient.GetAsync(media["url"]!.GetValue<string>())).StatusCode.Should().Be(HttpStatusCode.NotFound);
+                (await client.GetAsync(media["url"]!.GetValue<string>())).StatusCode.Should().Be(HttpStatusCode.NotFound);
             }
+            (await storage.ListObjectsV2Async(new ListObjectsV2Request { BucketName = bucket })).S3Objects.Should().ContainSingle().Which.Key.Should().Be("old-public.png");
             (await client.DeleteAsync(path)).StatusCode.Should().Be(HttpStatusCode.NoContent);
         }
         finally

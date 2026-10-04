@@ -64,7 +64,7 @@ public sealed class CollectionPresentationTests
             saved.ShowPinnedItems.Should().BeFalse();
             saved.ShowRecentItems.Should().BeFalse();
             saved.PinnedItems.Select(item => item.Id).Should().Equal(two.Id, one.Id);
-            saved.PinnedItems[1].PrimaryImageUrl.Should().Be("https://images.test/primary.jpg");
+            saved.PinnedItems[1].PrimaryImageUrl.Should().Be(CurateDS.Application.Collections.MediaContentPath.For(collection.Id, one.Id, one.MediaAssets.Single().Id));
             Func<Task> invalid = () => service.UpdateAsync(new("owner", collection.Id, true, true, true, true, [foreign.Id]), default);
             await invalid.Should().ThrowAsync<FluentValidation.ValidationException>();
             (await service.GetAsync("owner", collection.Id, default)).ShowCover.Should().BeFalse();
@@ -89,11 +89,11 @@ public sealed class CollectionPresentationTests
 
     private static CollectionPresentationService Service(CatalogDbContext db) => new(
         new CollectionRepository(db), new CollectionPresentationRepository(db), new EfCatalogUnitOfWork(db),
-        new User(), new Media(), new UpdateCollectionPresentationValidator());
+        new User(), new UpdateCollectionPresentationValidator());
     private sealed class User : ICurrentUserService { public string GetCurrentUser() => "owner"; }
     private sealed class Media : IMediaStorageService
     {
-        public string GetPublicUrl(string key) => "https://images.test/" + key;
+        public Task<byte[]?> ReadAsync(string key, long maximumBytes, CancellationToken ct) => throw new NotSupportedException();
         public Task DeleteAsync(string key, CancellationToken ct) => throw new NotSupportedException();
         public Task<string> UploadAsync(Guid collectionId, Guid itemId, Stream content, string contentType,
             string extension, CancellationToken ct) => throw new NotSupportedException();

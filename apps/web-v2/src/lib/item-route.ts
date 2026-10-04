@@ -10,6 +10,7 @@ export async function itemRoute(request: Request, collectionId: string, segments
   let schema: z.ZodType | undefined;
   let inputSchema: z.ZodType | undefined;
   let upload = false;
+  let mediaRead = false;
   const method = request.method;
   if (option) {
     const [resource] = segments;
@@ -27,10 +28,12 @@ export async function itemRoute(request: Request, collectionId: string, segments
     } else if (media === "media" && z.uuid().safeParse(assetId).success &&
       ((segments.length === 3 && method === "DELETE") || (segments.length === 4 && primary === "primary" && method === "PUT"))) {
       path += `/media/${assetId}${primary ? "/primary" : ""}`;
+    } else if (media === "media" && z.uuid().safeParse(assetId).success && segments.length === 4 && primary === "content" && method === "GET") {
+      path += `/media/${assetId}/content`; mediaRead = true;
     } else return reply({ code: "not_found" }, 404);
   }
   if (!isAuthConfigured()) return reply({ code: "service_unavailable" }, 503);
   const auth = getAuthClient();
   return handleCollections({ getSession: () => auth.getSession(), getToken: async () => (await auth.getAccessToken()).token,
-    apiBaseUrl: process.env.API_BASE_URL, appBaseUrl: process.env.APP_BASE_URL }, { path, schema, request, inputSchema, upload });
+    apiBaseUrl: process.env.API_BASE_URL, appBaseUrl: process.env.APP_BASE_URL }, { path, schema, request, inputSchema, upload, mediaRead });
 }

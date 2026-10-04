@@ -742,15 +742,14 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
     }
 
     [Fact]
-    public async Task GetItems_ShouldReturnPrimaryImageUrl_PrefixedWithPublicBaseUrlAndBucket()
+    public async Task GetItems_ShouldReturnOwnerScopedPrimaryImagePath()
     {
-        // Storage:PublicBaseUrl and Storage:BucketName are configured by CollectionApiFactory
-        // to known test values so URL composition is fully deterministic.
+        // Storage keys stay private; clients receive an authenticated content path.
         var collection = await CreateCollectionAsync(UniqueName("PrimaryImage"));
         var item = await CreateItemAsync(collection.Id, "Item-With-Image");
 
         const string storageKey = "test-env/collections/abc/items/def/image.jpg";
-        const string expectedUrl = "https://cdn.test.example/test-bucket/test-env/collections/abc/items/def/image.jpg";
+        Guid assetId;
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -766,6 +765,7 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
                 "image.jpg",
                 1024,
                 DateTime.UtcNow);
+            assetId = asset.Id;
             entity.AddMedia(asset);
             dbContext.MediaAssets.Add(asset);
             await dbContext.SaveChangesAsync();
@@ -777,7 +777,7 @@ public sealed class CollectionEndpointsTests : IClassFixture<CollectionApiFactor
         var paged = await response.Content.ReadFromJsonAsync<PagedItemsResponse>(JsonOptions);
         var summary = paged!.Items.Single(i => i.Id == item.Id);
 
-        summary.PrimaryImageUrl.Should().Be(expectedUrl);
+        summary.PrimaryImageUrl.Should().Be($"/collections/{collection.Id}/items/{item.Id}/media/{assetId}/content");
     }
 
     [Fact]

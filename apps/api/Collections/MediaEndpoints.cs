@@ -17,6 +17,19 @@ public static class MediaEndpoints
             .RequireAuthorization()
             .DisableAntiforgery();
 
+        group.MapGet("/{mediaAssetId:guid}/content", async (Guid collectionId, Guid itemId, Guid mediaAssetId,
+            CurateDS.Application.Collections.ReadItemMedia.ReadItemMediaService service,
+            ICurrentUserService user, CancellationToken ct) =>
+        {
+            try
+            {
+                var content = await service.ExecuteAsync(user.GetCurrentUser(), collectionId, itemId, mediaAssetId, ct);
+                return Results.File(content.Bytes, content.ContentType, enableRangeProcessing: false);
+            }
+            catch (NotFoundException) { return ApiResponses.NotFound("Media asset was not found."); }
+            catch (Exception error) when (error is IOException or InvalidDataException) { return Results.Problem(statusCode: 502, detail: "Media is temporarily unavailable."); }
+        }).Produces(StatusCodes.Status200OK, contentType: "image/png", additionalContentTypes: ["image/jpeg", "image/webp", "image/gif"]);
+
         group.MapPost("/", async (
             Guid collectionId,
             Guid itemId,
