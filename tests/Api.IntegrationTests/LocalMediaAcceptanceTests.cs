@@ -7,6 +7,7 @@ using Amazon.S3.Model;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using CurateDS.Application.Publications;
 
 namespace CurateDS.Api.IntegrationTests;
 
@@ -42,7 +43,7 @@ public sealed class LocalMediaAcceptanceTests
                 ["Storage:Endpoint"] = endpoint,
                 ["Storage:AccessKey"] = "curateds-local", ["Storage:SecretKey"] = "curateds-local-development-only",
                 ["Storage:BucketName"] = bucket, ["Storage:EnablePublicReadPolicy"] = "false",
-                ["Storage:EnforcePrivateReadPolicy"] = "true"
+                ["Storage:EnforcePrivateReadPolicy"] = "true", ["Publication:Enabled"] = "true"
             })));
 
         using var publicClient = new HttpClient();
@@ -61,7 +62,11 @@ public sealed class LocalMediaAcceptanceTests
             var collectionId = collection["id"]!.GetValue<string>();
             var item = await Read(await client.PostAsJsonAsync($"/collections/{collectionId}/items", new { name = "Local image test", quantity = 1 }));
             var path = $"/collections/{collectionId}/items/{item["id"]!.GetValue<string>()}";
-            var png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=");
+            using var sourceBitmap = new SkiaSharp.SKBitmap(1, 1);
+            sourceBitmap.Erase(SkiaSharp.SKColors.Coral);
+            using var sourceImage = SkiaSharp.SKImage.FromBitmap(sourceBitmap);
+            using var sourcePng = sourceImage.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+            var png = sourcePng.ToArray();
             var assets = new List<JsonObject>();
             foreach (var fileName in new[] { "front.png", "back.png" })
             {
@@ -89,12 +94,36 @@ public sealed class LocalMediaAcceptanceTests
                 .Should().Be(assets[1]["id"]!.GetValue<string>());
             var listing = await Read(await client.GetAsync($"/collections/{collectionId}/items?page=1&pageSize=12"));
             listing["items"]![0]!["primaryImageUrl"]!.GetValue<string>().Should().Be(assets[1]["url"]!.GetValue<string>());
+            var publication = $"/collections/{collectionId}/publication";
+            var prepared = await client.PostAsJsonAsync(publication + "/previews", new PreparePublication("local-media-showcase"));
+            prepared.StatusCode.Should().Be(HttpStatusCode.OK, await prepared.Content.ReadAsStringAsync());
+            var preview = (await prepared.Content.ReadFromJsonAsync<PublicationPreview>())!;
+            var image = preview.Showcase.Recent!.Single().ImageToken!.Value;
+            var publicImage = $"/showcases/local-media-showcase/media/{preview.Token}/{image}";
+            (await client.GetAsync(publicImage)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+            (await client.GetAsync($"{publication}/previews/{preview.Token}/media/{image}")).EnsureSuccessStatusCode();
+            (await client.PutAsJsonAsync(publication, new PublishPublication(preview.Token, preview.Generation))).EnsureSuccessStatusCode();
+            using var visitor = new HttpRequestMessage(HttpMethod.Get, publicImage);
+            visitor.Headers.Add("X-Test-Anonymous", "true");
+            var derivative = await client.SendAsync(visitor); derivative.EnsureSuccessStatusCode();
+            derivative.Headers.CacheControl!.NoStore.Should().BeTrue();
+            derivative.Content.Headers.ContentType!.MediaType.Should().Be("image/jpeg");
+            using (var decoded = SkiaSharp.SKBitmap.Decode(await derivative.Content.ReadAsByteArrayAsync())) decoded.Width.Should().Be(1);
+            var storedDerivatives = (await storage.ListObjectsV2Async(new ListObjectsV2Request { BucketName = bucket })).S3Objects
+                .Where(o => o.Key.Contains("/showcases/")).ToArray();
+            storedDerivatives.Should().ContainSingle();
+            (await publicClient.GetAsync($"{endpoint}/{bucket}/{storedDerivatives[0].Key}")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
             foreach (var media in assets)
             {
                 (await client.DeleteAsync($"{path}/media/{media["id"]!.GetValue<string>()}")).StatusCode.Should().Be(HttpStatusCode.NoContent);
                 (await client.GetAsync(media["url"]!.GetValue<string>())).StatusCode.Should().Be(HttpStatusCode.NotFound);
             }
-            (await storage.ListObjectsV2Async(new ListObjectsV2Request { BucketName = bucket })).S3Objects.Should().ContainSingle().Which.Key.Should().Be("old-public.png");
+            (await client.GetAsync(publicImage)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+            (await client.GetAsync("/showcases/local-media-showcase")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+            (await client.PutAsJsonAsync(publication, new PublishPublication(preview.Token, preview.Generation))).StatusCode.Should().Be(HttpStatusCode.Conflict);
+            // Retired derivatives remain private until durable cleanup runs; catalog originals are removed immediately.
+            (await storage.ListObjectsV2Async(new ListObjectsV2Request { BucketName = bucket })).S3Objects
+                .Where(o => !o.Key.Contains("/showcases/")).Should().ContainSingle().Which.Key.Should().Be("old-public.png");
             (await client.DeleteAsync(path)).StatusCode.Should().Be(HttpStatusCode.NoContent);
         }
         finally

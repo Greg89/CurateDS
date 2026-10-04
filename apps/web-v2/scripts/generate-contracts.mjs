@@ -31,6 +31,16 @@ if (source) {
     ["/collections/{collectionId}/vocabulary", ["put"]],
     ["/collections/{collectionId}/presentation", ["get", "put"]],
     ["/collections/{collectionId}/showcase-settings", ["get", "put"]],
+    ["/collections/{collectionId}/publication", ["get", "put", "delete"]],
+    ["/collections/{collectionId}/publication/previews", ["post"]],
+    ["/collections/{collectionId}/publication/previews/{token}", ["get"]],
+    [
+      "/collections/{collectionId}/publication/previews/{token}/media/{asset}",
+      ["get", "head"],
+    ],
+    ["/showcases/{slug}", ["get", "head"]],
+    ["/showcases/{slug}/revisions/{revision}", ["get", "head"]],
+    ["/showcases/{slug}/media/{revision}/{asset}", ["get", "head"]],
     ["/collections/{collectionId}/summary", ["get"]],
     ["/collections/{collectionId}/insights", ["get"]],
     ["/collections/{collectionId}/activity", ["get"]],
@@ -47,7 +57,10 @@ if (source) {
     ["/tags", ["get"]],
     ["/locations", ["get"]],
     ["/collections/{collectionId}/items/{itemId}/media", ["post"]],
-    ["/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}/content", ["get"]],
+    [
+      "/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}/content",
+      ["get"],
+    ],
     [
       "/collections/{collectionId}/items/{itemId}/media/{mediaAssetId}",
       ["delete"],

@@ -1,6 +1,6 @@
 # Showcase Sharing and Social Preview Contract
 
-Status (2026-10-03): implementation design for the remaining V2 Slice 6 work. These routes and publication behaviors are not deployed. The current showcase is an authenticated owner preview.
+Status (2026-10-04): the private-media prerequisite and publication backend are implemented and tested; publishing remains disabled by default. The owner review/publish UI, visitor pages, social metadata, and deployment acceptance remain. The current web showcase is still an authenticated owner preview. See the [publication API handoff](refactor/16-v2-publication-api-handoff.md).
 
 ## Product decision
 
@@ -10,7 +10,7 @@ The existing `/collections/{collectionId}/showcase` remains the live, private wo
 
 Anyone with a published link can open and redistribute it. V1 omits showcases from a directory and sitemap and requests `noindex, nofollow`; this is a discoverability preference, not access control. Do not call a published showcase private or promise that a link cannot be discovered. The owner can unpublish it, which stops new reads from CurateDS; already downloaded content and third-party previews cannot be recalled.
 
-## Evidence from the current repository
+## Repository evidence at design time (before the private-media task)
 
 | Current behavior | Consequence for sharing |
 | --- | --- |

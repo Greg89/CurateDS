@@ -55,10 +55,10 @@ public sealed class DeleteItemMediaService
         var storageKey = asset.StorageKey;
 
         await _unitOfWork.ExecuteInTransactionAsync(
-            innerCancellationToken =>
+            async innerCancellationToken =>
             {
+                await _unitOfWork.SuspendPublicationAsync(command.CollectionId, "media_deleted", innerCancellationToken);
                 item.RemoveMedia(command.MediaAssetId);
-                return Task.CompletedTask;
             },
             cancellationToken);
 

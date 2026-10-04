@@ -1,4 +1,5 @@
 # Run from any directory with Docker and the repository's .NET SDK available.
+param([string]$Runtime = '')
 $ErrorActionPreference = 'Stop'
 $containerName = 'curateds-transaction-tests-' + [Guid]::NewGuid().ToString('N')
 $testPassword = [Guid]::NewGuid().ToString('N')
@@ -26,7 +27,9 @@ try {
     }
     $env:CURATEDS_TEST_POSTGRES = "Host=127.0.0.1;Port=$($Matches[1]);Username=postgres;Password=$testPassword;Database=postgres"
     Write-Host 'Running infrastructure tests with PostgreSQL 17 and repository migrations.'
-    dotnet test $projectPath --no-restore --verbosity minimal
+    $testArguments = @('test', $projectPath, '--no-restore', '--verbosity', 'minimal')
+    if ($Runtime) { $testArguments += @('--runtime', $Runtime) }
+    dotnet @testArguments
     if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL infrastructure tests failed.' }
 } finally {
     $env:CURATEDS_TEST_POSTGRES = $previousConnection

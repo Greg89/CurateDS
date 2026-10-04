@@ -14,7 +14,7 @@ RUN dotnet restore "apps/api/CurateDS.Api.csproj"
 COPY packages ./packages
 COPY apps/api ./apps/api
 
-RUN dotnet publish "apps/api/CurateDS.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "apps/api/CurateDS.Api.csproj" -c Release -o /app/publish --use-current-runtime --no-self-contained /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app

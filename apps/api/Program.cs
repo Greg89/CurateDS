@@ -13,7 +13,7 @@ var serviceVersion = AssemblyVersion.Resolve();
 builder.AddCurateDsSerilog(serviceVersion);
 
 builder.Services.AddProblemDetails();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => options.AddSchemaTransformer(PublicationConfiguration.TransformSchemaAsync));
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -24,6 +24,7 @@ builder.Services.AddCurateDsCors(builder.Configuration);
 builder.Services.AddCurateDsPersistence(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddCurateDsMediaStorage(builder.Configuration);
+builder.Services.AddPublications(builder.Configuration);
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<CatalogDbContext>("catalog-db");
@@ -42,25 +43,30 @@ app.UseCors(CorsConfiguration.PolicyName);
 // Set headers before authorization so anonymous and unavailable media responses are also uncached.
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path.StartsWithSegments("/collections") &&
-        context.Request.Path.Value!.Contains("/media/", StringComparison.Ordinal))
+    var publicShowcase = context.Request.Path.StartsWithSegments("/showcases");
+    if (publicShowcase || (context.Request.Path.StartsWithSegments("/collections") &&
+        (context.Request.Path.Value!.Contains("/media/", StringComparison.Ordinal) ||
+         context.Request.Path.Value.Contains("/publication", StringComparison.Ordinal))))
     {
         context.Response.OnStarting(() =>
         {
-            context.Response.Headers.CacheControl = "private, no-store";
+            context.Response.Headers.CacheControl = publicShowcase ? "no-store" : "private, no-store";
             context.Response.Headers.XContentTypeOptions = "nosniff";
             return Task.CompletedTask;
         });
     }
     await next(context);
 });
+// The bearer handler skips public showcase requests before token validation/discovery.
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapDefaultEndpoints();
 app.MapCollectionCrudEndpoints();
 app.MapCollectionPresentationEndpoints();
 app.MapShowcaseSettingsEndpoints();
+app.MapPublicationEndpoints();
 app.MapCollectionVocabularyEndpoints();
 app.MapCollectionReportEndpoints();
 app.MapSavedViewEndpoints();
