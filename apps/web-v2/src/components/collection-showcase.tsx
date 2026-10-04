@@ -105,6 +105,9 @@ export function CollectionShowcase() {
           Only you can open this view. Your saved settings shape this
           presentation.
         </span>
+        <Link href={`/collections/${collection.id}/showcase/review`}>
+          Review for sharing →
+        </Link>
       </div>
       {query.isPending || settings.isPending ? (
         <section className="workspace-note" role="status">

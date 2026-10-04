@@ -1,6 +1,6 @@
 # Showcase Sharing and Social Preview Contract
 
-Status (2026-10-04): the private-media prerequisite and publication backend are implemented and tested; publishing remains disabled by default. The owner review/publish UI, visitor pages, social metadata, and deployment acceptance remain. The current web showcase is still an authenticated owner preview. See the [publication API handoff](refactor/16-v2-publication-api-handoff.md).
+Status (2026-10-04): the private-media prerequisite, publication backend, owner review/publish controls, and visitor experience are implemented; publishing remains disabled by default. Social metadata/card and deployment acceptance remain. See the [publication API handoff](refactor/16-v2-publication-api-handoff.md) and [review/visitor handoff](refactor/17-v2-publication-ui-handoff.md).
 
 ## Product decision
 
@@ -108,7 +108,7 @@ Private staged/retired derivatives need retryable cleanup after candidates expir
 
 ## Metadata, share card, and cache policy
 
-The page and `generateMetadata` share one request-scoped public loader so a single response cannot combine two editions. Use explicit uncached fetches and dynamic rendering; do not enable static generation, ISR, framework data caches, an image-optimizer cache, or CDN caching for public publication resources in V1. Public GET/HEAD success and error responses use `Cache-Control: no-store`. Configure the hosting layer to honor it and test the response from the deployed edge before enabling publishing. There are no public conditional 304 responses in V1.
+The document and metadata share one request-scoped public loader so a single response cannot combine two editions. Implementation update (2026-10-04): the visitor uses an App Router HTML route handler and React's static renderer on each request, preserving explicit 404/503 before sending any HTML. Add metadata to that same document from its already checked DTO rather than fetching a second edition through `generateMetadata`. Use explicit uncached fetches and dynamic rendering; do not enable static generation, ISR, framework data caches, an image-optimizer cache, or CDN caching for public publication resources in V1. Public GET/HEAD success and error responses use `Cache-Control: no-store`. Configure the hosting layer to honor it and test the response from the deployed edge before enabling publishing. There are no public conditional 304 responses in V1.
 
 Metadata comes only from the public DTO: title, a bounded plain-text description or generic fallback, canonical URL, `og:type=website`, `og:title`, `og:description`, `og:url`, and an absolute share-card URL with revision token. Use the configured public web origin, never an untrusted Host header or API/storage origin. Private workspace and review routes retain generic metadata. Missing/unpublished/error states omit collection-specific metadata and imagery, including inherited parent image values.
 

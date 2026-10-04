@@ -1,5 +1,9 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
+import {
+  publicationFixture,
+  resetPublications,
+} from "./publication-fixture.mjs";
 const initialCollections = [
   {
     id: "33333333-3333-4333-8333-333333333333",
@@ -86,6 +90,7 @@ createServer(async (request, response) => {
   if (request.url === "/health") return response.end("{}");
   if (request.method === "POST" && request.url?.startsWith("/scenario/")) {
     scenario = request.url.slice("/scenario/".length);
+    resetPublications();
     refreshCount = 0;
     revocationCount = 0;
     collectionRequests = 0;
@@ -230,6 +235,17 @@ createServer(async (request, response) => {
     }
   }
   const url = new URL(request.url, "http://127.0.0.1:3102");
+  if (
+    (url.pathname.startsWith("/showcases/") ||
+      url.pathname === "/publication-fixture") &&
+    (await publicationFixture(request, response, {
+      collections,
+      items,
+      presentations,
+      showcaseSettings,
+    }))
+  )
+    return;
   if (url.pathname === "/fixture-image.png") {
     response.setHeader("Content-Type", "image/png");
     return response.end(
@@ -269,6 +285,16 @@ createServer(async (request, response) => {
     return send(collections);
   }
   if (!collections.some((c) => c.id === collectionId)) return send({}, 404);
+  if (
+    segments[2] === "publication" &&
+    (await publicationFixture(request, response, {
+      collections,
+      items,
+      presentations,
+      showcaseSettings,
+    }))
+  )
+    return;
   if (segments.length === 2 && request.method === "PUT") {
     let body = "";
     for await (const chunk of request) body += chunk;

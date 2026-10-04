@@ -106,7 +106,15 @@ Browse preserves these report filters when ordinary filters are applied. Named s
 
 Open **Showcase** from collection navigation to view the first gallery presentation. A compact toolbar keeps collection switching, return, and customization available. Identity/cover, ordered pinned highlights, summary counts, and recent additions come from the existing authenticated API data. Visible highlights are omitted from recent additions to avoid duplicate cards. Missing images have a fallback, and empty collections remain navigable.
 
-The route inherits the workspace's server session check, requires collection ownership through existing API calls, and uses generic `noindex, nofollow` metadata. The page is private; this task does not add a share link, publish action, public API, or public image contract. It currently offers one gallery layout and follows overview section preferences. Template selection, selected report sections, and publication/social metadata are remaining Slice 6 tasks. See the [showcase handoff](../../docs/refactor/12-v2-showcase-preview-handoff.md).
+The route inherits the workspace's server session check, requires collection ownership through existing API calls, and uses generic `noindex, nofollow` metadata. Gallery/Journal layouts and selected growth/type reports are saved separately from overview section preferences. This live preview stays private even when a separate edition is published.
+
+## Reviewed public editions
+
+Choose **Review for sharing** from the private showcase, edit the proposed address, and explicitly **Prepare review**. Check the exact snapshot and sharing notices, then acknowledge and publish it. The same flow prepares updates. Unpublish requires confirmation; its address stays reserved. Image failures offer a prepare-without-images choice, and expired/conflicting reviews require preparation again.
+
+The owner flow is `/collections/[collectionId]/showcase/review`, backed by authenticated, same-origin `/api/collections/[collectionId]/publication` routes. Visitors use `/showcase/[slug]` and checked `/showcase/[slug]/media/[revision]/[asset]` images. These routes bypass Auth0, contain no workspace navigation or private fields, and return no-store HTML/JPEG with generic 404/503 responses. The visitor document renders from one validated immutable DTO with no client JavaScript. It shares its presentation component and stylesheet with the owner review.
+
+The API's `Publication:Enabled` setting remains **false by default**, so sharing controls report unavailability until it is enabled. Enabling requires `Storage:EnforcePrivateReadPolicy=true`. This task does not enable local or remote publication or publish user collections. Keep remote publishing disabled until the checked social card, canonical metadata, bot HTML, and deployed-edge/private-storage acceptance are complete. See the [review and visitor handoff](../../docs/refactor/17-v2-publication-ui-handoff.md). Browser tests exercise enabled publication in an isolated fixture only.
 
 ## API contract generation
 

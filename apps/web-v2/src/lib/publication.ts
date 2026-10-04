@@ -53,3 +53,45 @@ export const publicShowcaseSchema = z
     "Showcase exceeds its size limit",
   ) satisfies z.ZodType<components["schemas"]["PublicShowcase"]>;
 export type PublicShowcase = z.infer<typeof publicShowcaseSchema>;
+
+export const publicationSlugSchema = z
+  .string()
+  .min(3)
+  .max(80)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*(?![\s\S])/);
+export const publicationStatusSchema = z.strictObject({
+  state: z.enum(["unpublished", "published", "suspended"]),
+  slug: publicationSlugSchema.nullable(),
+  generation: count,
+  revisionToken: z.uuid().nullable(),
+  publishedUtc: timestamp.nullable(),
+  suspensionReason: z.string().nullable(),
+}) satisfies z.ZodType<components["schemas"]["PublicationStatus"]>;
+export const publicationPreviewSchema = z.strictObject({
+  token: z.uuid(),
+  expiresUtc: timestamp,
+  generation: count,
+  showcase: publicShowcaseSchema,
+  notices: z.array(z.string().max(2000)).max(30),
+}) satisfies z.ZodType<components["schemas"]["PublicationPreview"]>;
+export type PublicationStatus = z.infer<typeof publicationStatusSchema>;
+export type PublicationPreview = z.infer<typeof publicationPreviewSchema>;
+export const preparePublicationSchema = z.strictObject({
+  slug: publicationSlugSchema,
+  omitImages: z.boolean(),
+});
+export const activatePublicationSchema = z.strictObject({
+  candidateToken: z.uuid(),
+  expectedGeneration: count,
+});
+
+export function suggestPublicationSlug(name: string, randomSuffix: string) {
+  const slug = name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .slice(0, 80)
+    .replace(/^-+|-+$/g, "");
+  return slug.length >= 3 ? slug : `collection-${randomSuffix.slice(0, 8)}`;
+}

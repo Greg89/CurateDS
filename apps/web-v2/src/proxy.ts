@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthClient, isAuthConfigured } from "@/lib/auth";
 
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  if (
+    path === "/showcase" ||
+    path.startsWith("/showcase/") ||
+    path === "/showcase.css"
+  ) {
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", "no-store");
+    response.headers.set("X-Content-Type-Options", "nosniff");
+    return response;
+  }
   if (!isAuthConfigured()) {
     if (request.nextUrl.pathname.startsWith("/auth/")) {
       return new NextResponse("Sign-in is temporarily unavailable.", {
