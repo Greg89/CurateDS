@@ -1,0 +1,3 @@
+# Image vulnerability exceptions require a documented, reviewed rationale.
+# The V2 images currently have no approved exceptions.
+vulnerabilities: []
