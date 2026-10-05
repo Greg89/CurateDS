@@ -10,6 +10,11 @@ COPY apps/web-v2 apps/web-v2
 RUN npm run build:web-v2
 
 FROM node:24-alpine AS runtime
+# The standalone server only needs node; exclude bundled package managers and
+# their dependency trees from the deployed image.
+RUN rm -rf /usr/local/lib/node_modules /opt/yarn-v1.22.22 \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+      /usr/local/bin/pnpm /usr/local/bin/yarn /usr/local/bin/yarnpkg
 WORKDIR /app
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
