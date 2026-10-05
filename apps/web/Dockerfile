@@ -1,4 +1,4 @@
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
@@ -9,7 +9,7 @@ RUN npm ci --ignore-scripts
 COPY apps/web-v2 apps/web-v2
 RUN npm run build:web-v2
 
-FROM node:24-alpine AS runtime
+FROM node:26-alpine AS runtime
 # The standalone server only needs node; exclude bundled package managers and
 # their dependency trees from the deployed image.
 RUN rm -rf /usr/local/lib/node_modules /opt/yarn-v1.22.22 \
