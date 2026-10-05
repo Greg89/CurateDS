@@ -9,6 +9,9 @@ await cp(new URL(".next/static/", appRoot), new URL(".next/static/", output), {
 await cp(new URL("public/", appRoot), new URL("public/", output), {
   recursive: true,
 });
+await cp(new URL("assets/", appRoot), new URL("assets/", output), {
+  recursive: true,
+});
 process.env.PORT ??= "3001";
 process.env.HOSTNAME ??= "127.0.0.1";
 process.chdir(fileURLToPath(appRoot));

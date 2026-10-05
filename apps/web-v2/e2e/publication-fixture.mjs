@@ -44,12 +44,14 @@ export async function publicationFixture(
   const send = (value, code = 200) => {
     response.statusCode = code;
     response.setHeader("Cache-Control", "no-store");
+    response.setHeader("X-Content-Type-Options", "nosniff");
     response.end(request.method === "HEAD" ? undefined : JSON.stringify(value));
     return true;
   };
   const image = () => {
     response.setHeader("Content-Type", "image/jpeg");
     response.setHeader("Cache-Control", "no-store");
+    response.setHeader("X-Content-Type-Options", "nosniff");
     response.end(request.method === "HEAD" ? undefined : jpeg);
     return true;
   };
@@ -76,6 +78,11 @@ export async function publicationFixture(
     );
     if (!h) return send({}, 404);
     if (parts.length === 2) return send(h.edition);
+    if (parts.length === 4 && parts[2] === "revisions")
+      return send(
+        parts[3] === h.revisionToken ? h.edition : {},
+        parts[3] === h.revisionToken ? 200 : 404,
+      );
     if (
       parts.length === 5 &&
       parts[2] === "media" &&

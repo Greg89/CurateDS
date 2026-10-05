@@ -21,11 +21,19 @@ export type PublicResult =
 export async function loadPublicShowcase(
   slug: string,
   deps: PublicDependencies,
+  revision?: string,
 ): Promise<PublicResult> {
-  if (!publicationSlugSchema.safeParse(slug).success) return { status: 404 };
+  if (
+    !publicationSlugSchema.safeParse(slug).success ||
+    (revision !== undefined && !z.uuid().safeParse(revision).success)
+  )
+    return { status: 404 };
   try {
     const response = await (deps.fetcher ?? fetch)(
-      publicationApiUrl(deps.apiBaseUrl, `/showcases/${slug}`),
+      publicationApiUrl(
+        deps.apiBaseUrl,
+        `/showcases/${slug}${revision ? `/revisions/${revision}` : ""}`,
+      ),
       {
         headers: { Accept: "application/json" },
         cache: "no-store",
@@ -40,7 +48,11 @@ export async function loadPublicShowcase(
     const showcase = publicShowcaseSchema.parse(
       await readPublicationJson(response, 65536),
     );
-    if (showcase.slug !== slug || !showcase.publishedUtc)
+    if (
+      showcase.slug !== slug ||
+      !showcase.publishedUtc ||
+      (revision && showcase.revisionToken !== revision)
+    )
       return { status: 503 };
     return { status: 200, showcase };
   } catch {

@@ -17,6 +17,7 @@ ENV PORT=3000
 COPY --from=build --chown=node:node /app/apps/web-v2/.next/standalone ./
 COPY --from=build --chown=node:node /app/apps/web-v2/.next/static ./apps/web-v2/.next/static
 COPY --from=build --chown=node:node /app/apps/web-v2/public ./apps/web-v2/public
+COPY --from=build --chown=node:node /app/apps/web-v2/assets ./apps/web-v2/assets
 USER node
 EXPOSE 3000
 CMD ["node", "apps/web-v2/server.js"]

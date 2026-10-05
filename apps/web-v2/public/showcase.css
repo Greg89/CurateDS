@@ -322,6 +322,22 @@
   padding: 4px 10px;
   background: #e2e8dc;
 }
+.publication-card {
+  margin: 24px 0;
+  max-width: 720px;
+}
+.publication-card img {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #e2e8dc;
+  border: 1px solid #d9dfd5;
+}
+.publication-card figcaption {
+  font-size: 13px;
+  color: #657267;
+  margin-top: 10px;
+}
 @media (max-width: 680px) {
   .public-intro {
     padding: 40px 0;

@@ -1,6 +1,6 @@
 # Showcase Sharing and Social Preview Contract
 
-Status (2026-10-04): the private-media prerequisite, publication backend, owner review/publish controls, and visitor experience are implemented; publishing remains disabled by default. Social metadata/card and deployment acceptance remain. See the [publication API handoff](refactor/16-v2-publication-api-handoff.md) and [review/visitor handoff](refactor/17-v2-publication-ui-handoff.md).
+Status (2026-10-04): the private-media prerequisite, publication backend, owner review/publish controls, and visitor experience are implemented; publishing remains disabled by default. Social metadata and cards are also implemented; deployed acceptance remains pending because no V2 environment is available yet. See the [social preview handoff](refactor/18-v2-social-preview-handoff.md) and [rollout checklist](refactor/19-v2-publication-rollout-checklist.md). See the [publication API handoff](refactor/16-v2-publication-api-handoff.md) and [review/visitor handoff](refactor/17-v2-publication-ui-handoff.md).
 
 ## Product decision
 
@@ -114,13 +114,15 @@ Metadata comes only from the public DTO: title, a bounded plain-text description
 
 Render a 1,200 × 630 PNG share card with Next.js `ImageResponse`: collection title, category when present, colour preset, and CurateDS branding. V1 intentionally uses typography and theme rather than catalog photographs, report totals, or owner identity. Ship a local font asset, escape/render text through components, and test long, Unicode, empty, and right-to-left text. Generate from the active immutable edition after checking its revision token; a deleted/unpublished/retired edition returns 404 before image generation. Candidate card previews use a separate authorized route and cannot be used as public image URLs.
 
+Implementation update (2026-10-04): cards shape shipped Noto fonts locally into SVG glyph paths before Next ImageResponse, avoiding external font/emoji fetches and supporting joined Arabic and bidirectional text. Long text is shortened visibly; uncovered scripts and symbols use replacement marks, disclosed in the owner preview. Canonical URLs use the existing APP_BASE_URL. See the social preview handoff for font coverage and packaging details.
+
 Next's bundled metadata guide documents server metadata, request-scoped memoization, and special crawler handling. Use those supported mechanisms; test initial HTML with a regular browser and a metadata-limited bot user agent, rather than relying on client hydration or a logged-in screenshot to validate shareability. The social-image route must apply the access and cache rules explicitly even if a file-convention default would cache its output.
 
 Unpublish acknowledgement means subsequent origin/edge reads of page, JSON, image, and card are denied. It cannot retract a response already in flight, an open tab's rendered pixels, screenshots, downloads, or third-party cached cards. Do not promise immediate deletion from external social systems. Revision tokens avoid reusing an old card URL after an update; they are not authentication credentials.
 
 ## Implementation order and acceptance
 
-Keep Slice 6 in progress until the agreed sharing implementation and its publication boundary are validated. The design deliverables are complete; this document does not claim public sharing exists.
+Keep Slice 6 in progress until the agreed sharing implementation and its publication boundary are validated. Local implementation and automated acceptance are complete; publishing remains disabled by default pending deployed acceptance.
 
 | Next task | Deliverable and acceptance |
 | --- | --- |

@@ -1,6 +1,6 @@
 # CurateDS V2 web foundation
 
-This temporary Next.js App Router workspace implements V2 Slices 1–5. The existing Vite app remains in `apps/web`. Users can create collections, browse and edit items with custom fields and images, explore insights, and save filtered views. Settings supports collection identity, ordered pins, optional overview sections, collection vocabulary, and custom-field definitions. Slice 6 has begun with a private showcase preview; public sharing remains later work.
+This temporary Next.js App Router workspace implements V2 Slices 1–5. The existing Vite app remains in `apps/web`. Users can create collections, browse and edit items with custom fields and images, explore insights, and save filtered views. Settings supports collection identity, ordered pins, optional overview sections, collection vocabulary, and custom-field definitions. Slice 6 includes private showcases and reviewed public editions with checked media, social cards, and metadata. Publishing remains disabled by default pending deployed acceptance.
 
 ## Run locally
 
@@ -24,7 +24,7 @@ Use an Auth0 **Regular Web Application**, not the current Vite SPA application. 
 
 | Variable              | Purpose                                                           |
 | --------------------- | ----------------------------------------------------------------- |
-| `APP_BASE_URL`        | `http://localhost:3001` locally; exact HTTPS origin when deployed |
+| `APP_BASE_URL`        | `http://localhost:3001` locally; exact HTTPS origin when deployed; also supplies canonical/social URLs |
 | `AUTH0_DOMAIN`        | Your Auth0 tenant domain                                          |
 | `AUTH0_CLIENT_ID`     | Regular Web Application client ID                                 |
 | `AUTH0_CLIENT_SECRET` | Its client secret                                                 |
@@ -110,11 +110,15 @@ The route inherits the workspace's server session check, requires collection own
 
 ## Reviewed public editions
 
-Choose **Review for sharing** from the private showcase, edit the proposed address, and explicitly **Prepare review**. Check the exact snapshot and sharing notices, then acknowledge and publish it. The same flow prepares updates. Unpublish requires confirmation; its address stays reserved. Image failures offer a prepare-without-images choice, and expired/conflicting reviews require preparation again.
+Choose **Review for sharing** from the private showcase, edit the proposed address, and explicitly **Prepare review**. Check the exact snapshot, sharing notices, and loaded social card, then acknowledge and publish it. A failed card offers a retry and keeps publication disabled until it loads. The same flow prepares updates. Unpublish requires confirmation; its address stays reserved. Image failures offer a prepare-without-images choice, and expired/conflicting reviews require preparation again.
 
 The owner flow is `/collections/[collectionId]/showcase/review`, backed by authenticated, same-origin `/api/collections/[collectionId]/publication` routes. Visitors use `/showcase/[slug]` and checked `/showcase/[slug]/media/[revision]/[asset]` images. These routes bypass Auth0, contain no workspace navigation or private fields, and return no-store HTML/JPEG with generic 404/503 responses. The visitor document renders from one validated immutable DTO with no client JavaScript. It shares its presentation component and stylesheet with the owner review.
 
-The API's `Publication:Enabled` setting remains **false by default**, so sharing controls report unavailability until it is enabled. Enabling requires `Storage:EnforcePrivateReadPolicy=true`. This task does not enable local or remote publication or publish user collections. Keep remote publishing disabled until the checked social card, canonical metadata, bot HTML, and deployed-edge/private-storage acceptance are complete. See the [review and visitor handoff](../../docs/refactor/17-v2-publication-ui-handoff.md). Browser tests exercise enabled publication in an isolated fixture only.
+The API's `Publication:Enabled` setting remains **false by default**, so sharing controls report unavailability until it is enabled. Enabling requires `Storage:EnforcePrivateReadPolicy=true`. This task does not enable local or remote publication or publish user collections. Social cards and canonical/bot metadata are implemented. Keep remote publishing disabled until deployed-edge/private-storage acceptance is complete. No deployed V2 environment exists yet. See the [social preview handoff](../../docs/refactor/18-v2-social-preview-handoff.md) and [prepared rollout checklist](../../docs/refactor/19-v2-publication-rollout-checklist.md). Browser tests exercise enabled publication in an isolated fixture only.
+
+Public metadata comes from the exact reviewed DTO and configured `APP_BASE_URL`, never forwarded Host headers. `/showcase/[slug]/social/[revision]` serves a checked, uncached 1,200 × 630 PNG. The owner candidate card uses the authenticated preview route. Local fonts cover Latin/Greek/Cyrillic, Arabic, Hebrew, and CJK; long text shortens visibly and unsupported symbols use replacement marks. No candidate text is sent to an external font or emoji service. Two card renders may run concurrently per web process.
+
+The read-only `scripts/check-showcase-edge.mjs` checks active/revoked page, JSON, card, and all derivative GET/HEAD/conditional responses through supplied web/API origins. Use the rollout checklist for exact commands and the separate private-storage and proxy/rate-limit checks it cannot prove.
 
 ## API contract generation
 
@@ -159,6 +163,6 @@ docker build -f apps/web-v2/Dockerfile -t curateds-web-v2 .
 
 The image runs the standalone Next.js server as the non-root Node user. Set the Auth0 and API variables at runtime; do not use `NEXT_PUBLIC_` for credentials or the API bearer token. The server binds to `0.0.0.0` and uses `PORT` (default 3000). The separate `apps/web-v2/railway.toml` is intended for a new Railway service rooted at this repository. Select that config file for that service. The existing application's deployment files are not switched to V2.
 
-For a local production preview after building, run `npm run start --workspace @curateds/web-v2`. The helper copies static assets into the standalone output and starts it on loopback port 3001.
+For a local production preview after building, run `npm run start --workspace @curateds/web-v2`. The helper copies static assets and shipped server fonts into the standalone output and starts it on loopback port 3001.
 
 Deployment and live Auth0 tenant configuration are not performed by this slice.

@@ -63,6 +63,10 @@ export function PublicationReview() {
   const [omitImages, setOmitImages] = useState(false);
   const [preview, setPreview] = useState<PublicationPreview | null>(null);
   const [accepted, setAccepted] = useState(false);
+  const [cardState, setCardState] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
+  const [cardAttempt, setCardAttempt] = useState(0);
   const [busy, setBusy] = useState<"prepare" | "publish" | "unpublish" | null>(
     null,
   );
@@ -86,6 +90,7 @@ export function PublicationReview() {
     setNotice("");
     setAccepted(false);
     setPreview(null);
+    setCardState("loading");
     setConfirm(false);
     try {
       const next = await read(`${base}/previews`, publicationPreviewSchema, {
@@ -103,7 +108,7 @@ export function PublicationReview() {
     }
   }
   async function publish() {
-    if (!preview || stale || !accepted) return;
+    if (!preview || stale || !accepted || cardState !== "ready") return;
     setBusy("publish");
     setError(null);
     setNotice("");
@@ -283,6 +288,41 @@ export function PublicationReview() {
             aria-label="Review this edition"
           >
             <h2>This is the edition visitors will see.</h2>
+            <figure className="publication-card">
+              <img
+                key={`${preview.token}:${cardAttempt}`}
+                src={`${base}/previews/${preview.token}/social`}
+                alt="Share card preview"
+                width={1200}
+                height={630}
+                onLoad={() => setCardState("ready")}
+                onError={() => setCardState("error")}
+              />
+              <figcaption>
+                Link preview for this edition. Long text may be shortened and
+                symbols outside the bundled fonts use a placeholder. The
+                showcase keeps the original text.
+              </figcaption>
+            </figure>
+            {cardState === "loading" && (
+              <p role="status">Preparing the share card…</p>
+            )}
+            {cardState === "error" && (
+              <div role="alert">
+                <p>
+                  The share card could not load. Retry its preview before
+                  publishing.
+                </p>
+                <button
+                  onClick={() => {
+                    setCardState("loading");
+                    setCardAttempt((value) => value + 1);
+                  }}
+                >
+                  Retry share card
+                </button>
+              </div>
+            )}
             <p>
               Address: <code>/showcase/{preview.showcase.slug}</code>
             </p>
@@ -318,14 +358,20 @@ export function PublicationReview() {
               <input
                 type="checkbox"
                 checked={accepted}
-                disabled={!!busy || stale}
+                disabled={!!busy || stale || cardState !== "ready"}
                 onChange={(event) => setAccepted(event.target.checked)}
               />
               I reviewed this edition and want to make it public.
             </label>
             <div className="publication-actions">
               <button
-                disabled={!!busy || !accepted || stale || status.isError}
+                disabled={
+                  !!busy ||
+                  !accepted ||
+                  stale ||
+                  status.isError ||
+                  cardState !== "ready"
+                }
                 onClick={() => void publish()}
               >
                 {busy === "publish"
