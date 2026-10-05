@@ -95,3 +95,11 @@ GitHub's public deployment record identifies beta as Railway project `eda7c331-a
 The existing [CI run for committed develop at 3cb3bfb](https://github.com/Greg89/CurateDS/actions/runs/37246926017) failed in **Test V2 browser flows**. Backend, frontend builds, and both unit-test stages passed. Public check annotations do not include the browser failure details; authenticated log access is pending explicit user authorization. Do not assume the new Docker-backed local pass explains or resolves that remote failure.
 
 No push or hosted mutation has occurred. Railway is not connected through an available integration, and browser automation could not initialize. The remaining inputs are authenticated CI-log access (or the failure output), the beta web URL, and access to verify/configure the existing beta service. Local regression results above remain valid; no implementation changes were made during this continuation.
+
+### Pipeline navigation race (2026-10-05)
+
+The replacement is now committed as `69c9301`. The user supplied the failed 72-case CI output: 71 cases passed, and the mobile Insights drill-through test switched the second collection to Browse instead of Insights. This resolves the earlier need for authenticated log access for this failure.
+
+The test clicked Insights and immediately used the persistent collection switcher while client navigation could still be pending. The switcher intentionally preserves the current committed section, so its prior Browse handler could win that race. The regression now waits for both the Insights URL and its `aria-current="page"` navigation state before changing collection. The final destination and empty-Insights assertions remain intact; no sleeps, retries, or timeout increases were added, and application behavior is unchanged.
+
+Validation passed against the unchanged Linux deployment image: 20 consecutive repetitions of the mobile Insights scenario, followed by all 72 desktop/mobile browser cases. Remote CI will rerun when this fix is pushed to `develop`. Beta runtime settings, its public URL, and hosted acceptance remain unverified.

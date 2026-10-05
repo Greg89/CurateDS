@@ -515,6 +515,12 @@ test("insights drill through exact counts, preserve and save filters, and switch
     "Added before",
   );
   await page.getByRole("link", { name: "Insights", exact: true }).click();
+  // The switcher persists across client navigation and preserves the committed
+  // section. Wait for Insights to commit before using it to change collections.
+  await expect(page).toHaveURL(base + "/insights");
+  await expect(
+    page.getByRole("link", { name: "Insights", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
   await page
     .getByRole("combobox", { name: "Your collection", exact: true })
     .selectOption("44444444-4444-4444-8444-444444444444");
