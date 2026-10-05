@@ -4,6 +4,7 @@ import { getAuthClient, isAuthConfigured } from "@/lib/auth";
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (
+    path === "/health" ||
     path === "/showcase" ||
     path.startsWith("/showcase/") ||
     path === "/showcase.css"

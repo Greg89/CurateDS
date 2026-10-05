@@ -687,4 +687,4 @@ createServer(async (request, response) => {
     pageSize,
     totalPages: Math.ceil(filtered.length / pageSize),
   });
-}).listen(3102, "127.0.0.1");
+}).listen(3102, process.env.FIXTURE_HOST || "127.0.0.1");

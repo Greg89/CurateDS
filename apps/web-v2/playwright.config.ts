@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: "./e2e",
   workers: 1,
   fullyParallel: false,
+  globalTeardown: "./e2e/container-teardown.ts",
   use: {
     baseURL: "http://127.0.0.1:3101",
     trace: "retain-on-failure",
@@ -17,13 +18,19 @@ export default defineConfig({
     },
   ],
   webServer: [
+    ...(process.env.PLAYWRIGHT_DOCKER_IMAGE
+      ? []
+      : [
+          {
+            command: "node e2e/api-fixture.mjs",
+            url: "http://127.0.0.1:3102/health",
+            reuseExistingServer: false,
+          },
+        ]),
     {
-      command: "node e2e/api-fixture.mjs",
-      url: "http://127.0.0.1:3102/health",
-      reuseExistingServer: false,
-    },
-    {
-      command: "node --import ./e2e/auth-transport.mjs scripts/start-standalone.mjs",
+      command: process.env.PLAYWRIGHT_DOCKER_IMAGE
+        ? "node scripts/start-container-test.mjs"
+        : "node --import ./e2e/auth-transport.mjs scripts/start-standalone.mjs",
       url: "http://127.0.0.1:3101",
       reuseExistingServer: false,
       env: {

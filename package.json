@@ -8,15 +8,17 @@
     "tests/EndToEndTests"
   ],
   "scripts": {
-    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web -- --run && npm run build:web-v2 && npm run test:web-v2",
+    "verify": "dotnet test CurateDS.sln --verbosity minimal && npm run build:web && npm run test:web && npm run build:web:legacy && npm run test:web:legacy -- --run",
     "dev:web-v2": "npm run dev --workspace @curateds/web-v2",
     "build:web-v2": "npm run build --workspace @curateds/web-v2",
     "test:web-v2": "npm run test --workspace @curateds/web-v2",
-    "build:web": "npm run build --workspace @curateds/web",
-    "test:web": "npm run test --workspace @curateds/web-tests",
+    "build:web": "npm run build --workspace @curateds/web-v2",
+    "test:web": "npm run test --workspace @curateds/web-v2",
     "test:web:coverage": "npm run test:coverage --workspace @curateds/web-tests",
     "test:web:watch": "npm run test:watch --workspace @curateds/web-tests",
-    "test:e2e": "npm run test --workspace @curateds/e2e"
+    "test:e2e": "npm run test:e2e --workspace @curateds/web-v2",
+    "build:web:legacy": "npm run build --workspace @curateds/web",
+    "test:web:legacy": "npm run test --workspace @curateds/web-tests"
   },
   "overrides": {
     "postcss": "8.5.25",

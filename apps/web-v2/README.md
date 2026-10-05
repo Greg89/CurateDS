@@ -1,6 +1,6 @@
 # CurateDS V2 web foundation
 
-This temporary Next.js App Router workspace implements V2 Slices 1–5. The existing Vite app remains in `apps/web`. Users can create collections, browse and edit items with custom fields and images, explore insights, and save filtered views. Settings supports collection identity, ordered pins, optional overview sections, collection vocabulary, and custom-field definitions. Slice 6 includes private showcases and reviewed public editions with checked media, social cards, and metadata. Publishing remains disabled by default pending deployed acceptance.
+This Next.js App Router workspace implements V2 Slices 1–5. The existing Vite app remains in `apps/web`. Users can create collections, browse and edit items with custom fields and images, explore insights, and save filtered views. Settings supports collection identity, ordered pins, optional overview sections, collection vocabulary, and custom-field definitions. Slice 6 includes private showcases and reviewed public editions with checked media, social cards, and metadata. Publishing remains disabled by default pending deployed acceptance.
 
 ## Run locally
 
@@ -158,11 +158,13 @@ The browser suite also covers pin selection/search/pagination/order/limit/remova
 Build from the repository root:
 
 ```powershell
-docker build -f apps/web-v2/Dockerfile -t curateds-web-v2 .
+docker build -f apps/web/Dockerfile -t curateds-web-v2 .
 ```
 
-The image runs the standalone Next.js server as the non-root Node user. Set the Auth0 and API variables at runtime; do not use `NEXT_PUBLIC_` for credentials or the API bearer token. The server binds to `0.0.0.0` and uses `PORT` (default 3000). The separate `apps/web-v2/railway.toml` is intended for a new Railway service rooted at this repository. Select that config file for that service. The existing application's deployment files are not switched to V2.
+The image runs the standalone Next.js server as the non-root Node user. Set the Auth0 and API variables at runtime; do not use `NEXT_PUBLIC_` for credentials or the API bearer token. The server binds to `0.0.0.0` and uses `PORT` (default 8080). The existing `apps/web/Dockerfile` now builds V2. Select `/apps/web/railway.toml` on the existing beta web service, keep the repository root as build context, and retain its domain. `/health` requires complete runtime configuration and a reachable API. Follow the [beta replacement plan](../../docs/refactor/20-v2-beta-cutover.md); do not create a second web service.
 
 For a local production preview after building, run `npm run start --workspace @curateds/web-v2`. The helper copies static assets and shipped server fonts into the standalone output and starts it on loopback port 3001.
 
 Deployment and live Auth0 tenant configuration are not performed by this slice.
+
+For browser acceptance against the exact Linux image, set `PLAYWRIGHT_DOCKER_IMAGE` to its local image tag before running the browser suite. The test runner supplies only isolated fixtures. The read-only deployed smoke command is `node scripts/check-deployment.mjs --origin https://BETA-WEB-ORIGIN`; live account workflows still require the beta acceptance matrix.

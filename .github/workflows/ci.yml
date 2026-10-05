@@ -17,6 +17,19 @@ jobs:
     name: backend
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: regression-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
     permissions:
       contents: read
 
@@ -44,6 +57,8 @@ jobs:
         run: dotnet build CurateDS.sln --no-restore
 
       - name: Test
+        env:
+          CURATEDS_TEST_POSTGRES: Host=127.0.0.1;Port=5432;Username=postgres;Password=regression-only;Database=postgres
         run: dotnet test CurateDS.sln --no-build --verbosity normal
 
   frontend:
@@ -70,16 +85,21 @@ jobs:
         run: npm run build:web
 
       - name: Test web
-        run: npm run test:web -- --run
+        run: npm run test:web
 
-      - name: Build V2 web
-        run: npm run build:web-v2
+      - name: Build legacy reference client
+        run: npm run build:web:legacy
 
-      - name: Test V2 web
-        run: npm run test:web-v2
+      - name: Test legacy reference client
+        run: npm run test:web:legacy
 
       - name: Install V2 browser
         run: npx playwright install --with-deps chromium
 
-      - name: Test V2 browser flows
+      - name: Build deployment image
+        run: docker build -f apps/web/Dockerfile -t curateds-web-regression .
+
+      - name: Test V2 browser flows in deployment image
+        env:
+          PLAYWRIGHT_DOCKER_IMAGE: curateds-web-regression
         run: npm run test:e2e --workspace @curateds/web-v2

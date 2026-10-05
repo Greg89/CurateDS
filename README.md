@@ -21,7 +21,7 @@ Organise anything - books, vinyl, board games, tools - with custom attributes, t
 |---|---|
 | API | .NET 10, ASP.NET Core minimal APIs |
 | ORM | EF Core + Npgsql (PostgreSQL) |
-| Frontend | React 19, Vite, TypeScript, React Router 7, TanStack Query |
+| Frontend | Next.js App Router, React 19, TypeScript, TanStack Query |
 | Auth | Auth0 |
 | Logging | Serilog -> console + Seq |
 | Storage | S3-compatible object storage |
@@ -32,7 +32,8 @@ Organise anything - books, vinyl, board games, tools - with custom attributes, t
 ```
 apps/
   api/          ASP.NET Core API
-  web/          React web client
+  web/          Web deployment Dockerfile and legacy reference source
+  web-v2/       Primary Next.js web application
 packages/
   domain/       Domain model and business rules
   application/  Use cases and service contracts
@@ -60,11 +61,11 @@ Current V2 boundaries:
 
 ### V2 foundation workspace
 
-The Next.js foundation is in [`apps/web-v2`](apps/web-v2/README.md), alongside the current Vite web app. Run `npm run dev:web-v2` on Node 24.15+ for port 3001. Its README covers the separate Auth0 Regular Web Application setup, generated contracts, browser tests, and standalone Docker/Railway configuration. The existing deployment remains on the current web app.
+The primary Next.js application is in [`apps/web-v2`](apps/web-v2/README.md). The existing `apps/web/Dockerfile` deploys it to the existing web service; the Vite source is retained only as a regression reference. Beta replaces the original client in place, with one web service and the same domain. Run `npm run dev:web-v2` on Node 24.15+ for port 3001. See the [beta cutover and acceptance plan](docs/refactor/20-v2-beta-cutover.md) for runtime Auth0 configuration, hosted checks, and rollback.
 
 ## Local Development
 
-Requires Docker Desktop.
+Requires Docker Desktop. First run `npm ci --ignore-scripts` and `npm run setup:local --workspace @curateds/web-v2`, then fill in the Regular Web Application settings in `apps/web-v2/.env.local`. Compose uses those server credentials but overrides the web origin to `http://localhost:3000` and the API to its internal service address. Register `http://localhost:3000/auth/callback` and the matching logout origin in Auth0 for Docker; the standalone dev server continues to use port 3001.
 
 ```bash
 docker compose up --build
@@ -91,7 +92,7 @@ npm run test:web
 # Frontend unit tests (watch mode)
 npm run test:web:watch
 
-# E2E (local only - requires the full stack running)
+# Production browser fixtures (build first; no application data is changed)
 npm run test:e2e
 ```
 
@@ -107,18 +108,23 @@ npm run test:e2e
 | `Cors__AllowedOrigins__0` | Allowed CORS origin (web app URL) |
 | `Serilog__SeqUrl` | Optional Seq ingestion endpoint |
 
-### Web (build-time)
+### Web (server runtime)
 
 | Variable | Description |
 |---|---|
-| `VITE_API_BASE_URL` | API base URL |
-| `VITE_AUTH0_DOMAIN` | Auth0 tenant domain |
-| `VITE_AUTH0_CLIENT_ID` | Auth0 SPA client ID |
-| `VITE_AUTH0_AUDIENCE` | Auth0 API identifier |
+| `APP_BASE_URL` | Exact beta HTTPS origin; canonical URLs and Auth0 callback origin |
+| `API_BASE_URL` | API origin reachable by the web server |
+| `AUTH0_DOMAIN` | Auth0 tenant |
+| `AUTH0_CLIENT_ID` | Regular Web Application client ID |
+| `AUTH0_CLIENT_SECRET` | Its client secret |
+| `AUTH0_SECRET` | Stable 64-character hexadecimal session secret |
+| `AUTH0_AUDIENCE` | Existing API identifier |
+
+These are server-only variables. Old `VITE_*` values no longer configure the deployed web app. Use `/health` for readiness and `/apps/web/railway.toml` on the existing web service. See the cutover plan before pushing the replacement to beta.
 
 ## CI / CD
 
-GitHub Actions runs two required checks on every PR - `backend` and `frontend`. Both must pass before a branch can be merged. Railway is configured to wait for CI before deploying.
+GitHub Actions runs two required checks on every PR - `backend` and `frontend`. Both must pass before a branch can be merged. Frontend checks build/test V2 and the legacy reference, then exercise V2 desktop/mobile flows against the deployment Docker image. Railway is configured to wait for CI before deploying; verify that setting on beta during cutover.
 
 - PRs into `develop` -> deploy to **beta** on Railway after CI passes
 - PRs into `main` -> deploy to **production** on Railway after CI passes
