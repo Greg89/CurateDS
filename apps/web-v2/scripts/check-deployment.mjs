@@ -5,7 +5,7 @@ function assert(value, message) {
 }
 export async function checkDeployment(
   value,
-  { fetcher = fetch, log = console.log } = {},
+  { fetcher = fetch, log = console.log, expectedCommit } = {},
 ) {
   const url = new URL(value);
   assert(
@@ -25,6 +25,17 @@ export async function checkDeployment(
       redirect: "manual",
       signal: AbortSignal.timeout(15000),
     });
+  assert(
+    expectedCommit === undefined || /^[a-f0-9]{40}$/.test(expectedCommit),
+    "Expected commit must be a full lowercase Git SHA.",
+  );
+  const verifyCommit = (response, phase) => {
+    if (expectedCommit === undefined) return;
+    const actual = response.headers.get("x-curateds-commit");
+    const observed = /^[a-f0-9]{40}$/.test(actual ?? "") ? actual : "missing or invalid";
+    log(`Deployment commit ${phase}: expected ${expectedCommit}, observed ${observed}.`);
+    assert(response.ok && actual === expectedCommit, "Deployment commit could not be verified.");
+  };
   const health = await get("/health");
   assert(
     health.status === 200 &&
@@ -35,6 +46,7 @@ export async function checkDeployment(
     !health.headers.has("set-cookie"),
     "Readiness changed an account session.",
   );
+  verifyCommit(health, "before smoke");
   log("PASS: V2 readiness and API connectivity.");
   const home = await get("/");
   assert(home.status === 200, "Landing page failed.");
@@ -106,6 +118,11 @@ export async function checkDeployment(
   );
   await css.body?.cancel();
   log("PASS: public error boundary and stylesheet.");
+  if (expectedCommit !== undefined) {
+    const finalHealth = await get("/health");
+    verifyCommit(finalHealth, "after smoke");
+    await finalHealth.body?.cancel();
+  }
   log(
     "Read-only deployment smoke passed. Live sign-in, owner workflows, storage privacy, and publication lifecycle still require beta acceptance.",
   );
@@ -115,8 +132,10 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   try {
-    const { values } = parseArgs({ options: { origin: { type: "string" } } });
-    await checkDeployment(values.origin);
+    const { values } = parseArgs({
+      options: { origin: { type: "string" }, "expected-commit": { type: "string" } },
+    });
+    await checkDeployment(values.origin, { expectedCommit: values["expected-commit"] });
   } catch {
     console.error(
       "FAIL: deployment smoke failed. Check readiness, Auth0 settings, and deployed routes; no response bodies or secrets were logged.",

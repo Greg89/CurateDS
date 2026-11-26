@@ -38,9 +38,17 @@ export async function readiness(
     });
     await response.body?.cancel();
     if (!response.ok) throw new Error("API unavailable");
+    const commitSha = env.RAILWAY_GIT_COMMIT_SHA;
     return Response.json(
       { status: "ok", application: "curateds-web-v2" },
-      { headers },
+      {
+        headers: {
+          ...headers,
+          ...(commitSha && /^[a-f0-9]{40}$/.test(commitSha) && {
+            "X-CurateDS-Commit": commitSha,
+          }),
+        },
+      },
     );
   } catch {
     return Response.json({ status: "unavailable" }, { status: 503, headers });

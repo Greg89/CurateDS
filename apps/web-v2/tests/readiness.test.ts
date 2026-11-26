@@ -29,6 +29,17 @@ it("checks the API without credentials or redirects and identifies the V2 deploy
   expect(response.headers.get("cache-control")).toBe("no-store");
 });
 it.each([
+  ["a".repeat(40), "a".repeat(40)],
+  ["invalid", null],
+])("exposes only a full Railway commit SHA on readiness", async (sha, expected) => {
+  const response = await readiness(
+    { ...env, RAILWAY_GIT_COMMIT_SHA: sha ?? undefined },
+    async () => new Response("Healthy"),
+  );
+  expect(response.headers.get("x-curateds-commit")).toBe(expected);
+});
+
+it.each([
   { AUTH0_CLIENT_SECRET: "" },
   { AUTH0_SECRET: "short" },
   { APP_BASE_URL: "https://beta.example/path" },
