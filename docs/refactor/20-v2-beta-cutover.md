@@ -47,7 +47,9 @@ Docker browser tests mount fixture modules read-only and use synthetic Auth0 ses
 
 ## Hosted smoke and regression
 
-After CI and the beta deployment succeed, record the deployed commit and run:
+After CI and the beta deployment succeed, record the deployed commit from Railway and run **Beta deployment smoke** from the GitHub Actions tab. Once the workflow is on the default branch, you can also run it with `gh workflow run beta-smoke.yml --ref develop`. The job summary records the target and check results. The selected Git ref supplies the checker code only. Record the deployed commit separately in Railway.
+
+To run the same check directly:
 
 ```powershell
 node apps/web-v2/scripts/check-deployment.mjs --origin https://BETA-WEB-ORIGIN
