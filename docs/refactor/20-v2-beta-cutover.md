@@ -49,7 +49,9 @@ Docker browser tests mount fixture modules read-only and use synthetic Auth0 ses
 
 After CI and the beta deployment succeed, record the deployed commit from Railway and run **Beta deployment smoke** from the GitHub Actions tab. Once the workflow is on the default branch, you can also run it with `gh workflow run beta-smoke.yml --ref develop`. The job summary records the target and check results. The selected Git ref supplies the checker code only. Record the deployed commit separately in Railway.
 
-To run the same check directly:
+The workflow also runs on successful Railway deployment statuses for CurateDS beta. It compares the event's full commit SHA with the web service's `X-CurateDS-Commit` response header before and after the smoke suite. The header comes from Railway's `RAILWAY_GIT_COMMIT_SHA`. A missing or mismatched SHA fails the job. The summary records the GitHub deployment ID and both commit comparisons. Manual runs are available for checking endpoint health without a deploy event.
+
+To check a specific live beta commit directly, pass `--expected-commit FULL_SHA` to the following command:
 
 ```powershell
 node apps/web-v2/scripts/check-deployment.mjs --origin https://BETA-WEB-ORIGIN
