@@ -4,6 +4,10 @@ import { checkDeployment } from "../scripts/check-deployment.mjs";
 test("the read-only deployed smoke checker passes", async () => {
   await checkDeployment("http://127.0.0.1:3101", { log: () => {} });
 });
+test("disposable CI probe retains a trace on failure", async ({ page }) => {
+  const response = await page.goto("/health");
+  expect(response?.status(), "intentional failure for artifact verification").toBe(418);
+});
 test("legacy collection bookmarks redirect to V2 and preserve queries", async ({
   request,
 }) => {
