@@ -12,10 +12,15 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   backend:
     name: backend
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -64,6 +69,7 @@ jobs:
   frontend:
     name: frontend
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     permissions:
       contents: read
@@ -100,6 +106,16 @@ jobs:
         run: docker build -f apps/web/Dockerfile -t curateds-web-regression .
 
       - name: Test V2 browser flows in deployment image
+        id: v2-browser
         env:
           PLAYWRIGHT_DOCKER_IMAGE: curateds-web-regression
         run: npm run test:e2e --workspace @curateds/web-v2
+
+      - name: Upload V2 Playwright failure artifacts
+        if: ${{ failure() && steps.v2-browser.outcome == 'failure' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v2-playwright-failure
+          path: apps/web-v2/test-results/
+          if-no-files-found: warn
+          retention-days: 7

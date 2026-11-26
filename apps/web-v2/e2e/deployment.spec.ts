@@ -25,6 +25,21 @@ test("legacy collection bookmarks redirect to V2 and preserve queries", async ({
     expect(location.searchParams.get("search")).toBe("library");
   }
 });
+test("legacy item bookmarks preserve repeated filters and encoded search", async ({
+  request,
+}) => {
+  const base = "/collections/33333333-3333-4333-8333-333333333333";
+  const response = await request.get(
+    `${base}/items?tag=board%20games&tag=card%20games&search=C%2B%2B%20%26%20friends`,
+    { maxRedirects: 0 },
+  );
+
+  expect(response.status()).toBe(307);
+  const location = new URL(response.headers().location, "http://127.0.0.1:3101");
+  expect(location.pathname).toBe(`${base}/browse`);
+  expect(location.searchParams.getAll("tag")).toEqual(["board games", "card games"]);
+  expect(location.searchParams.get("search")).toBe("C++ & friends");
+});
 test("readiness identifies V2 without refreshing an expired account session", async ({
   context,
   request,
