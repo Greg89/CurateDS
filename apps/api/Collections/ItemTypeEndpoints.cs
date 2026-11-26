@@ -34,7 +34,7 @@ public static class ItemTypeEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        }).RequireAuthorization();
+        }).RequireAuthorization().Produces<ItemTypeResponse[]>();
 
         group.MapPost("/{collectionId:guid}/item-types", async (
             Guid collectionId,

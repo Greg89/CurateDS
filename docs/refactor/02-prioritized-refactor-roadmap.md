@@ -1,79 +1,46 @@
 # Prioritized Refactor Roadmap
 
-Status updated: 2026-06-29
+Status updated: 2026-10-02
 
-## Phase 1: Documentation And Status Refresh
+The June roadmap predates merged implementation. Use this status when resuming; keep the [V2 roadmap](../15-v2-roadmap.md) in view as the next product phase.
 
-Goal:
-Make the refactor notes match the repo before planning more work.
+## Completed implementation
 
-Work:
+- Filter/query symmetry, saved-view restoration and malformed-row handling.
+- Drawer unmount fix.
+- Saved-view write validation with application and API coverage.
+- Application unit-of-work abstraction and EF transaction implementation, used by item and other catalog write services.
+- Best-effort media-upload compensation after database failure.
+- Baseline tag-picker outside-click and Escape handling.
 
-1. Mark completed filter, saved-view, and report drill-through fixes as done.
-2. Record the item drawer unmount fix and green beta smoke test.
-3. Keep the remaining open work visible: encoding cleanup, `TagMultiSelect`, saved-view write validation, and transaction-boundary design.
+## Completed: Tag Picker Focus
 
-## Phase 2: Polish And Encoding Cleanup
+- Focus the first checkbox when opening.
+- Keep native Tab/Shift+Tab and Space interaction for the checkbox group.
+- Close when focus leaves without stealing focus from the destination.
+- Close and reset when disabled, preventing the clear action from remaining interactive.
+- Preserve Escape focus return and outside-click behavior.
 
-Goal:
-Clean obvious presentation debt while refactor momentum is already active.
+## Completed: Transaction Validation
 
-Work:
+Added six integration cases, verified against SQLite and PostgreSQL 17, through the real item create/update/delete services and repositories. A test decorator flushes item changes before the event insert, then a database trigger rejects that insert. Fresh contexts verify rollback restores item state and leaves no event; paired success cases verify both writes commit. The default SQLite mode needs no Docker. The optional PostgreSQL runner applies migrations to isolated fresh databases and verifies the same scenarios on the production provider. Existing-data migration safety and broader provider queries remain separate.
 
-1. Fix mojibake and content-encoding regressions.
-2. Review top-level docs for outdated statements.
-3. Consider a small contributor-facing quality checklist for:
-   - encoding
-   - accessibility
-   - filter/query symmetry
+## Completed: Validation Reliability
 
-## Phase 3: UI Hardening
+Replaced the `HttpListener` fake with Kestrel, direct ephemeral-port binding, asynchronous request capture, thread-safe snapshots, and awaited shutdown. Preserved Content-Length, raw-body, non-chunked HTTP signing, and S3 error assertions; added concurrent-endpoint isolation coverage. All 18 infrastructure tests pass on Windows and Linux (.NET SDK Docker container); see validation notes for details.
 
-Goal:
-Stabilize newer interactive controls and keep the shell maintainable.
+## First-pass Exit And V2 Handoff
 
-Work:
+- Complete: relational rollback coverage and the portable storage-test fixture. Results and limitations are in the validation notes; the first refactor pass is ready for V2.
+- Record unresolved interaction, decomposition, and media-cleanup work as follow-ups so this pass has a bounded finish.
+- Continue with [V2 Slice 1: Next.js Web Foundation](../15-v2-roadmap.md#slice-1-nextjs-web-foundation). Slice 0 decisions are already accepted; use the temporary `apps/web-v2` workspace and preserve the existing web as a reference.
+- Preserve the tested filters, saved views, ownership checks, transaction behavior, and media workflows while building the collection-first experience.
+- Reconcile completed transaction work with V2 Slice 7 when reaching that slice; retain its broader privacy, cleanup, import/export, and scale goals.
 
-1. Harden `TagMultiSelect` behavior.
-2. Audit other drawer and popover interactions for consistent close/focus behavior.
-3. Continue decomposing feature surfaces like the items workspace into smaller tested units.
+## Follow-up
 
-## Phase 4: Saved-View Write Validation
-
-Goal:
-Prevent invalid saved-view filter payloads from entering persistence.
-
-Work:
-
-1. Validate `FiltersJson` in `CreateSavedViewCommandValidator` or `CreateSavedViewService`.
-2. Reuse the same supported item-filter shape as the web client.
-3. Add application and API integration tests for malformed JSON and unsupported shapes.
-
-## Phase 5: Transaction-Boundary Design
-
-Goal:
-Define the write consistency approach before adding more multi-table domain features.
-
-Work:
-
-1. Document the unit-of-work transaction abstraction.
-2. Start implementation with item create, update, and delete flows.
-3. Define compensation behavior separately for object storage plus database writes.
-
-Status:
-
-The design direction is captured in `04-transaction-boundary-design.md`. Implementation remains open.
-
-## Phase 6: Validation Reliability
-
-Goal:
-Reduce environment-specific failures in local and CI feedback loops.
-
-Work:
-
-1. Revisit infrastructure tests that depend on `HttpListener`.
-2. Decide whether to:
-   - swap to a more portable fake server
-   - isolate those tests behind explicit environment assumptions
-   - move them to a different integration-test style
-3. Make repo validation notes clearer when failures are environment-specific rather than product regressions.
+- Audit other drawers and popovers for consistent close/focus behavior.
+- Continue extracting large feature surfaces into tested units when changing them.
+- Keep contributor docs aligned with the API/web-only V2 scope and actual SDK requirements.
+- Add a trusted TLS storage fixture to verify the actual HTTPS `UNSIGNED-PAYLOAD` header; the current transport-failure test cannot prove that branch.
+- Consider orphan-media repair and cancellation-independent compensation; current storage cleanup is best effort and uses the request cancellation token.

@@ -41,7 +41,7 @@ public static class OrganizationEndpoints
             var ownerId = currentUserService.GetCurrentUser();
             var tags = await service.ExecuteAsync(new ListTagsQuery(ownerId), cancellationToken);
             return Results.Ok(tags.Select(tag => new TagResponse(tag.Id, tag.Name, tag.Key, tag.CreatedUtc)));
-        }).RequireAuthorization();
+        }).RequireAuthorization().Produces<TagResponse[]>();
     }
 
     private static void MapCreateTag(IEndpointRouteBuilder app)
@@ -137,7 +137,7 @@ public static class OrganizationEndpoints
                 location.Name,
                 location.Description,
                 location.CreatedUtc)));
-        }).RequireAuthorization();
+        }).RequireAuthorization().Produces<LocationResponse[]>();
     }
 
     private static void MapCreateLocation(IEndpointRouteBuilder app)

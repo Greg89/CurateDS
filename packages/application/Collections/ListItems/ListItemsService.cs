@@ -9,16 +9,13 @@ public sealed class ListItemsService
 {
     private readonly ICollectionRepository _collectionRepository;
     private readonly IItemRepository _itemRepository;
-    private readonly IMediaStorageService _mediaStorageService;
 
     public ListItemsService(
         ICollectionRepository collectionRepository,
-        IItemRepository itemRepository,
-        IMediaStorageService mediaStorageService)
+        IItemRepository itemRepository)
     {
         _collectionRepository = collectionRepository;
         _itemRepository = itemRepository;
-        _mediaStorageService = mediaStorageService;
     }
 
     public async Task<PagedResult<ItemSummaryDto>> ExecuteAsync(
@@ -37,7 +34,7 @@ public sealed class ListItemsService
 
         var result = await _itemRepository.QueryAsync(query, cancellationToken);
 
-        // Repository returns storage keys; map to public URLs at the application boundary.
+        // Return owner-scoped API paths, never storage URLs.
         var dtos = result.Items.Select(projection => new ItemSummaryDto(
             projection.Id,
             projection.CollectionId,
@@ -50,9 +47,9 @@ public sealed class ListItemsService
             projection.AttributeValueCount,
             projection.CreatedUtc,
             projection.UpdatedUtc,
-            projection.PrimaryImageStorageKey is null
+            projection.PrimaryImageAssetId is null
                 ? null
-                : _mediaStorageService.GetPublicUrl(projection.PrimaryImageStorageKey))).ToArray();
+                : MediaContentPath.For(projection.CollectionId, projection.Id, projection.PrimaryImageAssetId.Value))).ToArray();
 
         return new PagedResult<ItemSummaryDto>(dtos, result.TotalCount, result.Page, result.PageSize);
     }

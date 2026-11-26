@@ -1,3 +1,4 @@
+using CurateDS.Application.Collections.UpdateCollection;
 using CurateDS.Api.ApiContracts;
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Collections;
@@ -24,7 +25,7 @@ public static class CollectionCrudEndpoints
             var collections = await service.ExecuteAsync(new ListCollectionsQuery(ownerId), cancellationToken);
 
             return Results.Ok(collections.Select(CollectionResponseMappers.ToCollectionResponse));
-        });
+        }).Produces<CollectionResponse[]>();
 
         group.MapPost("/", async (
             CreateCollectionRequest request,
@@ -36,18 +37,44 @@ public static class CollectionCrudEndpoints
             {
                 var ownerId = currentUserService.GetCurrentUser();
                 var result = await service.ExecuteAsync(
-                    new CreateCollectionCommand(ownerId, request.Name),
+                    new CreateCollectionCommand(ownerId, request.Name,
+                        request.Category, request.Description, request.CoverImageUrl, request.Color),
                     cancellationToken);
 
                 return Results.Created($"/collections/{result.Id}", CollectionResponseMappers.ToCollectionResponse(
-                    new CollectionDto(result.Id, result.Name, result.CreatedUtc)));
+                    new CollectionDto(result.Id, result.Name, result.CreatedUtc,
+                        result.Category, result.Description, result.CoverImageUrl, result.Color)));
             }
             catch (ValidationException exception)
             {
                 return ApiResponses.Validation(exception);
             }
-        });
+        }).Produces<CollectionResponse>(StatusCodes.Status201Created);
 
+        group.MapPut("/{collectionId:guid}", async (
+            Guid collectionId,
+            UpdateCollectionRequest request,
+            UpdateCollectionService service,
+            ICurrentUserService currentUserService,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var result = await service.ExecuteAsync(
+                    new UpdateCollectionCommand(currentUserService.GetCurrentUser(), collectionId, request.Name,
+                        request.Category, request.Description, request.CoverImageUrl, request.Color),
+                    cancellationToken);
+                return Results.Ok(CollectionResponseMappers.ToCollectionResponse(result));
+            }
+            catch (ValidationException exception)
+            {
+                return ApiResponses.Validation(exception);
+            }
+            catch (NotFoundException)
+            {
+                return ApiResponses.NotFound("Collection was not found.");
+            }
+        }).Produces<CollectionResponse>();
         group.MapDelete("/{collectionId:guid}", async (
             Guid collectionId,
             DeleteCollectionService service,

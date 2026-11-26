@@ -1,3 +1,4 @@
+import { AuthenticatedImage } from "./AuthenticatedImage";
 import { ItemSummary } from "../../api";
 
 export function ItemList({
@@ -53,7 +54,7 @@ export function ItemList({
             >
               <td className="table-thumb-cell">
                 {item.primaryImageUrl
-                  ? <img alt={item.name} className="table-thumb" src={item.primaryImageUrl} />
+                  ? <AuthenticatedImage alt={item.name} className="table-thumb" src={item.primaryImageUrl} />
                   : <span className="table-thumb-placeholder" />}
               </td>
               <td>{item.name}</td>
@@ -80,7 +81,7 @@ export function ItemList({
           key={item.id}
         >
           {item.primaryImageUrl && (
-            <img
+            <AuthenticatedImage
               alt={item.name}
               className="item-card-thumb"
               src={item.primaryImageUrl}

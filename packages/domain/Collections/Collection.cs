@@ -22,20 +22,109 @@ public sealed class Collection : AuditableEntity
 
     public string Name { get; private set; }
 
-    public static Collection Create(string ownerId, string name, DateTime createdUtc, string createdBy)
+    public string? Category { get; private set; }
+    public string? Description { get; private set; }
+    public string? CoverImageUrl { get; private set; }
+    public string? Color { get; private set; }
+    public string ItemLabel { get; private set; } = "item";
+    public string ItemsLabel { get; private set; } = "items";
+
+    public string ShowcaseLayout { get; private set; } = "gallery";
+    public bool ShowcaseShowGrowth { get; private set; }
+    public bool ShowcaseShowTypes { get; private set; }
+
+    public static bool IsValidShowcaseLayout(string? layout) => layout is "gallery" or "journal";
+
+    public void UpdateShowcaseSettings(string layout, bool showGrowth, bool showTypes,
+        DateTime updatedUtc, string updatedBy)
+    {
+        if (!IsValidShowcaseLayout(layout))
+            throw new ArgumentException("Choose Gallery or Journal.", nameof(layout));
+        ShowcaseLayout = layout;
+        ShowcaseShowGrowth = showGrowth;
+        ShowcaseShowTypes = showTypes;
+        SetUpdated(updatedUtc, updatedBy);
+    }
+
+    public static bool IsValidItemLabel(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && value.Trim().Length <= 40 && !value.Any(char.IsControl);
+
+    public void UpdateVocabulary(string itemLabel, string itemsLabel, DateTime updatedUtc, string updatedBy)
+    {
+        if (!IsValidItemLabel(itemLabel) || !IsValidItemLabel(itemsLabel))
+            throw new ArgumentException("Use labels between 1 and 40 characters without line breaks.");
+        ItemLabel = itemLabel.Trim();
+        ItemsLabel = itemsLabel.Trim();
+        SetUpdated(updatedUtc, updatedBy);
+    }
+
+    public bool ShowCover { get; private set; } = true;
+    public bool ShowSummary { get; private set; } = true;
+    public bool ShowPinnedItems { get; private set; } = true;
+    public bool ShowRecentItems { get; private set; } = true;
+    public IReadOnlyList<Guid> PinnedItemIds { get; private set; } = Array.Empty<Guid>();
+
+    public void UpdatePresentation(bool showCover, bool showSummary, bool showPinnedItems, bool showRecentItems,
+        IReadOnlyList<Guid> pinnedItemIds, DateTime updatedUtc, string updatedBy)
+    {
+        ArgumentNullException.ThrowIfNull(pinnedItemIds);
+        if (pinnedItemIds.Count > 6 || pinnedItemIds.Any(id => id == Guid.Empty) ||
+            pinnedItemIds.Distinct().Count() != pinnedItemIds.Count)
+            throw new ArgumentException("Choose up to six different items.", nameof(pinnedItemIds));
+
+        ShowCover = showCover;
+        ShowSummary = showSummary;
+        ShowPinnedItems = showPinnedItems;
+        ShowRecentItems = showRecentItems;
+        PinnedItemIds = Array.AsReadOnly(pinnedItemIds.ToArray());
+        SetUpdated(updatedUtc, updatedBy);
+    }
+
+    public static bool IsValidCoverImageUrl(string? value) =>
+        string.IsNullOrWhiteSpace(value) ||
+        (Uri.TryCreate(value.Trim(), UriKind.Absolute, out var uri) &&
+         uri.Scheme == Uri.UriSchemeHttps && string.IsNullOrEmpty(uri.UserInfo));
+
+    public static Collection Create(string ownerId, string name, DateTime createdUtc, string createdBy,
+        string? category = null, string? description = null, string? coverImageUrl = null, string? color = null)
     {
         if (string.IsNullOrWhiteSpace(ownerId))
         {
             throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
 
-        var normalizedName = name.Trim();
+        var collection = new Collection(Guid.NewGuid(), ownerId.Trim(), name, createdUtc, createdBy);
+        collection.SetIdentity(name, category, description, coverImageUrl, color);
+        return collection;
+    }
 
+    public void UpdateIdentity(string name, string? category, string? description,
+        string? coverImageUrl, string? color, DateTime updatedUtc, string updatedBy)
+    {
+        SetIdentity(name, category, description, coverImageUrl, color);
+        SetUpdated(updatedUtc, updatedBy);
+    }
+
+    private void SetIdentity(string name, string? category, string? description, string? coverImageUrl, string? color)
+    {
+        var normalizedName = name?.Trim() ?? "";
         if (normalizedName.Length is < 3 or > 100)
-        {
             throw new ArgumentException("Collection name must be between 3 and 100 characters.", nameof(name));
-        }
 
-        return new Collection(Guid.NewGuid(), ownerId.Trim(), normalizedName, createdUtc, createdBy);
+        static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        category = Normalize(category);
+        description = Normalize(description);
+        coverImageUrl = Normalize(coverImageUrl);
+        color = Normalize(color);
+        if (category?.Length > 100 || description?.Length > 1000 || coverImageUrl?.Length > 2048 ||
+            !IsValidCoverImageUrl(coverImageUrl) || color is not (null or "forest" or "clay" or "slate"))
+            throw new ArgumentException("Collection identity is invalid.");
+
+        // Validate the whole identity before mutating any field.
+        Name = normalizedName;
+        Category = category;
+        Description = description;
+        CoverImageUrl = coverImageUrl;
+        Color = color;
     }
 }

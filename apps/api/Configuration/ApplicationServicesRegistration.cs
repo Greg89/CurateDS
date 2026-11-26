@@ -1,3 +1,5 @@
+using CurateDS.Application.Collections.CollectionPresentation;
+using CurateDS.Application.Collections.UpdateCollection;
 using CurateDS.Application.Abstractions;
 using CurateDS.Application.Collections.CreateAttributeDefinition;
 using CurateDS.Application.Collections.CreateCollection;
@@ -59,9 +61,18 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<IValidator<UpdateLocationCommand>, UpdateLocationCommandValidator>();
         services.AddScoped<IValidator<UpdateAttributeDefinitionCommand>, UpdateAttributeDefinitionCommandValidator>();
 
+        services.AddScoped<CollectionPresentationService>();
+        services.AddScoped<CurateDS.Application.Collections.ShowcaseSettings.ShowcaseSettingsService>();
+        services.AddScoped<UpdateCollectionVocabularyService>();
+        services.AddScoped<IValidator<UpdateCollectionPresentationCommand>, UpdateCollectionPresentationValidator>();
+        services.AddScoped<CurateDS.Application.Abstractions.Persistence.ICollectionPresentationRepository,
+            CurateDS.Infrastructure.Persistence.Repositories.CollectionPresentationRepository>();
+
         // Command/query services
         services.AddScoped<CreateAttributeDefinitionService>();
         services.AddScoped<CreateCollectionService>();
+        services.AddScoped<UpdateCollectionService>();
+        services.AddScoped<IValidator<UpdateCollectionCommand>, UpdateCollectionCommandValidator>();
         services.AddScoped<CreateItemService>();
         services.AddScoped<CreateLocationService>();
         services.AddScoped<CreateTagService>();
@@ -74,6 +85,8 @@ internal static class ApplicationServicesRegistration
         services.AddScoped<DeleteSavedViewService>();
         services.AddScoped<ExportCollectionService>();
         services.AddScoped<GetCollectionReportsService>();
+        services.AddScoped<CurateDS.Application.Collections.GetCollectionInsights.GetCollectionInsightsService>();
+        services.AddScoped<CurateDS.Application.Abstractions.Persistence.ICollectionInsightsRepository, CurateDS.Infrastructure.Persistence.Repositories.CollectionInsightsRepository>();
         services.AddScoped<GetCollectionSummaryService>();
         services.AddScoped<GetItemDetailService>();
         services.AddScoped<ListCollectionActivityService>();
@@ -96,6 +109,7 @@ internal static class ApplicationServicesRegistration
 
         // Media services
         services.AddScoped<UploadItemMediaService>();
+        services.AddScoped<CurateDS.Application.Collections.ReadItemMedia.ReadItemMediaService>();
         services.AddScoped<DeleteItemMediaService>();
         services.AddScoped<SetPrimaryItemMediaService>();
 

@@ -62,7 +62,10 @@ public static class ItemEndpoints
                         ItemTypeId: request.ItemTypeId,
                         TagMatchMode: string.Equals(request.TagMatchMode, "any", StringComparison.OrdinalIgnoreCase)
                             ? TagMatchMode.Any
-                            : TagMatchMode.All),
+                            : TagMatchMode.All,
+                        HasNoItemType: request.HasNoItemType ?? false,
+                        CreatedBeforeExclusive: request.CreatedBeforeExclusive,
+                        ExactAttributeKey: request.ExactAttributeKey, ExactAttributeValue: request.ExactAttributeValue),
                     cancellationToken);
 
                 return Results.Ok(new PagedItemsResponse(
@@ -76,7 +79,7 @@ public static class ItemEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<PagedItemsResponse>();
     }
 
     private static void MapCreateItem(RouteGroupBuilder group)
@@ -132,7 +135,7 @@ public static class ItemEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<ItemDetailResponse>(StatusCodes.Status201Created);
     }
 
     private static void MapGetItemDetail(RouteGroupBuilder group)
@@ -157,7 +160,7 @@ public static class ItemEndpoints
             {
                 return ApiResponses.NotFound("Item was not found.");
             }
-        });
+        }).Produces<ItemDetailResponse>();
     }
 
     private static void MapListItemEvents(RouteGroupBuilder group)
@@ -245,7 +248,7 @@ public static class ItemEndpoints
             {
                 return ApiResponses.NotFound("Item or collection was not found.");
             }
-        });
+        }).Produces<ItemDetailResponse>();
     }
 
     private static void MapDeleteItem(RouteGroupBuilder group)

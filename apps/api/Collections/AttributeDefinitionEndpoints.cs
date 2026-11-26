@@ -35,7 +35,7 @@ public static class AttributeDefinitionEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<AttributeDefinitionResponse[]>();
 
         group.MapPost("/{collectionId:guid}/attribute-definitions", async (
             Guid collectionId,
@@ -80,7 +80,7 @@ public static class AttributeDefinitionEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<AttributeDefinitionResponse>(StatusCodes.Status201Created);
 
         group.MapDelete("/{collectionId:guid}/attribute-definitions/{attributeDefinitionId:guid}", async (
             Guid collectionId,
@@ -145,7 +145,7 @@ public static class AttributeDefinitionEndpoints
             {
                 return ApiResponses.NotFound(exception.Message);
             }
-        });
+        }).Produces<AttributeDefinitionResponse>();
 
         return app;
     }

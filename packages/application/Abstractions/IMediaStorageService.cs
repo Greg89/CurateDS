@@ -24,7 +24,7 @@ public interface IMediaStorageService
     Task DeleteAsync(string storageKey, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Returns the public-facing URL for a stored object.
+    /// Reads a private object with a strict byte limit; returns null only when it does not exist.
     /// </summary>
-    string GetPublicUrl(string storageKey);
+    Task<byte[]?> ReadAsync(string storageKey, long maximumBytes, CancellationToken cancellationToken);
 }

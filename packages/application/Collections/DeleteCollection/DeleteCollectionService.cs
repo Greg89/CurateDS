@@ -31,6 +31,7 @@ public sealed class DeleteCollectionService
         await _unitOfWork.ExecuteInTransactionAsync(
             async innerCancellationToken =>
             {
+                await _unitOfWork.SuspendPublicationAsync(command.CollectionId, "collection_deleted", innerCancellationToken);
                 var deleted = await _collectionRepository.SoftDeleteAsync(
                     command.CollectionId,
                     command.OwnerId,

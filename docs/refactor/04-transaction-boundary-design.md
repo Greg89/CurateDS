@@ -2,6 +2,14 @@
 
 Status created: 2026-06-29
 
+## Implementation Status (2026-10-02)
+
+The design below is the original proposal. `ICatalogUnitOfWork` and `EfCatalogUnitOfWork` are now implemented, including result-returning operations. Item create/update/delete and other catalog write services use them. The implementation saves inside an existing transaction without committing that caller-owned transaction.
+
+Media upload now attempts storage deletion when metadata persistence fails. This is best effort and uses the request cancellation token; orphan cleanup remains a follow-up.
+
+Relational rollback coverage now exists in `ItemTransactionTests`: six cases, verified on SQLite and PostgreSQL 17, exercise real create/update/delete services, with an early item flush and an event-insert rejection for failure cases. Fresh contexts verify rollback and paired success cases verify commit. Existing API tests still use EF InMemory; the Docker runner additionally verifies migrations from an empty PostgreSQL database, while existing-data migration safety and broader provider queries need separate validation.
+
 ## Decision
 
 Add an application-layer transaction abstraction and implement it in infrastructure with EF Core.

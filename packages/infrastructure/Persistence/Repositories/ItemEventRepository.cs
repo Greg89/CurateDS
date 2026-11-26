@@ -42,15 +42,16 @@ public sealed class ItemEventRepository : IItemEventRepository
 
         var q = _dbContext.ItemEvents
             .Where(e => e.CollectionId == collectionId)
-            .OrderByDescending(e => e.OccurredUtc);
+            .OrderByDescending(e => e.OccurredUtc).ThenByDescending(e => e.Id);
 
         var totalCount = await q.CountAsync(cancellationToken);
 
+        // Keep deleted-item history consistent with the event count; collection access is checked by the service.
         var events = await q
             .Skip((safePage - 1) * safePageSize)
             .Take(safePageSize)
             .Join(
-                _dbContext.Items,
+                _dbContext.Items.IgnoreQueryFilters().Where(item => item.CollectionId == collectionId),
                 e => e.ItemId,
                 i => i.Id,
                 (e, i) => new CollectionActivityEventDto(

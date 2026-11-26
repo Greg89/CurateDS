@@ -2,6 +2,7 @@ name: Beta deployment smoke
 
 on:
   workflow_dispatch:
+  deployment_status:
 
 permissions:
   contents: read
@@ -12,11 +13,19 @@ concurrency:
 
 jobs:
   smoke:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment_status.creator.login == 'railway-app[bot]' &&
+       github.event.deployment.environment == 'CurateDS / beta' &&
+       github.event.deployment.payload.environmentId == '9ec45f12-7e4f-4328-9348-05f48c16dd5e')
     name: Read-only beta deployment check
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       BETA_ORIGIN: https://curateds-client-beta.up.railway.app
+      EXPECTED_COMMIT: ${{ github.event.deployment.sha }}
+      DEPLOYMENT_ID: ${{ github.event.deployment.id }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -31,15 +40,23 @@ jobs:
       - name: Check deployed beta
         shell: bash
         run: |
+          args=(--origin "$BETA_ORIGIN")
+          if [[ "$GITHUB_EVENT_NAME" == deployment_status ]]; then
+            args+=(--expected-commit "${EXPECTED_COMMIT:?Missing deployment SHA}")
+          fi
           {
             echo "### Beta deployment smoke"
             echo
             echo "Target: \`$BETA_ORIGIN\`"
             echo
+            if [[ "$GITHUB_EVENT_NAME" == deployment_status ]]; then
+              echo "GitHub deployment ID: $DEPLOYMENT_ID"
+              echo
+            fi
             echo '~~~text'
           } >> "$GITHUB_STEP_SUMMARY"
           status=0
-          node apps/web-v2/scripts/check-deployment.mjs --origin "$BETA_ORIGIN" 2>&1 |
+          node apps/web-v2/scripts/check-deployment.mjs "${args[@]}" 2>&1 |
             tee -a "$GITHUB_STEP_SUMMARY" || status=$?
           echo '~~~' >> "$GITHUB_STEP_SUMMARY"
           exit "$status"

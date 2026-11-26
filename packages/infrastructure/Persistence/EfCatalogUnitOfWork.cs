@@ -5,6 +5,8 @@ namespace CurateDS.Infrastructure.Persistence;
 
 public sealed class EfCatalogUnitOfWork : ICatalogUnitOfWork
 {
+    public Task SuspendPublicationAsync(Guid collectionId, string reason, CancellationToken cancellationToken) =>
+        Publications.PublicationTransactions.SuspendAsync(_dbContext, collectionId, reason, cancellationToken);
     private readonly CatalogDbContext _dbContext;
 
     public EfCatalogUnitOfWork(CatalogDbContext dbContext)

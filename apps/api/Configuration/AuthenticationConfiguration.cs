@@ -17,6 +17,16 @@ internal static class AuthenticationConfiguration
             {
                 options.Authority = $"https://{auth0Domain}/";
                 options.Audience = auth0Audience;
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        // Stop before token validation or discovery. Public resources are identical
+                        // for signed-in visitors and must not depend on Auth0 being available.
+                        if (context.Request.Path.StartsWithSegments("/showcases")) context.NoResult();
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddAuthorization();

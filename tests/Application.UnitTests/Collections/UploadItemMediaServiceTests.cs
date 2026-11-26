@@ -197,7 +197,7 @@ public sealed class UploadItemMediaServiceTests
             return Task.CompletedTask;
         }
 
-        public string GetPublicUrl(string storageKey) => $"https://cdn.example.com/{storageKey}";
+        public Task<byte[]?> ReadAsync(string key, long maximumBytes, CancellationToken ct) => throw new NotSupportedException();
     }
 
     private sealed class FakeCollectionRepository : ICollectionRepository

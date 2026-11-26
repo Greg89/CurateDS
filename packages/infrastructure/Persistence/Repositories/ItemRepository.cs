@@ -109,9 +109,9 @@ public sealed class ItemRepository : IItemRepository
                     .ToList(),
                 AttributeValueCount = _dbContext.ItemAttributeValues
                     .Count(iav => iav.ItemId == i.Id),
-                PrimaryImageStorageKey = _dbContext.MediaAssets
+                PrimaryImageAssetId = _dbContext.MediaAssets
                     .Where(ma => ma.ItemId == i.Id && ma.IsPrimary)
-                    .Select(ma => ma.StorageKey)
+                    .Select(ma => (Guid?)ma.Id)
                     .FirstOrDefault()
             })
             .ToListAsync(cancellationToken);
@@ -128,7 +128,7 @@ public sealed class ItemRepository : IItemRepository
             i.AttributeValueCount,
             i.CreatedUtc,
             i.UpdatedUtc,
-            PrimaryImageStorageKey: i.PrimaryImageStorageKey))
+            PrimaryImageAssetId: i.PrimaryImageAssetId))
             .ToArray();
 
         return new PagedResult<ItemSummaryProjection>(dtos, totalCount, page, pageSize);

@@ -18,3 +18,8 @@ playwright-report
 test-results
 
 **/dist
+
+**/.next
+**/test-results
+**/.env
+**/.env.*

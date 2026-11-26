@@ -4,6 +4,7 @@ namespace CurateDS.Application.UnitTests.Collections;
 
 internal sealed class FakeCatalogUnitOfWork : ICatalogUnitOfWork
 {
+    public Task SuspendPublicationAsync(Guid collectionId, string reason, CancellationToken cancellationToken) => Task.CompletedTask;
     public int ExecutionCount { get; private set; }
     public Exception? ExceptionToThrowAfterOperation { get; init; }
 

@@ -1,0 +1,208 @@
+# CurateDS V2 Roadmap
+
+## Roadmap Principles
+
+- Build the collection experience before expanding the feature surface.
+- Preserve the strongest current backend and domain behavior.
+- Prefer one coherent vertical slice over broad unfinished infrastructure.
+- Keep collection identity visible in every user-facing workflow.
+- Treat presentation as a product capability, not a final marketing layer.
+- Add another client only after the web experience proves the need.
+
+## Slice 0: V2 Foundation Decision
+
+Goal: make the product and architecture decisions explicit before implementation.
+
+Status: Complete. Decisions accepted on 2026-09-20.
+
+Accepted decisions:
+
+- Create a temporary `apps/web-v2` Next.js application so the current web remains available as a behavioral reference.
+- Use the Next.js App Router.
+- Keep the .NET API authoritative for domain rules, persistence, authentication validation, and collection ownership.
+- Let Next.js own the web session and pass the Auth0 bearer token to the API.
+- Use stable collection IDs internally and human-readable slugs for showcase routes.
+- Keep TanStack Query for server state.
+- Make the URL authoritative for the active collection and expose it to nested components through a provider.
+- Prefer OpenAPI-generated TypeScript types with runtime validation at the web boundary.
+- Keep Vitest and Testing Library for component tests; add focused Playwright coverage after the shell is usable.
+- Deploy the Next.js web app as a Railway service beside the existing API.
+
+Deliverables:
+
+- V2 product vision and collection-first model
+- collection workspace specification
+- product language contract
+- Next.js and .NET API boundary
+- decision on shared/generated API contracts
+- decision on temporary parallel web app versus direct replacement
+
+Exit criteria:
+
+- a contributor can explain what a collection is
+- a contributor knows which concepts are intentionally absent
+- new screens can be evaluated against the collection-first design test
+- the web migration shape, routing, authentication, contracts, state, testing, and deployment boundaries are agreed
+
+## Slice 1: Next.js Web Foundation
+
+Goal: establish the new web application shell without rebuilding feature workflows yet.
+
+Status (2026-10-02): Complete in `apps/web-v2`, including live Auth0 acceptance. Automated session-boundary, API-contract, component, and desktop/mobile browser checks passed. The user's interactive live-check results confirm login/callback, authenticated collection access, two token refreshes with persisted session cookies, logout/session removal/protected-route denial, and sign-in/API access after logout. See [Slice 1 handoff](refactor/05-v2-foundation-handoff.md) and [workspace setup](../apps/web-v2/README.md). Subsequent progress is tracked below.
+
+Deliverables:
+
+- Next.js app under `apps/web` or a temporary V2 web workspace
+- Auth0 sign-in and session boundary
+- route and layout conventions
+- collection switcher contract
+- base typography, color, spacing, and responsive design tokens
+- error, loading, empty, and not-found states
+- API client boundary
+
+Exit criteria:
+
+- a signed-in user can reach the collection area
+- collection context is available to nested routes
+- the shell works on desktop and narrow screens
+- API failures do not produce generic blank pages
+
+## Slice 2: First Collection And Overview
+
+Goal: make the first collection feel real immediately after creation.
+
+Status (2026-10-02): Implemented and validated in `apps/web-v2` with persistent optional identity fields in the .NET API. Creation, live overview data, collection switching, and basic first-item entry are available. Covers use HTTPS image links; full item/custom-field editing and media upload remain later work. See [Slice 2 handoff](refactor/06-v2-collection-overview-handoff.md). Slice 3 completion is recorded below.
+
+Deliverables:
+
+- first-run collection creation
+- collection name, description, cover, and identity fields
+- collection switcher
+- collection header
+- overview route
+- item count and initial summary cards
+- recent or featured content states
+- empty collection guidance with a clear add-item action
+
+Exit criteria:
+
+- a new user can create a collection and understand what to do next
+- switching collections changes the complete workspace context
+- the page feels like the user's collection rather than an administration screen
+
+## Slice 3: Browse And Curate
+
+Goal: make repeated collection management efficient and visually grounded.
+
+Status (2026-10-02): Complete in `apps/web-v2`. Browse/search/filter/sort/pagination, full item editing with custom fields, detail views, and image management are implemented. Desktop/mobile checks and an isolated real-storage API acceptance test passed. Local development storage is configured and running. See [Slice 3 handoff](refactor/07-v2-browse-curate-handoff.md). Slice 4 completion is recorded below.
+
+Deliverables:
+
+- collection browse route
+- search, filter, sort, and pagination behavior
+- useful grid/list presentation options
+- item creation and editing flow
+- item detail view
+- media handling
+- keyboard, focus, and responsive interaction behavior
+
+Exit criteria:
+
+- a user can add and find items without leaving the collection context
+- browse supports both efficient management and enjoyable exploration
+- existing API behavior remains covered by tests
+
+## Slice 4: Insights
+
+Goal: make reports satisfying to explore rather than merely administrative.
+
+Status (2026-10-03): Complete in `apps/web-v2`. Collection cards, twelve-month growth, paged activity, location/tag/type/custom-field breakdowns, exact browse drill-through, and saved views are implemented. Category remains collection-level identity in the current model; item types provide the within-collection grouping. API, SQLite/PostgreSQL, and desktop/mobile checks passed. See [Slice 4 handoff](refactor/08-v2-insights-handoff.md). Next scope: Slice 5.
+
+Deliverables:
+
+- collection-level insight cards
+- growth and activity summaries
+- category, tag, location, and custom-attribute breakdowns
+- report drill-through into browse
+- saved insight or view patterns where useful
+
+Exit criteria:
+
+- insights answer useful questions about the collection
+- every insight can lead naturally back to the underlying items
+- empty and sparse data states remain useful and attractive
+
+## Slice 5: Collection Customization
+
+Goal: let each collection develop its own identity without creating configuration overload.
+
+Status (2026-10-03): Complete in `apps/web-v2`. Settings supports identity and Forest/Clay/Slate presets, ordered pins, optional overview sections, collection-specific singular/plural labels, and custom-field definition choices. See [settings handoff](refactor/09-v2-collection-settings-handoff.md), [overview customization handoff](refactor/10-v2-overview-customization-handoff.md), and [labels and fields handoff](refactor/11-v2-labels-and-fields-handoff.md). API, migration/persistence, and desktop/mobile checks passed. Item-type creation and account-wide tag/location management remain in the legacy client; predefined field choice lists are not part of this slice. Next: Slice 6, beginning with private showcase preview.
+
+Deliverables:
+
+- collection themes or visual presets
+- featured and pinned items
+- configurable overview sections
+- collection-specific labels and metadata choices
+- reusable layout and display primitives
+
+Exit criteria:
+
+- two collections can feel meaningfully different
+- customization improves expression without blocking basic cataloging
+- settings remain understandable to a non-technical hobbyist
+
+## Slice 6: Showcase V1
+
+Goal: let a hobbyist show what their collection is.
+
+Status (2026-10-03): In progress. Private showcase now supports saved Gallery/Journal layouts, identity/vocabulary, ordered highlights, optional summary/recent sections, and selected twelve-month additions and item-type reports. Layout/report settings persist independently of overview choices; data remains owner-scoped and comes from the existing catalog and Insights API. API, PostgreSQL migration, production build, unit/component, and desktop/mobile checks passed. See [private preview](refactor/12-v2-showcase-preview-handoff.md) and [layouts and reports](refactor/13-v2-showcase-layouts-handoff.md) handoffs. The [sharing and social-preview contract](16-v2-showcase-sharing-contract.md) now defines reviewed public editions, stable slugs, explicit publish/unpublish, a public data allowlist, checked media, and revocation/cache behavior; see the [design handoff](refactor/14-v2-showcase-sharing-design-handoff.md). Update (2026-10-04): authenticated catalog-media reads in both clients and the explicit local storage-policy transition are complete; see the [private-media handoff](refactor/15-v2-private-media-handoff.md). Ownership, real-storage privacy, upload/display/delete, and desktop/mobile acceptance passed. Remote policy enforcement remains a deployment step. Publication domain and API are now implemented behind a disabled-by-default feature flag: reviewed editions, permanent slug reservations, generation-checked activation/revocation, private derivatives, and bounded cleanup. PostgreSQL concurrency and real-storage acceptance passed; see the [publication API handoff](refactor/16-v2-publication-api-handoff.md). Owner review/publish/update/unpublish controls and anonymous visitor HTML/media routes are now implemented; see the [review and visitor handoff](refactor/17-v2-publication-ui-handoff.md). Gallery/Journal rendering uses the exact reviewed public DTO, with explicit error recovery and revocation checks. Publishing remains disabled by default. Checked social cards, authorized candidate cards, configured canonical/Open Graph/Twitter metadata, and bot HTML are now implemented; see the [social preview handoff](refactor/18-v2-social-preview-handoff.md). The user confirmed there is no deployed V2 environment yet. Deployment decision (2026-10-04): replace the existing beta client/service in place; do not host two web versions. See the [beta cutover plan](refactor/20-v2-beta-cutover.md). Next: execute the [prepared edge/private-storage rollout checks](refactor/19-v2-publication-rollout-checklist.md). Slice 6 remains in progress until that deployed acceptance passes.
+
+Deliverables:
+
+- showcase route
+- splash page templates
+- featured collection content
+- selected reports or summary sections
+- private preview mode
+- shareable route design
+- social metadata and preview image strategy
+
+Exit criteria:
+
+- a user can open a polished representation of their collection
+- the showcase feels distinct from the management workspace
+- presentation data comes from the authoritative collection model
+
+## Slice 7: Trust And Scale
+
+Goal: strengthen the platform after the core experience works.
+
+Dependency note (2026-10-03): the minimum private media-read path and explicit bucket-policy transition are brought forward into Slice 6 as prerequisites for revocable sharing. Broader media cleanup and scale work remain here. See the [sharing contract](16-v2-showcase-sharing-contract.md).
+
+Deliverables:
+
+- transaction boundaries for multi-step writes
+- media privacy and cleanup decision
+- streaming or paged export
+- cursor pagination or virtualization where needed
+- stronger contract and query-shape tests
+- import with preview and dry-run validation
+
+Exit criteria:
+
+- larger real collections remain practical
+- destructive and multi-step operations are trustworthy
+- imports and exports do not bypass domain validation
+
+## Deferred Until Proven Necessary
+
+- native mobile client
+- member or organization functionality
+- public social feed
+- marketplace integrations
+- speculative natural-language search
+- complex collaboration
+- broad template marketplace
+
+These are not permanent prohibitions. They are intentionally downstream of proving that the collection-first web product is useful, enjoyable, and worth extending.

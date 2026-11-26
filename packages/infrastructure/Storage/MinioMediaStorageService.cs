@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace CurateDS.Infrastructure.Storage;
 
-public sealed class MinioMediaStorageService : IMediaStorageService
+public sealed class MinioMediaStorageService : IMediaStorageService, CurateDS.Application.Publications.IPublicationStorage
 {
     private readonly MediaStorageOptions _options;
     private readonly string _environment;
@@ -28,6 +28,20 @@ public sealed class MinioMediaStorageService : IMediaStorageService
         CancellationToken cancellationToken)
     {
         var key = $"{_environment}/collections/{collectionId}/items/{itemId}/{Guid.NewGuid()}.{fileExtension.TrimStart('.')}";
+        await PutAsync(key, content, contentType, cancellationToken);
+        return key;
+    }
+
+    public string Key(Guid revision, Guid asset) => $"{_environment}/showcases/{revision:N}/{asset:N}.jpg";
+
+    public async Task WriteAsync(string key, byte[] bytes, CancellationToken ct)
+    {
+        using var stream = new MemoryStream(bytes, writable: false);
+        await PutAsync(key, stream, "image/jpeg", ct);
+    }
+
+    private async Task PutAsync(string key, Stream content, string contentType, CancellationToken cancellationToken)
+    {
 
         // Buffer non-seekable streams so the SDK can send a single fixed-Content-Length
         // HTTP PUT. Streaming uploads with unknown length force Transfer-Encoding: chunked,
@@ -72,7 +86,6 @@ public sealed class MinioMediaStorageService : IMediaStorageService
         };
 
         await client.PutObjectAsync(request, cancellationToken);
-        return key;
     }
 
     public async Task DeleteAsync(string storageKey, CancellationToken cancellationToken)
@@ -88,8 +101,27 @@ public sealed class MinioMediaStorageService : IMediaStorageService
         }
     }
 
-    public string GetPublicUrl(string storageKey)
-        => $"{_options.PublicBaseUrl.TrimEnd('/')}/{_options.BucketName}/{storageKey}";
+    public async Task<byte[]?> ReadAsync(string storageKey, long maximumBytes, CancellationToken cancellationToken)
+    {
+        if (maximumBytes is <= 0 or > 20 * 1024 * 1024) throw new ArgumentOutOfRangeException(nameof(maximumBytes));
+        using var client = CreateClient();
+        try
+        {
+            using var response = await client.GetObjectAsync(_options.BucketName, storageKey, cancellationToken);
+            if (response.ContentLength > maximumBytes) throw new InvalidDataException("Media exceeds its size limit.");
+            using var output = new MemoryStream();
+            var buffer = new byte[81920];
+            int read;
+            while ((read = await response.ResponseStream.ReadAsync(buffer, cancellationToken)) > 0)
+            {
+                if (output.Length + read > maximumBytes) throw new InvalidDataException("Media exceeds its size limit.");
+                await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            }
+            return output.ToArray();
+        }
+        catch (AmazonS3Exception error) when (error.ErrorCode == "NoSuchKey") { return null; }
+        catch (AmazonS3Exception error) { throw new IOException("Media storage is unavailable.", error); }
+    }
 
     private AmazonS3Client CreateClient()
     {

@@ -1,27 +1,35 @@
 # Refactor Review
 
-This folder captures a focused review of the app as of 2026-06-26, with status refreshed on 2026-06-29 after the filter/saved-view/report fixes and the item drawer smoke-test fix.
+Status refreshed: 2026-10-04
 
-Contents:
+This folder tracks the incremental refactor originally reviewed in June 2026. The October reconciliation checked the implementation at `c61f0a6`; the original notes had not caught up with merged work. The next product phase follows the [V2 roadmap](../15-v2-roadmap.md), with supporting engineering guidance in [the app plan](../app-plan/README.md).
 
-- `00-current-state-review.md`
-- `01-concrete-findings.md`
-- `02-prioritized-refactor-roadmap.md`
-- `03-validation-notes.md`
-- `04-transaction-boundary-design.md`
+## Where to resume
 
-Recommended reading order:
+1. Relational rollback coverage is complete for item create/update/delete using SQLite and PostgreSQL 17 with real services/repositories. PostgreSQL mode applies repository migrations to fresh databases; see the [test runner](../../tests/Infrastructure.IntegrationTests/README.md).
+2. Storage-test portability is complete: Kestrel binds an ephemeral loopback port directly, captures requests asynchronously, and awaits shutdown. Wire-level assertions and concurrent-server isolation are covered.
+3. V2 Slices 1–5 are complete in `apps/web-v2`. Live Auth0 acceptance is recorded in [the foundation handoff](05-v2-foundation-handoff.md); collection creation, identity, overview data, and first-item entry are covered in [the Slice 2 handoff](06-v2-collection-overview-handoff.md). Browse, full item editing, and media management are covered in [the Slice 3 handoff](07-v2-browse-curate-handoff.md). Insights, exact report drill-through, activity, and saved views are covered in [the Slice 4 handoff](08-v2-insights-handoff.md). Slice 5 identity editing is covered in [the Settings handoff](09-v2-collection-settings-handoff.md). Pinned items and configurable overview sections are covered in [the overview customization handoff](10-v2-overview-customization-handoff.md). Collection vocabulary and custom-field definition choices complete Slice 5; see [the labels and fields handoff](11-v2-labels-and-fields-handoff.md). Slice 6 now includes private layouts/reports, private media, the publication API, and [owner review and visitor pages](17-v2-publication-ui-handoff.md). Checked social cards, authorized candidate cards, and canonical/bot metadata are implemented in [the social preview handoff](18-v2-social-preview-handoff.md). The next task replaces the existing beta client in place, following [the beta cutover plan](20-v2-beta-cutover.md), then executes [the prepared rollout checks](19-v2-publication-rollout-checklist.md). Do not provision a second web service. Publishing remains disabled by default. Remaining interaction audits and feature decomposition are recorded follow-ups.
 
-1. `00-current-state-review.md`
-2. `01-concrete-findings.md`
-3. `02-prioritized-refactor-roadmap.md`
-4. `03-validation-notes.md`
-5. `04-transaction-boundary-design.md`
+## After the first refactor pass
 
-Current near-term phases:
+The first refactor pass and V2 Slices 1–5 are complete. Continue with [V2 Slice 6: Showcase V1](../15-v2-roadmap.md#slice-6-showcase-v1); transaction and storage-test validation are complete, and remaining follow-ups are recorded in the refactor roadmap. Avoid letting optional legacy UI decomposition indefinitely delay V2.
 
-1. Documentation and status refresh.
-2. Encoding/mojibake cleanup.
-3. `TagMultiSelect` interaction hardening.
-4. Server-side saved-view filter validation.
-5. Transaction-boundary design for multi-step writes.
+Slice 0 is already complete, with decisions accepted on 2026-09-20: start a temporary `apps/web-v2` Next.js App Router application, preserve the current web as a behavioral reference, and keep the .NET API authoritative. Carry the refactor's tested behavior into V2. Track broader trust/scale work under V2 Slice 7 without repeating transaction implementation already completed here.
+
+## Implemented
+
+- Shared item-filter serialization, report drill-through, saved-view restoration, and malformed-row handling.
+- Item drawers unmount after closing.
+- Saved-view JSON shape validation with `invalid_saved_view_filters`, plus application and API tests.
+- `ICatalogUnitOfWork` and its EF implementation; item writes and other catalog writes use the abstraction. Six integration cases, verified on both SQLite and PostgreSQL, cover successful commits and rollback after audit-event persistence failure.
+- Best-effort object-storage deletion when media metadata persistence fails.
+- Tag picker outside-click/Escape handling; the current continuation adds focus on open, close on focus leaving, and reset when disabled. Native checkbox Tab/Space navigation is retained.
+
+## Reading order
+
+1. [Current state](00-current-state-review.md)
+2. [Concrete findings](01-concrete-findings.md)
+3. [Remaining roadmap](02-prioritized-refactor-roadmap.md)
+4. [Validation notes](03-validation-notes.md)
+5. [Transaction design and implementation status](04-transaction-boundary-design.md)
+6. [V2 foundation handoff](05-v2-foundation-handoff.md)

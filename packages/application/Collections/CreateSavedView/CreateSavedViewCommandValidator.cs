@@ -59,14 +59,15 @@ public sealed class CreateSavedViewCommandValidator : AbstractValidator<CreateSa
     {
         return property.Name switch
         {
-            "searchText" or "locationId" or "itemTypeId" or "createdAfter" or "createdBefore" =>
+            "searchText" or "locationId" or "itemTypeId" or "createdAfter" or "createdBefore" or "createdBeforeExclusive" or "exactAttributeKey" or "exactAttributeValue" =>
                 property.Value.ValueKind == JsonValueKind.String,
             "tagIds" => IsStringArray(property.Value),
             "attributeFilters" => IsStringMap(property.Value),
+            "tagMatchMode" => property.Value.ValueKind == JsonValueKind.String && property.Value.GetString() is "all" or "any",
             "sortBy" => IsSortBy(property.Value),
             "sortDirection" => IsSortDirection(property.Value),
             "minQuantity" or "maxQuantity" => property.Value.ValueKind == JsonValueKind.Number,
-            "hasNoLocation" or "hasNoTags" => property.Value.ValueKind == JsonValueKind.True ||
+            "hasNoLocation" or "hasNoTags" or "hasNoItemType" => property.Value.ValueKind == JsonValueKind.True ||
                 property.Value.ValueKind == JsonValueKind.False,
             _ => false
         };

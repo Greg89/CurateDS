@@ -5,6 +5,9 @@ namespace CurateDS.Infrastructure.Persistence;
 
 public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options) : DbContext(options)
 {
+    public DbSet<ShowcasePublication> Publications => Set<ShowcasePublication>();
+    public DbSet<ShowcaseEdition> ShowcaseEditions => Set<ShowcaseEdition>();
+    public DbSet<ShowcaseAsset> ShowcaseAssets => Set<ShowcaseAsset>();
     public DbSet<AttributeDefinition> AttributeDefinitions => Set<AttributeDefinition>();
 
     public DbSet<Collection> Collections => Set<Collection>();

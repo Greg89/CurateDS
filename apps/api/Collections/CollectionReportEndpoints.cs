@@ -41,7 +41,19 @@ public static class CollectionReportEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<CollectionSummaryResponse>();
+
+        group.MapGet("/{collectionId:guid}/insights", async (
+            Guid collectionId, Guid? attributeDefinitionId,
+            CurateDS.Application.Collections.GetCollectionInsights.GetCollectionInsightsService service,
+            ICurrentUserService currentUserService, CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                return Results.Ok(await service.ExecuteAsync(currentUserService.GetCurrentUser(), collectionId, attributeDefinitionId, cancellationToken));
+            }
+            catch (NotFoundException) { return ApiResponses.NotFound("Collection or attribute was not found."); }
+        }).Produces<CurateDS.Application.Collections.CollectionInsightsDto>();
 
         group.MapGet("/{collectionId:guid}/reports", async (
             Guid collectionId,
@@ -93,7 +105,7 @@ public static class CollectionReportEndpoints
             {
                 return ApiResponses.NotFound("Collection was not found.");
             }
-        });
+        }).Produces<PagedCollectionActivityResponse>();
 
         group.MapGet("/{collectionId:guid}/export", async (
             Guid collectionId,
